@@ -1,0 +1,10 @@
+Enabled: true
+Limit: 3
+CoolDown: 86400
+Name: 'Cure Spells'
+Description: 'Take away all bad spells in the world.'
+Effects:
+- CureSpells
+Item:
+  Material: 'POTION'
+  Data: 0

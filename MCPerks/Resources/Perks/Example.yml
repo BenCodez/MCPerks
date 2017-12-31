@@ -1,0 +1,58 @@
+# Example Perk File
+# Taken from cure hunger
+
+# Wether perk is enabled
+Enabled: false
+
+# Limit how many times this can be used per player
+Limit: 3
+
+# CoolDown to use perk after its been activated for user, in seconds
+# 86400 = 24 hours
+CoolDown: 86400
+
+# Perk display name
+Name: 'Cure Hunger'
+
+# Perk description
+Description: 'Fill everybodys stomach.'
+
+# Effects
+# Can have multiple
+Effects:
+- CureHunger
+- Potions 
+- Rewards
+- Commands
+
+# Will execute for each player who gets the effect, needs Commands effect
+Commands:
+- 'say test'
+
+# Requires Potions to be listed in effects
+Potions:
+  # Potion type
+  # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/potion/PotionEffectType.html
+  FAST_DIGGING:
+    # Duration in seconds
+    Duration: 60
+    # Amplifier
+    Amplifier: 2
+
+# Priority in the GUI
+# Highest priority is first in the gui
+Priority: 0
+
+# Requires Rewards to be listed in effects
+# Runs reward files from AdvancedCore on activation
+# Use this to run commands, titles, etc
+Rewards:
+- 'Example'
+    
+# Item to use in /mcperks
+Item:
+  # List of material for 1.10: 
+  # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
+  Material: 'BREAD'
+  # Item Data
+  Data: 0

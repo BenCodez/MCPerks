@@ -1,0 +1,13 @@
+Enabled: true
+CoolDown: 86400
+TimeLasts: 60
+Name: 'Fly'
+Description: 'Allow everyone to fly.'
+Effects:
+- Fly
+Item:
+  Material: 'ELYTRA'
+  Data: 0
+FlyWorlds:
+- world
+- world_nether

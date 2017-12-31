@@ -1,0 +1,13 @@
+Enabled: true
+CoolDown: 86400
+Name: 'Invisibility'
+Description: 'Turn invisible.'
+Effects:
+- Potions
+Potions:
+  INVISIBILITY:
+    Duration: 60
+    Amplifier: 2
+Item:
+  Material: 'BEACON'
+  Data: 0

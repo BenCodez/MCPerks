@@ -1,0 +1,148 @@
+# Config.yml
+# Welcome to MCPerks!
+# Perks are located in Perks folder
+# Permissions are mcperks.(filename) - filename without extenstion
+
+# Enable debug mode
+Debug: false
+
+# Show extra debug info
+# Only needed in extreme cases
+ExtraDebug: false
+
+# Valid Options:
+# - FLAT
+# - SQLITE
+# - MYSQL
+DataStorage: FLAT
+
+# Information for mysql
+MySQL:
+  Host: ''
+  # Default port is 3306
+  Port: 3306 
+  Database: ''
+  Username: ''
+  Password: ''
+  # Max number of connections
+  MaxConnections: 1
+  # Wether or not to preload table
+  # Increases performance greatly when using mysql
+  # Set to false if you want multiple servers using the same table
+  PreLoadTable: true
+
+# Wether or not to load command aliases
+LoadCommandAliases: true
+
+# If true only one perk can be activated at a time
+# If false, unlimited number of perks can be activated at a time
+PerkQue: true
+
+# If true, players can only see perks in /mcperks 
+# they have permission to
+# Default is True
+RequirePermToView: true
+
+# Give Perks for the player that activated it only
+# Old config option, may not work, use the one below
+#PerPlayerPerks: false
+
+# Valid options
+# - ALL
+# - PLAYER
+# - TOWNY
+PerkSystemType: 'ALL'
+
+# At how many seconds left a count should be broadcasted
+CountDownTimes:
+- '10'
+- '3'
+- '2'
+- '1'
+
+# Count down bossbar
+BossBar:
+  Enabled: false
+  # Message to send
+  Message: '&a%perk% ends in %seconds% seconds'
+  # Bar Colors:
+  # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/boss/BarColor.html
+  Color: 'BLUE'
+  # Bar Styles:
+  # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/boss/BarStyle.html
+  Style: 'SOLID'
+
+CountDownEffect:
+  Firework:
+    Enabled: false
+    Power: 2
+    # Colors can be found here:
+    # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Color.html
+    Colors:
+    - GRAY
+    - SILVER
+    FadeOutColor: 
+    - RED
+    Trail: true
+    Flicker: true
+    # Types can be found here:
+    # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/FireworkEffect.Type.html
+    Types:
+    - BALL_LARGE
+    
+ActivationEffect:
+  Firework:
+    Enabled: false
+    Power: 2
+    # Colors can be found here:
+    # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Color.html
+    Colors:
+    - GRAY
+    - SILVER
+    FadeOutColor: 
+    - RED
+    Trail: true
+    Flicker: true
+    # Types can be found here:
+    # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/FireworkEffect.Type.html
+    Types:
+    - BALL_LARGE
+    
+DeactivationEffect:
+  Firework:
+    Enabled: false
+    Power: 2
+    # Colors can be found here:
+    # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Color.html
+    Colors:
+    - GRAY
+    - SILVER
+    FadeOutColor: 
+    - RED
+    Trail: true
+    Flicker: true
+    # Types can be found here:
+    # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/FireworkEffect.Type.html
+    Types:
+    - BALL_LARGE
+
+# Default Item lore
+# Can also put this in each perk file
+# to define specific messages for each perk in gui
+# PlaceHolders:
+# %Description% - Perk description
+# %HasPerm% - True/False
+# %CoolDownLeft% - Seconds left until cooldown over
+# %CoolDown% - Perk cooldown
+Lore:
+  Available: 
+  - '&aClick to activate perk'
+  - '&aCoolDown:  %CoolDown%'
+  - '&aDescription: %Description%'
+  Active: 
+  - '&aCurrently active'
+  - '&aTimeLeft: %TimeLeft%'
+  InCoolDown: 
+  - '&aCoolDownLeft: %CoolDownLeft%'
+  LimitReached: 
+  - '&aPerk limit reached'

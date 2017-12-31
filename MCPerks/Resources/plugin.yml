@@ -1,0 +1,14 @@
+name: ${project.name}
+description: Some EULA friendly perks.
+author: Ben12345rocks
+version: ${project.version}
+main: com.Ben12345rocks.MCPerks.Main
+softdepend: [AdvancedCore]
+commands:
+  mcperks:
+    description: MCPerks commands
+    aliases: [mcp, perks]
+  mcperksreload:
+    description: MCPerks commands
+  mcperkshelp:
+    description: MCPerks commands

@@ -1,0 +1,18 @@
+#
+#
+#
+
+NoPermission: '&cSorry, you do not have permission to execute this command.'
+IncorrectCommandReply: '&cIncorrect command format. For help do /mcperks help'
+MustBePlayer: '&cYou must be a player to use this command'
+HelpTitle: '&3&lMCPerks Help'
+HelpLine: '&3&l%Command% - &3%HelpMessage%'
+PerkActivated: '&6&l%Player% &3&lenacted %Perk% for the entire server!'
+PerkActivatedTimed: '&3&lThis effect will last for %TimeLasts% seconds.'
+PerkDeactivated: '&3&l%Perk% has been deactivated'
+PerkLimitReached: '&cPerk limited reached'
+PerkInCoolDown: '&cCooldown still in affect'
+PerkAlreayActive: '&cPerk already active'
+PerkAddedToQue: '&cPerk has been added to queue'
+GUIName: 'MCPerks'
+CountDownTimer: '&a%countdown% seconds left until %perk% ends!'

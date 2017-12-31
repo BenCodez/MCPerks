@@ -1,0 +1,10 @@
+Enabled: true
+TimeLasts: 60
+CoolDown: 86400
+Name: 'Fire Walking Effect'
+Description: 'Give yourself fire immunity for %TimeLasts% seconds.'
+Effects:
+- FireWalker
+Item:
+  Material: 'FIREBALL'
+  Data: 0

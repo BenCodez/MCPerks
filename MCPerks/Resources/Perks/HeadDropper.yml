@@ -1,0 +1,11 @@
+Enabled: true
+TimeLasts: 60
+PercentIncrease: 50
+CoolDown: 86400
+Name: 'Head Dropper'
+Description: 'Give a chance for heads to drop for %TimeLasts% seconds.'
+Effects:
+- HeadDropper
+Item:
+  Material: 'SKULL_ITEM'
+  Data: 0

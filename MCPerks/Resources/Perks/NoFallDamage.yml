@@ -1,0 +1,10 @@
+Enabled: true
+TimeLasts: 60
+CoolDown: 86400
+Name: 'No Fall Damage Effect'
+Description: 'Give yourself no fall damage for %TimeLasts% seconds.'
+Effects:
+- NoFallDamage
+Item:
+  Material: 'DIAMOND_BOOTS'
+  Data: 0

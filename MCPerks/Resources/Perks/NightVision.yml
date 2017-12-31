@@ -1,0 +1,13 @@
+Enabled: true
+CoolDown: 86400
+Name: 'Night Vision'
+Description: 'See in the dark.'
+Effects:
+- Potions
+Potions:
+  NIGHT_VISION:
+    Duration: 60
+    Amplifier: 2
+Item:
+  Material: 'BEACON'
+  Data: 0

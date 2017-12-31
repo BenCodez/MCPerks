@@ -1,0 +1,10 @@
+Enabled: true
+CoolDown: 86400
+TimeLasts: 60
+Name: 'God'
+Description: 'Give a godly effect'
+Effects:
+- God
+Item:
+  Material: 'DIAMOND_CHESTPLATE'
+  Data: 0

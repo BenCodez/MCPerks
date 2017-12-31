@@ -1,0 +1,10 @@
+Enabled: true
+TimeLasts: 60
+CoolDown: 86400
+Name: 'Protection Effect'
+Description: 'Give yourself protection for %TimeLasts% seconds.'
+Effects:
+- Protection
+Item:
+  Material: 'DIAMOND_CHESTPLATE'
+  Data: 0

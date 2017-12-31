@@ -1,0 +1,13 @@
+Enabled: true
+CoolDown: 86400
+Name: 'Haste'
+Description: 'Give everyone a mine speed increase.'
+Effects:
+- Potions
+Potions:
+  FAST_DIGGING:
+    Duration: 60
+    Amplifier: 2
+Item:
+  Material: 'BEACON'
+  Data: 0

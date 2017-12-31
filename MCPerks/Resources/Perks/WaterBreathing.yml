@@ -1,0 +1,10 @@
+Enabled: true
+TimeLasts: 60
+CoolDown: 86400
+Name: 'Water Breathing Effect'
+Description: 'Give yourself water breathing for %TimeLasts% seconds.'
+Effects:
+- WaterBreathing
+Item:
+  Material: 'DIAMOND_HELMET'
+  Data: 0

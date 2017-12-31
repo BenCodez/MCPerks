@@ -1,0 +1,9 @@
+Enabled: true
+CoolDown: 86400
+Name: 'Cure Hunger'
+Description: 'Fill everybodys stomach.'
+Effects:
+- CureHunger
+Item:
+  Material: 'BREAD'
+  Data: 0

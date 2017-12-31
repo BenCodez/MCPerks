@@ -1,0 +1,20 @@
+Enabled: true
+TimeLasts: 60
+PercentIncrease: 100
+CoolDown: 86400
+Name: 'Fortune Effect'
+Description: 'Give yourself fortune for %TimeLasts% seconds.'
+Effects:
+- Fortune
+Blocks:
+- IRON_ORE
+- DIAMOND_ORE
+- LAPIS_ORE
+- REDSTONE_ORE
+- COAL_ORE
+- EMERALD_ORE
+- QUARTZ_ORE
+- GLOWSTONE
+Item:
+  Material: 'DIAMOND_PICKAXE'
+  Data: 0
