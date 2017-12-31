@@ -48,21 +48,15 @@ public class Main extends JavaPlugin {
 	private EffectHandler effects;
 
 	public ArrayList<CommandHandler> commands;
-	
+
 	public HashMap<String, Boolean> flyingUUIDs;
-	
+
 	private PerkSystemType perkSystemType;
 
 	public void broadcast(String msg) {
 		MiscUtils.getInstance().broadcast(msg);
 	}
 
-	/**
-	 * Debug.
-	 *
-	 * @param msg
-	 *            the msg
-	 */
 	public void debug(String msg) {
 		if (Config.getInstance().getDebugEnabled()) {
 			plugin.getLogger().info("Debug: " + msg);
@@ -127,7 +121,6 @@ public class Main extends JavaPlugin {
 		AdvancedCoreHook.getInstance().loadHook(this);
 		perks = new PerkHandler();
 		effects = new EffectHandler();
-		
 
 		CommandLoader.getInstance().loadCommands();
 
