@@ -185,12 +185,9 @@ public class Main extends JavaPlugin {
 
 				@Override
 				public void run() {
-
 					AdvancedCoreHook.getInstance()
-							.setMysql(new MySQL("MCPerks_Users", Config.getInstance().getMySqlHost(),
-									Config.getInstance().getMySqlPort(), Config.getInstance().getMySqlDatabase(),
-									Config.getInstance().getMySqlUsername(), Config.getInstance().getMySqlPassword(),
-									Config.getInstance().getMySqlMaxConnections()));
+							.setMysql(new MySQL("MCPerks_Users", Config.getInstance().getMysql()));
+
 				}
 			});
 

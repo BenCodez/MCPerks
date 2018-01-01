@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 
 import com.Ben12345rocks.AdvancedCore.YML.YMLFile;
 import com.Ben12345rocks.MCPerks.Main;
@@ -100,32 +101,8 @@ public class Config extends YMLFile {
 		return (ArrayList<String>) getData().getList("Lore.LimitReached", new ArrayList<String>());
 	}
 
-	public String getMySqlDatabase() {
-		return getData().getString("MySQL.Database", "");
-	}
-
-	public String getMySqlHost() {
-		return getData().getString("MySQL.Host", "");
-	}
-
-	public int getMySqlMaxConnections() {
-		return getData().getInt("MySQL.MaxConnections", 1);
-	}
-
-	public String getMySqlPassword() {
-		return getData().getString("MySQL.Password", "");
-	}
-
-	public int getMySqlPort() {
-		return getData().getInt("MySQL.Port");
-	}
-
-	public boolean getMySqlPreloadTable() {
-		return getData().getBoolean("MySQL.PreLoadTable");
-	}
-
-	public String getMySqlUsername() {
-		return getData().getString("MySQL.Username", "");
+	public ConfigurationSection getMysql() {
+		return getData().getConfigurationSection("MySQL");
 	}
 
 	/**
