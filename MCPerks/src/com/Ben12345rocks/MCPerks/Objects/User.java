@@ -63,7 +63,11 @@ public class User extends com.Ben12345rocks.AdvancedCore.Objects.User {
 	}
 
 	public boolean isUseBossBar() {
-		return Boolean.valueOf(getData().getString("UseBossBar"));
+		String str = getData().getString("UseBossBar");
+		if (str == null || str.isEmpty()) {
+			return true;
+		}
+		return Boolean.valueOf(str);
 	}
 
 	public void setUseBossBar(boolean b) {
