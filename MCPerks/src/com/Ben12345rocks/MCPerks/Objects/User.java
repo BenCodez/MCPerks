@@ -62,6 +62,14 @@ public class User extends com.Ben12345rocks.AdvancedCore.Objects.User {
 		super(Main.plugin, uuid, loadName);
 	}
 
+	public boolean isUseBossBar() {
+		return Boolean.valueOf(getData().getString("UseBossBar"));
+	}
+
+	public void setUseBossBar(boolean b) {
+		getData().setString("UseBossBar", "" + b);
+	}
+
 	public long getPerkCoolDown(Perk perk) {
 		try {
 			return Long.valueOf(getUserData().getString(perk.getPerk() + "_CoolDown"));

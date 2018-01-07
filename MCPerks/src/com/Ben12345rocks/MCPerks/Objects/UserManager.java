@@ -39,4 +39,9 @@ public class UserManager {
 	public User getMCPerksUser(UUID uuid) {
 		return new User(uuid);
 	}
+
+	public User getMCPerksUser(java.util.UUID uuid) {
+		return getMCPerksUser(new UUID(uuid.toString()));
+
+	}
 }

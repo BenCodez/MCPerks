@@ -37,6 +37,7 @@ import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
 import com.Ben12345rocks.MCPerks.Configs.Lang;
+import com.massivecraft.factions.entity.MPlayer;
 import com.palmergames.bukkit.towny.Towny;
 import com.palmergames.bukkit.towny.object.Resident;
 
@@ -90,54 +91,18 @@ public class PerkHandler {
 		placeholders.put("perk", perk.getName());
 		String msg = Lang.getInstance().getCountDownTimer();
 
-		if (plugin.getPerkSystemType().equals(PerkSystemType.PLAYER)) {
+		PerkSystemType perkType = clone.getPerkType();
+
+		if (perkType.equals(PerkSystemType.PLAYER)) {
 			clone.getEffectedPlayers().add(user.getUUID());
-			if (perk.getTime() > 0) {
-				final User p = user;
-				for (Integer time : times) {
-					timer.schedule(new TimerTask() {
-
-						@Override
-						public void run() {
-							placeholders.put("countdown", "" + (length - time.intValue()));
-							HashMap<String, String> phs = new HashMap<String, String>();
-							phs.putAll(placeholders);
-							p.sendMessage(msg, phs);
-
-							new RewardBuilder(Config.getInstance().getData(),
-									Config.getInstance().getCountDownEffectPath()).checkOffline(false)
-											.setGiveOffline(false).withPlaceHolder(placeholders).send(user);
-						}
-					}, time * 1000);
-				}
-			}
-		} else if (plugin.getPerkSystemType().equals(PerkSystemType.ALL)) {
+		} else if (perkType.equals(PerkSystemType.ALL)) {
 			for (Player player : Bukkit.getOnlinePlayers()) {
 				clone.getEffectedPlayers().add(player.getUniqueId().toString());
 			}
-			if (perk.getTime() > 0) {
-				for (Integer time : times) {
-					timer.schedule(new TimerTask() {
 
-						@Override
-						public void run() {
-							placeholders.put("countdown", "" + (length - time.intValue()));
-							HashMap<String, String> phs = new HashMap<String, String>();
-							phs.putAll(placeholders);
-							for (Player player : Bukkit.getOnlinePlayers()) {
-								player.sendMessage(StringUtils.getInstance()
-										.colorize(StringUtils.getInstance().replacePlaceHolder(msg, phs)));
-								new RewardBuilder(Config.getInstance().getData(),
-										Config.getInstance().getCountDownEffectPath()).checkOffline(false)
-												.setGiveOffline(false).withPlaceHolder(placeholders)
-												.send(UserManager.getInstance().getUser(player));
-							}
+		} else if (perkType.equals(PerkSystemType.TOWNY))
 
-						}
-					}, time * 1000);
-				}
-			}
-		} else if (plugin.getPerkSystemType().equals(PerkSystemType.TOWNY)) {
+		{
 			try {
 				@SuppressWarnings("deprecation")
 				Resident res = Towny.plugin.getTownyUniverse().getResident(user.getPlayerName());
@@ -145,53 +110,50 @@ public class PerkHandler {
 					for (Resident r : res.getTown().getResidents()) {
 						clone.getEffectedPlayers().add(UserManager.getInstance().getUser(r.getName()).getUUID());
 					}
-					if (perk.getTime() > 0) {
-						for (Integer time : times) {
-							timer.schedule(new TimerTask() {
-
-								@Override
-								public void run() {
-									placeholders.put("countdown", "" + (length - time.intValue()));
-									HashMap<String, String> phs = new HashMap<String, String>();
-									phs.putAll(placeholders);
-									for (Player player : Bukkit.getOnlinePlayers()) {
-										player.sendMessage(StringUtils.getInstance()
-												.colorize(StringUtils.getInstance().replacePlaceHolder(msg, phs)));
-									}
-
-									new RewardBuilder(Config.getInstance().getData(),
-											Config.getInstance().getCountDownEffectPath()).checkOffline(false)
-													.setGiveOffline(false).withPlaceHolder(placeholders).send(user);
-								}
-							}, time * 1000);
-						}
-					}
 				} else {
 					clone.getEffectedPlayers().add(user.getUUID());
-					if (perk.getTime() > 0) {
-						final User p = user;
-						for (Integer time : times) {
-							timer.schedule(new TimerTask() {
 
-								@Override
-								public void run() {
-									placeholders.put("countdown", "" + (length - time.intValue()));
-									HashMap<String, String> phs = new HashMap<String, String>();
-									phs.putAll(placeholders);
-									p.sendMessage(msg, phs);
-
-									new RewardBuilder(Config.getInstance().getData(),
-											Config.getInstance().getCountDownEffectPath()).checkOffline(false)
-													.setGiveOffline(false).send(user);
-								}
-							}, time * 1000);
-						}
-					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
+		} else if (perkType.equals(PerkSystemType.FACTIONS)) {
+			try {
+				MPlayer mplayer = MPlayer.get(user.getUUID());
+				if (mplayer.hasFaction()) {
+					for (MPlayer p : mplayer.getFaction().getMPlayers()) {
+						clone.getEffectedPlayers().add(p.getUuid().toString());
+					}
+
+				} else {
+					clone.getEffectedPlayers().add(user.getUUID());
+
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
+
+		// countdown effects
+		if (perk.getTime() > 0) {
+			final User p = user;
+			for (Integer time : times) {
+				timer.schedule(new TimerTask() {
+
+					@Override
+					public void run() {
+						placeholders.put("countdown", "" + (length - time.intValue()));
+						HashMap<String, String> phs = new HashMap<String, String>();
+						phs.putAll(placeholders);
+						p.sendMessage(msg, phs);
+
+						new RewardBuilder(Config.getInstance().getData(), Config.getInstance().getCountDownEffectPath())
+								.checkOffline(false).setGiveOffline(false).send(user);
+					}
+				}, time * 1000);
+			}
 		}
 
 		Main.plugin.getEffectHandler().activate(clone, user);
@@ -225,7 +187,10 @@ public class PerkHandler {
 			clone.setBossBar(bossBar);
 
 			for (String uuid : clone.getEffectedPlayers()) {
-				bossBar.addPlayer(Bukkit.getPlayer(java.util.UUID.fromString(uuid)));
+				if (com.Ben12345rocks.MCPerks.Objects.UserManager.getInstance()
+						.getMCPerksUser(java.util.UUID.fromString(uuid)).isUseBossBar()) {
+					bossBar.addPlayer(Bukkit.getPlayer(java.util.UUID.fromString(uuid)));
+				}
 			}
 
 			long delay = 0;
@@ -258,7 +223,9 @@ public class PerkHandler {
 		}
 
 		clone.announcePerk(user.getPlayerName(), length);
+
 		printActivePerks();
+
 	}
 
 	public void addQue(User user, Perk perk) {

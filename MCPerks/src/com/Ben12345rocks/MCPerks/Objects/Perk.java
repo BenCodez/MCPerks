@@ -88,6 +88,8 @@ public class Perk {
 
 	private ArrayList<String> flyWorlds;
 
+	private String perkType;
+
 	private ArrayList<String> commands;
 
 	private ArrayList<String> mcmmoSkills;
@@ -139,6 +141,7 @@ public class Perk {
 		activater = perk.activater;
 		commands = perk.commands;
 		mcmmoSkills = perk.mcmmoSkills;
+		perkType = perk.perkType;
 	}
 
 	/**
@@ -177,6 +180,7 @@ public class Perk {
 		experation = 0;
 		commands = ConfigPerks.getInstance().getCommands(perk);
 		mcmmoSkills = ConfigPerks.getInstance().getPerkMCMMOSkills(perk);
+		perkType = ConfigPerks.getInstance().getPerkType(perk);
 	}
 
 	public ArrayList<String> getMcmmoSkills() {
@@ -313,6 +317,10 @@ public class Perk {
 		return aliases;
 	}
 
+	public PerkSystemType getPerkType() {
+		return PerkSystemType.valueOf(perkType);
+	}
+
 	public ArrayList<Material> getBlocks() {
 		return blocks;
 	}
@@ -347,7 +355,7 @@ public class Perk {
 	}
 
 	public long getExperation(User user) {
-		if (Main.plugin.getPerkSystemType().equals(PerkSystemType.ALL)) {
+		if (getPerkType().equals(PerkSystemType.ALL)) {
 			experation = ServerData.getInstance().getPerkExperation(this);
 		} else {
 			experation = user.getPerkExperation(this);
@@ -638,7 +646,7 @@ public class Perk {
 	}
 
 	public void setExperation(User user, long experation) {
-		if (Main.plugin.getPerkSystemType().equals(PerkSystemType.ALL)) {
+		if (getPerkType().equals(PerkSystemType.ALL)) {
 			ServerData.getInstance().setPerkExperation(this, experation);
 		} else {
 			user.setPerkExperation(this, experation);

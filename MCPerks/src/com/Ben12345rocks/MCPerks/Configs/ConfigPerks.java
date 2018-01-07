@@ -131,10 +131,14 @@ public class ConfigPerks {
 		return effects;
 
 	}
-	
+
+	public String getPerkType(String perk) {
+		return getData(perk).getString("PerkType", "");
+	}
+
 	@SuppressWarnings("unchecked")
 	public ArrayList<String> getPerkMCMMOSkills(String perk) {
-		return (ArrayList<String>) getData(perk).getList("MCMMOSkills",new ArrayList<String>());
+		return (ArrayList<String>) getData(perk).getList("MCMMOSkills", new ArrayList<String>());
 	}
 
 	public boolean getPerkEnabled(String perk) {

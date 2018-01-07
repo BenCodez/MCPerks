@@ -113,7 +113,7 @@
 			<id>spigot-repo</id>
 			<url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
 		</repository>
-	<repository>
+		<repository>
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
@@ -143,6 +143,20 @@
 			<version>LATEST</version>
 			<scope>system</scope>
 			<systemPath>${project.basedir}/Jars/mcMMO.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>com.massivecraft</groupId>
+			<artifactId>factions</artifactId>
+			<version>LATEST</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/Jars/Factions.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>com.massivecraft</groupId>
+			<artifactId>MassiveCore</artifactId>
+			<version>LATEST</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/Jars/MassiveCore.jar</systemPath>
 		</dependency>
 	</dependencies>
 </project>
