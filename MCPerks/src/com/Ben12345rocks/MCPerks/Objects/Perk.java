@@ -318,7 +318,8 @@ public class Perk {
 	}
 
 	public PerkSystemType getPerkType() {
-		return PerkSystemType.valueOf(perkType);
+		//Main.plugin.debug(perkType);
+		return PerkSystemType.getType(perkType);
 	}
 
 	public ArrayList<Material> getBlocks() {

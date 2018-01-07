@@ -93,6 +93,8 @@ public class PerkHandler {
 
 		PerkSystemType perkType = clone.getPerkType();
 
+		plugin.debug("Activating perk " + clone.getPerk() + " using " + perkType.toString());
+
 		if (perkType.equals(PerkSystemType.PLAYER)) {
 			clone.getEffectedPlayers().add(user.getUUID());
 		} else if (perkType.equals(PerkSystemType.ALL)) {
@@ -100,9 +102,7 @@ public class PerkHandler {
 				clone.getEffectedPlayers().add(player.getUniqueId().toString());
 			}
 
-		} else if (perkType.equals(PerkSystemType.TOWNY))
-
-		{
+		} else if (perkType.equals(PerkSystemType.TOWNY)) {
 			try {
 				@SuppressWarnings("deprecation")
 				Resident res = Towny.plugin.getTownyUniverse().getResident(user.getPlayerName());
@@ -365,6 +365,7 @@ public class PerkHandler {
 	 */
 	public void loadEnabledPerks() {
 		for (String name : ConfigPerks.getInstance().getPerksNames()) {
+			plugin.debug("Loading perk " + name);
 			loadPerk(name);
 		}
 
