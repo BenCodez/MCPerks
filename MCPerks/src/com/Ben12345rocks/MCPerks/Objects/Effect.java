@@ -93,7 +93,7 @@ public enum Effect {
 			new CureSpellsEffect().clearBadEffects(players);
 			break;
 		case Fly:
-			new FlyEffect().enableFly(players);
+			new FlyEffect().enableFly(perk.getFlyWorlds(), players);
 			break;
 		case Potions:
 			Set<String> potions = perk.getPotions();
