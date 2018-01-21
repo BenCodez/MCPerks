@@ -85,6 +85,10 @@ public class Main extends JavaPlugin {
 		return perks;
 	}
 
+	public PerkSystemType getPerkSystemType() {
+		return perkSystemType;
+	}
+
 	public void loadEvents() {
 		PluginManager pm = getServer().getPluginManager();
 
@@ -196,9 +200,5 @@ public class Main extends JavaPlugin {
 		AdvancedCoreHook.getInstance().setHelpLine(Lang.getInstance().getHelpLine());
 		AdvancedCoreHook.getInstance().setFormatNoPerms(Lang.getInstance().getNoPermission());
 		AdvancedCoreHook.getInstance().setFormatNotNumber(Lang.getInstance().getIncorrectCommandReply());
-	}
-
-	public PerkSystemType getPerkSystemType() {
-		return perkSystemType;
 	}
 }

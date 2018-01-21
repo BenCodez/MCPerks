@@ -96,22 +96,6 @@ public class Perk {
 
 	private BossBar bossBar;
 
-	public BossBar getBossBar() {
-		return bossBar;
-	}
-
-	public void setBossBar(BossBar bossBar) {
-		this.bossBar = bossBar;
-	}
-
-	public ArrayList<String> getCommands() {
-		return commands;
-	}
-
-	public void setCommands(ArrayList<String> commands) {
-		this.commands = commands;
-	}
-
 	private ArrayList<String> effectedPlayers = new ArrayList<String>();
 
 	private User activater;
@@ -183,16 +167,16 @@ public class Perk {
 		perkType = ConfigPerks.getInstance().getPerkType(perk);
 	}
 
-	public ArrayList<String> getMcmmoSkills() {
-		return mcmmoSkills;
-	}
-
 	/**
 	 * Activate perk.
 	 */
 	public void activatePerk(User user, int length) {
 		activater = user;
 		Main.plugin.getPerkHandler().activePerk(this, user, length);
+	}
+
+	public void addEffectedPlayer(String uuid) {
+		this.effectedPlayers.add(uuid);
 	}
 
 	/**
@@ -205,7 +189,7 @@ public class Perk {
 			ArrayList<Player> players = new ArrayList<Player>();
 			for (String uuid : getEffectedPlayers()) {
 				Player p = Bukkit.getPlayer(UUID.fromString(uuid));
-				//Main.plugin.debug(uuid);
+				// Main.plugin.debug(uuid);
 				if (p != null) {
 					players.add(p);
 				}
@@ -274,15 +258,17 @@ public class Perk {
 			new RewardBuilder(Config.getInstance().getData(), Config.getInstance().getDeactivationEffect())
 					.setGiveOffline(false).send(user);
 		}
-		for (Effect effect : getEffects()) {
-			effect.removeEffect(getEffectedPlayers());
-		}
+
 		if (getBossBar() != null) {
 			getBossBar().hide();
 			setBossBar(null);
 		}
 
 		Main.plugin.getPerkHandler().remove(this, user);
+
+		for (Effect effect : getEffects()) {
+			effect.removeEffect(getEffectedPlayers());
+		}
 
 	}
 
@@ -317,13 +303,16 @@ public class Perk {
 		return aliases;
 	}
 
-	public PerkSystemType getPerkType() {
-		//Main.plugin.debug(perkType);
-		return PerkSystemType.getType(perkType);
-	}
-
 	public ArrayList<Material> getBlocks() {
 		return blocks;
+	}
+
+	public BossBar getBossBar() {
+		return bossBar;
+	}
+
+	public ArrayList<String> getCommands() {
+		return commands;
 	}
 
 	/**
@@ -447,8 +436,8 @@ public class Perk {
 		return limit;
 	}
 
-	public void addEffectedPlayer(String uuid) {
-		this.effectedPlayers.add(uuid);
+	public ArrayList<String> getMcmmoSkills() {
+		return mcmmoSkills;
 	}
 
 	/**
@@ -467,6 +456,11 @@ public class Perk {
 	 */
 	public String getPerk() {
 		return perk;
+	}
+
+	public PerkSystemType getPerkType() {
+		// Main.plugin.debug(perkType);
+		return PerkSystemType.getType(perkType);
 	}
 
 	public String getPermission() {
@@ -503,6 +497,14 @@ public class Perk {
 			time = ConfigPerks.getInstance().getPerkTimeLasts(getPerk());
 		}
 		return time;
+	}
+
+	public void giveEffect(Player player) {
+		for (Effect effect : getEffects()) {
+			ArrayList<String> uuids = new ArrayList<String>();
+			uuids.add(player.getUniqueId().toString());
+			effect.runEffect(this, null, uuids);
+		}
 	}
 
 	public boolean hasEffect(Effect effect) {
@@ -610,6 +612,14 @@ public class Perk {
 
 	public void setBlocks(ArrayList<Material> blocks) {
 		this.blocks = blocks;
+	}
+
+	public void setBossBar(BossBar bossBar) {
+		this.bossBar = bossBar;
+	}
+
+	public void setCommands(ArrayList<String> commands) {
+		this.commands = commands;
 	}
 
 	/**
@@ -749,14 +759,6 @@ public class Perk {
 			} else {
 				activatePerk(null, getTime());
 			}
-		}
-	}
-
-	public void giveEffect(Player player) {
-		for (Effect effect : getEffects()) {
-			ArrayList<String> uuids = new ArrayList<String>();
-			uuids.add(player.getUniqueId().toString());
-			effect.runEffect(this, null, uuids);
 		}
 	}
 

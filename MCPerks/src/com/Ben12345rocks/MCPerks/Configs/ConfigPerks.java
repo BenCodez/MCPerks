@@ -55,6 +55,11 @@ public class ConfigPerks {
 		ConfigPerks.plugin = plugin;
 	}
 
+	@SuppressWarnings("unchecked")
+	public ArrayList<String> getCommands(String perk) {
+		return (ArrayList<String>) getData(perk).getList("Commands", new ArrayList<String>());
+	}
+
 	/**
 	 * Gets the data.
 	 *
@@ -81,11 +86,6 @@ public class ConfigPerks {
 	@SuppressWarnings("unchecked")
 	public ArrayList<String> getLoreActive(String perk) {
 		return (ArrayList<String>) getData(perk).getList("Lore.Active", Config.getInstance().getLoreActive());
-	}
-
-	@SuppressWarnings("unchecked")
-	public ArrayList<String> getCommands(String perk) {
-		return (ArrayList<String>) getData(perk).getList("Commands", new ArrayList<String>());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -132,15 +132,6 @@ public class ConfigPerks {
 
 	}
 
-	public String getPerkType(String perk) {
-		return getData(perk).getString("PerkType", "");
-	}
-
-	@SuppressWarnings("unchecked")
-	public ArrayList<String> getPerkMCMMOSkills(String perk) {
-		return (ArrayList<String>) getData(perk).getList("MCMMOSkills", new ArrayList<String>());
-	}
-
 	public boolean getPerkEnabled(String perk) {
 		return getData(perk).getBoolean("Enabled");
 	}
@@ -183,6 +174,11 @@ public class ConfigPerks {
 
 	public int getPerkLimit(String perk) {
 		return getData(perk).getInt("Limit");
+	}
+
+	@SuppressWarnings("unchecked")
+	public ArrayList<String> getPerkMCMMOSkills(String perk) {
+		return (ArrayList<String>) getData(perk).getList("MCMMOSkills", new ArrayList<String>());
 	}
 
 	public String getPerkName(String perk) {
@@ -292,6 +288,10 @@ public class ConfigPerks {
 
 	public int getPerkTimeLasts(String perk) {
 		return getData(perk).getInt("TimeLasts");
+	}
+
+	public String getPerkType(String perk) {
+		return getData(perk).getString("PerkType", "");
 	}
 
 	/**

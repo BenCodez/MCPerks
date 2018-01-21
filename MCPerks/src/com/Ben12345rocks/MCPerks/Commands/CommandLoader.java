@@ -340,13 +340,13 @@ public class CommandLoader {
 				ArrayUtils.getInstance().convert(plugin.getPerkHandler().getLoadedPerks().keySet())) {
 
 			@Override
-			public void updateReplacements() {
-
+			public void reload() {
+				setReplace(ArrayUtils.getInstance().convert(plugin.getPerkHandler().getLoadedPerks().keySet()));
 			}
 
 			@Override
-			public void reload() {
-				setReplace(ArrayUtils.getInstance().convert(plugin.getPerkHandler().getLoadedPerks().keySet()));
+			public void updateReplacements() {
+
 			}
 		});
 

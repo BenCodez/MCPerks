@@ -47,6 +47,22 @@ public class Config extends YMLFile {
 		return "ActivationEffect";
 	}
 
+	public String getBossBarColor() {
+		return getData().getString("BossBar.Color", "BLUE");
+	}
+
+	public boolean getBossBarEnabled() {
+		return getData().getBoolean("BossBar.Enabled");
+	}
+
+	public String getBossBarMessage() {
+		return getData().getString("BossBar.Message", "%perk% ends in %seconds% seconds");
+	}
+
+	public String getBossBarStyle() {
+		return getData().getString("BossBar.Style", "SOLID");
+	}
+
 	public String getCountDownEffectPath() {
 		return "CountDownEffect";
 	}
@@ -189,6 +205,24 @@ public class Config extends YMLFile {
 		return new ArrayList<String>();
 	}
 
+	public String getPerkSystemType() {
+		String type = getData().getString("PerkSystemType", "");
+		if (type.equals("")) {
+			if (getPerPlayerPerks()) {
+				type = "PLAYER";
+			} else {
+				type = "ALL";
+			}
+		}
+		if (type.equalsIgnoreCase("towny")) {
+			if (Bukkit.getPluginManager().getPlugin("Towny") == null) {
+				plugin.getLogger().warning("Towny not found, switching to ALL perk system");
+				type = "ALL";
+			}
+		}
+		return type;
+	}
+
 	/**
 	 * Gets the perk time cool down.
 	 *
@@ -224,24 +258,6 @@ public class Config extends YMLFile {
 		return getData().getBoolean("PerPlayerPerks");
 	}
 
-	public String getPerkSystemType() {
-		String type = getData().getString("PerkSystemType", "");
-		if (type.equals("")) {
-			if (getPerPlayerPerks()) {
-				type = "PLAYER";
-			} else {
-				type = "ALL";
-			}
-		}
-		if (type.equalsIgnoreCase("towny")) {
-			if (Bukkit.getPluginManager().getPlugin("Towny") == null) {
-				plugin.getLogger().warning("Towny not found, switching to ALL perk system");
-				type = "ALL";
-			}
-		}
-		return type;
-	}
-
 	public boolean getRequirePermToView() {
 		return getData().getBoolean("RequirePermToView", true);
 	}
@@ -249,22 +265,6 @@ public class Config extends YMLFile {
 	@Override
 	public void onFileCreation() {
 		plugin.saveResource("Config.yml", true);
-	}
-
-	public boolean getBossBarEnabled() {
-		return getData().getBoolean("BossBar.Enabled");
-	}
-
-	public String getBossBarMessage() {
-		return getData().getString("BossBar.Message", "%perk% ends in %seconds% seconds");
-	}
-
-	public String getBossBarColor() {
-		return getData().getString("BossBar.Color", "BLUE");
-	}
-
-	public String getBossBarStyle() {
-		return getData().getString("BossBar.Style", "SOLID");
 	}
 
 }

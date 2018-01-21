@@ -23,6 +23,11 @@ public class UserManager {
 		super();
 	}
 
+	public User getMCPerksUser(java.util.UUID uuid) {
+		return getMCPerksUser(new UUID(uuid.toString()));
+
+	}
+
 	public User getMCPerksUser(OfflinePlayer player) {
 		return getMCPerksUser(player.getName());
 	}
@@ -38,10 +43,5 @@ public class UserManager {
 	@SuppressWarnings("deprecation")
 	public User getMCPerksUser(UUID uuid) {
 		return new User(uuid);
-	}
-
-	public User getMCPerksUser(java.util.UUID uuid) {
-		return getMCPerksUser(new UUID(uuid.toString()));
-
 	}
 }

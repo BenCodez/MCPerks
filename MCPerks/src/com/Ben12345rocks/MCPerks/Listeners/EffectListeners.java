@@ -227,7 +227,7 @@ public class EffectListeners implements Listener {
 					 * (plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString())
 					 * .contains(player.getWorld().getName())) { new FlyEffect().enableFly(player);
 					 * } else { new FlyEffect().disableFly(player); }
-					 * 
+					 *
 					 * }
 					 */
 					if (plugin.getPerkHandler().getActivePerks().size() != 0) {
