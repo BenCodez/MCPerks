@@ -205,7 +205,7 @@ public class Perk {
 			ArrayList<Player> players = new ArrayList<Player>();
 			for (String uuid : getEffectedPlayers()) {
 				Player p = Bukkit.getPlayer(UUID.fromString(uuid));
-				Main.plugin.debug(uuid);
+				//Main.plugin.debug(uuid);
 				if (p != null) {
 					players.add(p);
 				}
