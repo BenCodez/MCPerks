@@ -296,8 +296,8 @@ public class PerkHandler {
 			Perk perk = it.next();
 			if (perk.getEffects().contains(effect)) {
 				if (uuid == null || perk.getEffectedPlayers().contains(uuid)) {
-					// plugin.debug("Effect active, " + effect.toString() + "
-					// for " + uuid);
+					plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
+
 					return true;
 				}
 			}

@@ -533,11 +533,15 @@ public class Perk {
 
 	public boolean isPerkActive(User user) {
 		for (Perk perk : Main.plugin.getPerkHandler().getActivePerks()) {
-			if (perk.getActivater().getPlayerName().equals(user.getPlayerName())) {
-				if (perk.getPerk().equals(getPerk())) {
+			if (perk.getPerk().equals(getPerk())) {
+				if (perk.getActivater().getPlayerName().equals(user.getPlayerName())) {
+					return true;
+				}
+				if (perk.getPerkType().equals(PerkSystemType.ALL)) {
 					return true;
 				}
 			}
+
 		}
 		return false;
 	}
