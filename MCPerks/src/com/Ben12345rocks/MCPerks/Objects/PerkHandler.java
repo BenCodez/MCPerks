@@ -365,7 +365,6 @@ public class PerkHandler {
 	 */
 	public void loadEnabledPerks() {
 		for (String name : ConfigPerks.getInstance().getPerksNames()) {
-			plugin.debug("Loading perk " + name);
 			loadPerk(name);
 		}
 
@@ -393,8 +392,12 @@ public class PerkHandler {
 	public void loadPerk(String perkName) {
 		Perk perk = new Perk(perkName);
 		if (perk.isEnabled()) {
+			plugin.debug("Loading perk: " + perk.getName() + " : " + perk.getPerkType().toString());
 			addToList(perkName, perk);
+		} else {
+			plugin.debug("Perk " + perk.getName() + " not enabled");
 		}
+
 	}
 
 	private void printActivePerks() {
