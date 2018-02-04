@@ -82,6 +82,14 @@ public class User extends com.Ben12345rocks.AdvancedCore.Objects.User {
 		return getUserData().getInt(perk.getPerk() + "_TimesUsed");
 	}
 
+	public boolean isUseBossBar() {
+		String str = getData().getString("UseBossBar");
+		if (str == null || str.isEmpty()) {
+			return true;
+		}
+		return Boolean.valueOf(str);
+	}
+
 	public void setPerkCoolDown(Perk perk, long value) {
 		getUserData().setString(perk.getPerk() + "_CoolDown", "" + value);
 	}
@@ -92,6 +100,10 @@ public class User extends com.Ben12345rocks.AdvancedCore.Objects.User {
 
 	public void setPerkTimesUsed(Perk perk, int value) {
 		getUserData().setInt(perk.getPerk() + "_TimesUsed", value);
+	}
+
+	public void setUseBossBar(boolean b) {
+		getData().setString("UseBossBar", "" + b);
 	}
 
 }

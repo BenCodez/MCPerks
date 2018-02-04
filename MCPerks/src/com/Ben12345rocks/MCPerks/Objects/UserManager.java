@@ -23,6 +23,11 @@ public class UserManager {
 		super();
 	}
 
+	public User getMCPerksUser(java.util.UUID uuid) {
+		return getMCPerksUser(new UUID(uuid.toString()));
+
+	}
+
 	public User getMCPerksUser(OfflinePlayer player) {
 		return getMCPerksUser(player.getName());
 	}

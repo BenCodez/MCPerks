@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
 
 import com.Ben12345rocks.AdvancedCore.YML.YMLFile;
 import com.Ben12345rocks.MCPerks.Main;
@@ -44,6 +45,22 @@ public class Config extends YMLFile {
 
 	public String getActivationEffectPath() {
 		return "ActivationEffect";
+	}
+
+	public String getBossBarColor() {
+		return getData().getString("BossBar.Color", "BLUE");
+	}
+
+	public boolean getBossBarEnabled() {
+		return getData().getBoolean("BossBar.Enabled");
+	}
+
+	public String getBossBarMessage() {
+		return getData().getString("BossBar.Message", "%perk% ends in %seconds% seconds");
+	}
+
+	public String getBossBarStyle() {
+		return getData().getString("BossBar.Style", "SOLID");
 	}
 
 	public String getCountDownEffectPath() {
@@ -100,32 +117,8 @@ public class Config extends YMLFile {
 		return (ArrayList<String>) getData().getList("Lore.LimitReached", new ArrayList<String>());
 	}
 
-	public String getMySqlDatabase() {
-		return getData().getString("MySQL.Database", "");
-	}
-
-	public String getMySqlHost() {
-		return getData().getString("MySQL.Host", "");
-	}
-
-	public int getMySqlMaxConnections() {
-		return getData().getInt("MySQL.MaxConnections", 1);
-	}
-
-	public String getMySqlPassword() {
-		return getData().getString("MySQL.Password", "");
-	}
-
-	public int getMySqlPort() {
-		return getData().getInt("MySQL.Port");
-	}
-
-	public boolean getMySqlPreloadTable() {
-		return getData().getBoolean("MySQL.PreLoadTable");
-	}
-
-	public String getMySqlUsername() {
-		return getData().getString("MySQL.Username", "");
+	public ConfigurationSection getMysql() {
+		return getData().getConfigurationSection("MySQL");
 	}
 
 	/**
@@ -212,6 +205,24 @@ public class Config extends YMLFile {
 		return new ArrayList<String>();
 	}
 
+	public String getPerkSystemType() {
+		String type = getData().getString("PerkSystemType", "");
+		if (type.equals("")) {
+			if (getPerPlayerPerks()) {
+				type = "PLAYER";
+			} else {
+				type = "ALL";
+			}
+		}
+		if (type.equalsIgnoreCase("towny")) {
+			if (Bukkit.getPluginManager().getPlugin("Towny") == null) {
+				plugin.getLogger().warning("Towny not found, switching to ALL perk system");
+				type = "ALL";
+			}
+		}
+		return type;
+	}
+
 	/**
 	 * Gets the perk time cool down.
 	 *
@@ -247,24 +258,6 @@ public class Config extends YMLFile {
 		return getData().getBoolean("PerPlayerPerks");
 	}
 
-	public String getPerkSystemType() {
-		String type = getData().getString("PerkSystemType", "");
-		if (type.equals("")) {
-			if (getPerPlayerPerks()) {
-				type = "PLAYER";
-			} else {
-				type = "ALL";
-			}
-		}
-		if (type.equalsIgnoreCase("towny")) {
-			if (Bukkit.getPluginManager().getPlugin("Towny") == null) {
-				plugin.getLogger().warning("Towny not found, switching to ALL perk system");
-				type = "ALL";
-			}
-		}
-		return type;
-	}
-
 	public boolean getRequirePermToView() {
 		return getData().getBoolean("RequirePermToView", true);
 	}
@@ -272,22 +265,6 @@ public class Config extends YMLFile {
 	@Override
 	public void onFileCreation() {
 		plugin.saveResource("Config.yml", true);
-	}
-
-	public boolean getBossBarEnabled() {
-		return getData().getBoolean("BossBar.Enabled");
-	}
-
-	public String getBossBarMessage() {
-		return getData().getString("BossBar.Message", "%perk% ends in %seconds% seconds");
-	}
-
-	public String getBossBarColor() {
-		return getData().getString("BossBar.Color", "BLUE");
-	}
-
-	public String getBossBarStyle() {
-		return getData().getString("BossBar.Style", "SOLID");
 	}
 
 }

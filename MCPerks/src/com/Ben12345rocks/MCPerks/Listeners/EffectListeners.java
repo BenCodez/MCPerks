@@ -41,6 +41,7 @@ import com.Ben12345rocks.MCPerks.Effects.ProtectionEffect;
 import com.Ben12345rocks.MCPerks.Objects.Effect;
 import com.Ben12345rocks.MCPerks.Objects.Perk;
 import com.Ben12345rocks.MCPerks.Objects.PerkSystemType;
+import com.Ben12345rocks.MCPerks.Objects.UserManager;
 
 public class EffectListeners implements Listener {
 
@@ -220,23 +221,34 @@ public class EffectListeners implements Listener {
 			public void run() {
 				Player player = event.getPlayer();
 				if (player != null) {
-					if (plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString())) {
-						if (plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString())
-								.contains(player.getWorld().getName())) {
-							new FlyEffect().enableFly(player);
-						} else {
-							new FlyEffect().disableFly(player);
-						}
-
-					}
-					if (plugin.getPerkSystemType().equals(PerkSystemType.ALL)
-							&& plugin.getPerkHandler().getActivePerks().size() != 0) {
+					/*
+					 * if (plugin.getPerkHandler().effectActive(Effect.Fly,
+					 * player.getUniqueId().toString())) { if
+					 * (plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString())
+					 * .contains(player.getWorld().getName())) { new FlyEffect().enableFly(player);
+					 * } else { new FlyEffect().disableFly(player); }
+					 *
+					 * }
+					 */
+					if (plugin.getPerkHandler().getActivePerks().size() != 0) {
 						for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
-							perk.addEffectedPlayer(player.getUniqueId().toString());
-							perk.giveEffect(player);
-							BossBar bar = perk.getBossBar();
-							if (bar != null) {
-								bar.addPlayer(player);
+							boolean giveEffect = false;
+							if (perk.getPerkType().equals(PerkSystemType.ALL)) {
+								perk.addEffectedPlayer(player.getUniqueId().toString());
+								giveEffect = true;
+							}
+							if (perk.getEffectedPlayers().contains(player.getUniqueId().toString())) {
+								giveEffect = true;
+							}
+
+							if (giveEffect) {
+								perk.giveEffect(player);
+								BossBar bar = perk.getBossBar();
+								if (bar != null) {
+									if (UserManager.getInstance().getMCPerksUser(player).isUseBossBar()) {
+										bar.addPlayer(player);
+									}
+								}
 							}
 						}
 					}
@@ -328,7 +340,8 @@ public class EffectListeners implements Listener {
 					if (plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString())) {
 						if (plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString())
 								.contains(player.getWorld().getName())) {
-							new FlyEffect().enableFly(player);
+							new FlyEffect().enableFly(
+									plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString()), player);
 						} else {
 							new FlyEffect().disableFly(player);
 						}

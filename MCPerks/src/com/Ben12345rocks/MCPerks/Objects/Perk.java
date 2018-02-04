@@ -88,27 +88,13 @@ public class Perk {
 
 	private ArrayList<String> flyWorlds;
 
+	private String perkType;
+
 	private ArrayList<String> commands;
 
 	private ArrayList<String> mcmmoSkills;
 
 	private BossBar bossBar;
-
-	public BossBar getBossBar() {
-		return bossBar;
-	}
-
-	public void setBossBar(BossBar bossBar) {
-		this.bossBar = bossBar;
-	}
-
-	public ArrayList<String> getCommands() {
-		return commands;
-	}
-
-	public void setCommands(ArrayList<String> commands) {
-		this.commands = commands;
-	}
 
 	private ArrayList<String> effectedPlayers = new ArrayList<String>();
 
@@ -139,6 +125,7 @@ public class Perk {
 		activater = perk.activater;
 		commands = perk.commands;
 		mcmmoSkills = perk.mcmmoSkills;
+		perkType = perk.perkType;
 	}
 
 	/**
@@ -177,10 +164,7 @@ public class Perk {
 		experation = 0;
 		commands = ConfigPerks.getInstance().getCommands(perk);
 		mcmmoSkills = ConfigPerks.getInstance().getPerkMCMMOSkills(perk);
-	}
-
-	public ArrayList<String> getMcmmoSkills() {
-		return mcmmoSkills;
+		perkType = ConfigPerks.getInstance().getPerkType(perk);
 	}
 
 	/**
@@ -189,6 +173,10 @@ public class Perk {
 	public void activatePerk(User user, int length) {
 		activater = user;
 		Main.plugin.getPerkHandler().activePerk(this, user, length);
+	}
+
+	public void addEffectedPlayer(String uuid) {
+		this.effectedPlayers.add(uuid);
 	}
 
 	/**
@@ -201,7 +189,7 @@ public class Perk {
 			ArrayList<Player> players = new ArrayList<Player>();
 			for (String uuid : getEffectedPlayers()) {
 				Player p = Bukkit.getPlayer(UUID.fromString(uuid));
-				Main.plugin.debug(uuid);
+				// Main.plugin.debug(uuid);
 				if (p != null) {
 					players.add(p);
 				}
@@ -270,15 +258,17 @@ public class Perk {
 			new RewardBuilder(Config.getInstance().getData(), Config.getInstance().getDeactivationEffect())
 					.setGiveOffline(false).send(user);
 		}
-		for (Effect effect : getEffects()) {
-			effect.removeEffect(getEffectedPlayers());
-		}
+
 		if (getBossBar() != null) {
 			getBossBar().hide();
 			setBossBar(null);
 		}
 
 		Main.plugin.getPerkHandler().remove(this, user);
+
+		for (Effect effect : getEffects()) {
+			effect.removeEffect(getEffectedPlayers());
+		}
 
 	}
 
@@ -317,6 +307,14 @@ public class Perk {
 		return blocks;
 	}
 
+	public BossBar getBossBar() {
+		return bossBar;
+	}
+
+	public ArrayList<String> getCommands() {
+		return commands;
+	}
+
 	/**
 	 * Gets the cool down.
 	 *
@@ -347,7 +345,7 @@ public class Perk {
 	}
 
 	public long getExperation(User user) {
-		if (Main.plugin.getPerkSystemType().equals(PerkSystemType.ALL)) {
+		if (getPerkType().equals(PerkSystemType.ALL)) {
 			experation = ServerData.getInstance().getPerkExperation(this);
 		} else {
 			experation = user.getPerkExperation(this);
@@ -438,8 +436,8 @@ public class Perk {
 		return limit;
 	}
 
-	public void addEffectedPlayer(String uuid) {
-		this.effectedPlayers.add(uuid);
+	public ArrayList<String> getMcmmoSkills() {
+		return mcmmoSkills;
 	}
 
 	/**
@@ -458,6 +456,11 @@ public class Perk {
 	 */
 	public String getPerk() {
 		return perk;
+	}
+
+	public PerkSystemType getPerkType() {
+		// Main.plugin.debug(perkType);
+		return PerkSystemType.getType(perkType);
 	}
 
 	public String getPermission() {
@@ -496,6 +499,14 @@ public class Perk {
 		return time;
 	}
 
+	public void giveEffect(Player player) {
+		for (Effect effect : getEffects()) {
+			ArrayList<String> uuids = new ArrayList<String>();
+			uuids.add(player.getUniqueId().toString());
+			effect.runEffect(this, null, uuids);
+		}
+	}
+
 	public boolean hasEffect(Effect effect) {
 		return getEffects().contains(effect);
 	}
@@ -522,11 +533,15 @@ public class Perk {
 
 	public boolean isPerkActive(User user) {
 		for (Perk perk : Main.plugin.getPerkHandler().getActivePerks()) {
-			if (perk.getActivater().getPlayerName().equals(user.getPlayerName())) {
-				if (perk.getPerk().equals(getPerk())) {
+			if (perk.getPerk().equals(getPerk())) {
+				if (perk.getActivater().getPlayerName().equals(user.getPlayerName())) {
+					return true;
+				}
+				if (perk.getPerkType().equals(PerkSystemType.ALL)) {
 					return true;
 				}
 			}
+
 		}
 		return false;
 	}
@@ -603,6 +618,14 @@ public class Perk {
 		this.blocks = blocks;
 	}
 
+	public void setBossBar(BossBar bossBar) {
+		this.bossBar = bossBar;
+	}
+
+	public void setCommands(ArrayList<String> commands) {
+		this.commands = commands;
+	}
+
 	/**
 	 * Sets the cool down.
 	 *
@@ -638,7 +661,7 @@ public class Perk {
 	}
 
 	public void setExperation(User user, long experation) {
-		if (Main.plugin.getPerkSystemType().equals(PerkSystemType.ALL)) {
+		if (getPerkType().equals(PerkSystemType.ALL)) {
 			ServerData.getInstance().setPerkExperation(this, experation);
 		} else {
 			user.setPerkExperation(this, experation);
@@ -740,14 +763,6 @@ public class Perk {
 			} else {
 				activatePerk(null, getTime());
 			}
-		}
-	}
-
-	public void giveEffect(Player player) {
-		for (Effect effect : getEffects()) {
-			ArrayList<String> uuids = new ArrayList<String>();
-			uuids.add(player.getUniqueId().toString());
-			effect.runEffect(this, null, uuids);
 		}
 	}
 

@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.Ben12345rocks</groupId>
 	<artifactId>MCPerks</artifactId>
-	<version>1.9.4</version>
+	<version>1.10.0</version>
 	<packaging>jar</packaging>
 	<name>MCPerks</name>
 	<properties>
@@ -113,7 +113,7 @@
 			<id>spigot-repo</id>
 			<url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
 		</repository>
-	<repository>
+		<repository>
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
@@ -122,7 +122,7 @@
 		<dependency>
 			<groupId>com.github.Ben12345rocks</groupId>
 			<artifactId>AdvancedCore</artifactId>
-			<version>2.10</version>
+			<version>LATEST</version>
 		</dependency>
 		<dependency>
 			<groupId>com.palmergames</groupId>
@@ -143,6 +143,20 @@
 			<version>LATEST</version>
 			<scope>system</scope>
 			<systemPath>${project.basedir}/Jars/mcMMO.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>com.massivecraft</groupId>
+			<artifactId>factions</artifactId>
+			<version>LATEST</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/Jars/Factions.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>com.massivecraft</groupId>
+			<artifactId>MassiveCore</artifactId>
+			<version>LATEST</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/Jars/MassiveCore.jar</systemPath>
 		</dependency>
 	</dependencies>
 </project>

@@ -17,6 +17,10 @@ Name: 'Cure Hunger'
 # Perk description
 Description: 'Fill everybodys stomach.'
 
+# Individual perk type
+# Will override config.yml option
+#PerkType: 'ALL'
+
 # Effects
 # Can have multiple
 Effects:
@@ -45,7 +49,8 @@ Priority: 0
 
 # Requires Rewards to be listed in effects
 # Runs reward files from AdvancedCore on activation
-# Use this to run commands, titles, etc
+# Use this to run titles and other things
+# See here: https://github.com/Ben12345rocks/AdvancedCore/wiki/Rewards
 Rewards:
 - 'Example'
     

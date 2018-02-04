@@ -12,7 +12,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.Ben12345rocks.AdvancedCore.Objects.CommandHandler;
-import com.Ben12345rocks.AdvancedCore.Objects.User;
+import com.Ben12345rocks.AdvancedCore.Objects.TabCompleteHandle;
+import com.Ben12345rocks.AdvancedCore.Objects.TabCompleteHandler;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventory;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventory.ClickEvent;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventoryButton;
@@ -30,6 +31,7 @@ import com.Ben12345rocks.MCPerks.Commands.TabCompleter.AliasesTabCompleter;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
 import com.Ben12345rocks.MCPerks.Objects.Perk;
+import com.Ben12345rocks.MCPerks.Objects.User;
 import com.Ben12345rocks.MCPerks.Objects.UserManager;
 
 import net.md_5.bungee.api.chat.TextComponent;
@@ -134,6 +136,18 @@ public class CommandLoader {
 	public void loadCommands() {
 		plugin.commands = new ArrayList<CommandHandler>();
 		commands = new HashMap<String, CommandHandler>();
+
+		plugin.commands.add(
+				new CommandHandler(new String[] { "ToggleBossBar" }, "MCPerks.ToggleBossBar", "Toggle BossBar", false) {
+
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						User user = UserManager.getInstance().getMCPerksUser((Player) sender);
+						boolean setTo = !user.isUseBossBar();
+						user.setUseBossBar(setTo);
+						user.sendMessage("&cSetting using bossbar to " + setTo);
+					}
+				});
 
 		plugin.commands.add(new CommandHandler(new String[] { "Reload" }, "MCPerks.Reload", "Reloads the plugin") {
 
@@ -322,10 +336,20 @@ public class CommandLoader {
 	}
 
 	public void loadTabComplete() {
-		for (CommandHandler cmd : plugin.commands) {
-			cmd.addTabCompleteOption("(Perk)",
-					ArrayUtils.getInstance().convert(plugin.getPerkHandler().getLoadedPerks().keySet()));
-		}
+		TabCompleteHandler.getInstance().addTabCompleteOption(new TabCompleteHandle("(Perk)",
+				ArrayUtils.getInstance().convert(plugin.getPerkHandler().getLoadedPerks().keySet())) {
+
+			@Override
+			public void reload() {
+				setReplace(ArrayUtils.getInstance().convert(plugin.getPerkHandler().getLoadedPerks().keySet()));
+			}
+
+			@Override
+			public void updateReplacements() {
+
+			}
+		});
+
 	}
 
 	public void openPerkEdit(Player player, final String perk) {

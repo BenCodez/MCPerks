@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 
 import com.Ben12345rocks.AdvancedCore.Objects.RewardHandler;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
+import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
 import com.Ben12345rocks.MCPerks.Effects.CureHungerEffect;
 import com.Ben12345rocks.MCPerks.Effects.CureSpellsEffect;
@@ -65,9 +66,15 @@ public enum Effect {
 	}
 
 	public void removeEffect(ArrayList<String> players) {
+		ArrayList<String> uuids = new ArrayList<String>();
+		for (String uuid : players) {
+			if (!Main.plugin.getPerkHandler().effectActive(this, uuid)) {
+				uuids.add(uuid);
+			}
+		}
 		switch (this) {
 		case Fly:
-			new FlyEffect().disableFly(players);
+			new FlyEffect().disableFly(uuids);
 		default:
 			break;
 
@@ -93,7 +100,7 @@ public enum Effect {
 			new CureSpellsEffect().clearBadEffects(players);
 			break;
 		case Fly:
-			new FlyEffect().enableFly(players);
+			new FlyEffect().enableFly(perk.getFlyWorlds(), players);
 			break;
 		case Potions:
 			Set<String> potions = perk.getPotions();

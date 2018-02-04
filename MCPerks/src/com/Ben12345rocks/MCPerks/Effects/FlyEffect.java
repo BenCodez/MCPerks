@@ -33,13 +33,13 @@ public class FlyEffect {
 		}
 	}
 
-	public void enableFly(ArrayList<Player> players) {
+	public void enableFly(final ArrayList<String> flyWorlds, ArrayList<Player> players) {
 		Bukkit.getScheduler().runTask(Main.plugin, new Runnable() {
 
 			@Override
 			public void run() {
 				for (Player player : players) {
-					enableFly(player);
+					enableFly(flyWorlds, player);
 
 				}
 			}
@@ -47,8 +47,12 @@ public class FlyEffect {
 
 	}
 
-	public void enableFly(Player player) {
-		player.setAllowFlight(true);
-		Main.plugin.debug("Enabled fly for " + player.getName());
+	public void enableFly(ArrayList<String> flyWorlds, Player player) {
+		if (flyWorlds.contains(player.getWorld().getName())) {
+			player.setAllowFlight(true);
+			Main.plugin.debug("Enabled fly for " + player.getName());
+		} else {
+			Main.plugin.debug("Player " + player.getName() + " not in the correct world to enable fly");
+		}
 	}
 }

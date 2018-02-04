@@ -85,6 +85,10 @@ public class Main extends JavaPlugin {
 		return perks;
 	}
 
+	public PerkSystemType getPerkSystemType() {
+		return perkSystemType;
+	}
+
 	public void loadEvents() {
 		PluginManager pm = getServer().getPluginManager();
 
@@ -185,12 +189,9 @@ public class Main extends JavaPlugin {
 
 				@Override
 				public void run() {
-
 					AdvancedCoreHook.getInstance()
-							.setMysql(new MySQL("MCPerks_Users", Config.getInstance().getMySqlHost(),
-									Config.getInstance().getMySqlPort(), Config.getInstance().getMySqlDatabase(),
-									Config.getInstance().getMySqlUsername(), Config.getInstance().getMySqlPassword(),
-									Config.getInstance().getMySqlMaxConnections()));
+							.setMysql(new MySQL("MCPerks_Users", Config.getInstance().getMysql()));
+
 				}
 			});
 
@@ -199,9 +200,5 @@ public class Main extends JavaPlugin {
 		AdvancedCoreHook.getInstance().setHelpLine(Lang.getInstance().getHelpLine());
 		AdvancedCoreHook.getInstance().setFormatNoPerms(Lang.getInstance().getNoPermission());
 		AdvancedCoreHook.getInstance().setFormatNotNumber(Lang.getInstance().getIncorrectCommandReply());
-	}
-
-	public PerkSystemType getPerkSystemType() {
-		return perkSystemType;
 	}
 }
