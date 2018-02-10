@@ -176,7 +176,9 @@ public class Perk {
 	}
 
 	public void addEffectedPlayer(String uuid) {
-		this.effectedPlayers.add(uuid);
+		if (!this.effectedPlayers.contains(uuid)) {
+			this.effectedPlayers.add(uuid);
+		}
 	}
 
 	/**

@@ -72,7 +72,7 @@ public class PerkHandler {
 	}
 
 	public void activePerk(Perk perk, User user, int length) {
-		Perk clone = perk.clone();
+		final Perk clone = perk.clone();
 		clone.setActivater(user);
 		clone.getEffectedPlayers().clear();
 		ArrayList<Integer> times = new ArrayList<Integer>();
@@ -138,7 +138,6 @@ public class PerkHandler {
 
 		// countdown effects
 		if (perk.getTime() > 0) {
-			final User p = user;
 			for (Integer time : times) {
 				timer.schedule(new TimerTask() {
 
@@ -147,10 +146,15 @@ public class PerkHandler {
 						placeholders.put("countdown", "" + (length - time.intValue()));
 						HashMap<String, String> phs = new HashMap<String, String>();
 						phs.putAll(placeholders);
-						p.sendMessage(msg, phs);
+						for (String uuid : clone.getEffectedPlayers()) {
+							com.Ben12345rocks.AdvancedCore.Objects.User user = UserManager.getInstance()
+									.getUser(new UUID(uuid));
+							user.sendMessage(msg, phs);
 
-						new RewardBuilder(Config.getInstance().getData(), Config.getInstance().getCountDownEffectPath())
-								.checkOffline(false).setGiveOffline(false).send(user);
+							new RewardBuilder(Config.getInstance().getData(),
+									Config.getInstance().getCountDownEffectPath()).checkOffline(false)
+											.setGiveOffline(false).send(user);
+						}
 					}
 				}, time * 1000);
 			}
