@@ -202,7 +202,12 @@ public class Perk {
 			}
 
 			if (isTimed() && !isLastForever()) {
-				msg = Lang.getInstance().getPerkActivatedTimed().replace("%TimeLasts%", "" + length);
+				HashMap<String, String> placeholders = new HashMap<String, String>();
+				placeholders.put("TimeLasts", "" + length);
+				placeholders.put("TimeLastsMin", "" + length / 60);
+				placeholders.put("TimeLastsHour", "" + length / 60 / 60);
+				msg = StringUtils.getInstance().replacePlaceHolder(Lang.getInstance().getPerkActivatedTimed(),
+						placeholders);
 				for (Player p : players) {
 					p.sendMessage(StringUtils.getInstance().colorize(msg));
 				}
@@ -404,24 +409,26 @@ public class Perk {
 		int coolDownHours = (int) (coolDownMins / 60);
 		int coolDownMin = (int) (coolDownHours * 60 - coolDownMins);
 
-		lore = ArrayUtils.getInstance().replaceIgnoreCase(lore, "%TimeLasts%", Integer.toString(getTime()));
-		lore = ArrayUtils.getInstance().replaceIgnoreCase(lore, "%Description%", getDescription());
-		lore = ArrayUtils.getInstance().replaceIgnoreCase(lore, "%HasPerm%", Boolean.toString(hasPerm));
-		lore = ArrayUtils.getInstance().replaceIgnoreCase(lore, "%CoolDownLeft%",
-				"" + coolDownHours + " hours " + coolDownMin + " minutes");
+		HashMap<String, String> placeholders = new HashMap<String, String>();
+		int timeLasts = getTime();
+		placeholders.put("%TimeLasts%", "" + timeLasts);
+		placeholders.put("%TimeLastsMin%", "" + (timeLasts / 60));
+		placeholders.put("%TimeLastsHour%", "" + (timeLasts / 60 / 60));
+		placeholders.put("%Description%", getDescription());
+		placeholders.put("%HasPerm%", Boolean.toString(hasPerm));
+		placeholders.put("%CoolDownLeft%", "" + coolDownHours + " hours " + coolDownMin + " minutes");
 		if (!isLastForever()) {
-			lore = ArrayUtils.getInstance().replaceIgnoreCase(lore, "%TimeLeft%",
-					"" + left / (1000 * 64) + " minutes " + sec + " seconds");
+			placeholders.put("%TimeLeft%", "" + left / (1000 * 64) + " minutes " + sec + " seconds");
 		} else {
-			lore = ArrayUtils.getInstance().replaceIgnoreCase(lore, "%TimeLeft%", "Forever");
+			placeholders.put("%TimeLeft%", "Forever");
 		}
 		int CooldownMin = getCoolDown() / 60;
 		int CooldownHour = CooldownMin / 60;
 		CooldownMin = CooldownHour * 60 - CooldownMin;
-		lore = ArrayUtils.getInstance().replaceIgnoreCase(lore, "%CoolDown%",
-				"" + CooldownHour + " Hours " + CooldownMin + " Minutes");
+		placeholders.put("%CoolDown%", "" + CooldownHour + " Hours " + CooldownMin + " Minutes");
 		// lore = Utils.getInstance().replacePlaceStringList(lore, "", "");
 
+		lore = ArrayUtils.getInstance().replacePlaceHolder(lore, placeholders);
 		return ArrayUtils.getInstance().convert(lore);
 	}
 
