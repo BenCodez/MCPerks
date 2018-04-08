@@ -3,15 +3,9 @@
  */
 package com.Ben12345rocks.MCPerks.Data;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.Plugin;
 
+import com.Ben12345rocks.AdvancedCore.TimeChecker.TimeChecker;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Objects.Perk;
 
@@ -36,12 +30,6 @@ public class ServerData {
 		return instance;
 	}
 
-	/** The data. */
-	FileConfiguration data;
-
-	/** The d file. */
-	File dFile;
-
 	/**
 	 * Instantiates a new server data.
 	 */
@@ -64,7 +52,7 @@ public class ServerData {
 	 * @return the data
 	 */
 	public FileConfiguration getData() {
-		return data;
+		return com.Ben12345rocks.AdvancedCore.Data.ServerData.getInstance().getData();
 	}
 
 	public long getPerkExperation(Perk perk) {
@@ -75,18 +63,14 @@ public class ServerData {
 	 * Reload data.
 	 */
 	public void reloadData() {
-		data = YamlConfiguration.loadConfiguration(dFile);
+		com.Ben12345rocks.AdvancedCore.Data.ServerData.getInstance().reloadData();
 	}
 
 	/**
 	 * Save data.
 	 */
 	public void saveData() {
-		try {
-			data.save(dFile);
-		} catch (IOException e) {
-			Bukkit.getServer().getLogger().severe(ChatColor.RED + "Could not save ServerData.yml!");
-		}
+		com.Ben12345rocks.AdvancedCore.Data.ServerData.getInstance().saveData();
 	}
 
 	public void setPerkExperation(Perk perk, long time) {
@@ -94,29 +78,10 @@ public class ServerData {
 		saveData();
 	}
 
-	/**
-	 * Sets the up.
-	 *
-	 * @param p
-	 *            the new up
-	 */
-	public void setup(Plugin p) {
-		if (!p.getDataFolder().exists()) {
-			p.getDataFolder().mkdir();
-		}
-
-		dFile = new File(p.getDataFolder(), "ServerData.yml");
-
-		if (!dFile.exists()) {
-			try {
-				dFile.createNewFile();
-				plugin.saveResource("ServerData.yml", true);
-			} catch (IOException e) {
-				Bukkit.getServer().getLogger().severe(ChatColor.RED + "Could not create ServerData.yml!");
-			}
-		}
-
-		data = YamlConfiguration.loadConfiguration(dFile);
+	public void addPerkHistory(String data) {
+		String path = "PerkHistory." + TimeChecker.getInstance().getTime().getMonth().toString();
+		getData().set(path, getData().getStringList(path).add(data));
+		saveData();
 	}
 
 }

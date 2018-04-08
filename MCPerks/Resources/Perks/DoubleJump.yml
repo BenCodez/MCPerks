@@ -3,7 +3,7 @@ TimeLasts: 60
 PercentIncrease: 100
 CoolDown: 86400
 Name: 'Double Jump'
-Description: 'Allow Double Jump'
+Description: 'Allows Double Jump'
 Effects:
 - DoubleJump
 Item:

@@ -1,7 +1,7 @@
 Enabled: true
 CoolDown: 86400
 Name: 'Speed'
-Description: 'Give everyone a movement speed increase.'
+Description: 'Gives a movement speed increase.'
 Effects:
 - Potions
 Potions:

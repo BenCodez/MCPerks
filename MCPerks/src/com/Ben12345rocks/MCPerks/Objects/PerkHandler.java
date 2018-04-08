@@ -37,6 +37,7 @@ import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
 import com.Ben12345rocks.MCPerks.Configs.Lang;
+import com.Ben12345rocks.MCPerks.Data.ServerData;
 import com.massivecraft.factions.entity.MPlayer;
 import com.palmergames.bukkit.towny.Towny;
 import com.palmergames.bukkit.towny.object.Resident;
@@ -227,6 +228,11 @@ public class PerkHandler {
 		}
 
 		clone.announcePerk(user.getPlayerName(), length);
+
+		ServerData.getInstance()
+				.addPerkHistory(user.getPlayerName() + ":"
+						+ ArrayUtils.getInstance().makeStringList(clone.getEffectedPlayers()) + ":" + perk.getName()
+						+ ":" + perk.getPerkType().toString() + ":" + System.currentTimeMillis());
 
 		printActivePerks();
 

@@ -2,7 +2,7 @@ Enabled: true
 CoolDown: 86400
 TimeLasts: 60
 Name: 'Fly'
-Description: 'Allow everyone to fly.'
+Description: 'Allow flight.'
 Effects:
 - Fly
 Item:

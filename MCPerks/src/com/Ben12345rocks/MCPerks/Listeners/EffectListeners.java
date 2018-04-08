@@ -58,7 +58,7 @@ public class EffectListeners implements Listener {
 		this.plugin = plugin;
 	}
 
-	@EventHandler
+	@EventHandler(ignoreCancelled = true)
 	public void entityDamaged(EntityDamageEvent event) {
 
 		if (event.getEntity() instanceof Player) {
@@ -96,7 +96,7 @@ public class EffectListeners implements Listener {
 	 * @param event
 	 *            the event
 	 */
-	@EventHandler
+	@EventHandler(ignoreCancelled = true)
 	public void entityDamagedByEntity(EntityDamageByEntityEvent event) {
 		if (event.getEntity() instanceof Player) {
 			Player player = (Player) event.getEntity();
@@ -108,7 +108,7 @@ public class EffectListeners implements Listener {
 	}
 
 	@SuppressWarnings("deprecation")
-	@EventHandler(priority = EventPriority.HIGHEST)
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onBlockBreak(BlockBreakEvent event) {
 		Player player = event.getPlayer();
 		if (!event.isCancelled()) {
@@ -161,13 +161,13 @@ public class EffectListeners implements Listener {
 	 * @param event
 	 *            the event
 	 */
-	@EventHandler
+	@EventHandler(ignoreCancelled = true)
 	public void onBlockPlaceEvent(BlockPlaceEvent event) {
 		Block block = event.getBlock();
 		block.setMetadata("Placed", new FixedMetadataValue(plugin, "placed"));
 	}
 
-	@EventHandler
+	@EventHandler(ignoreCancelled = true)
 	public void onDisconnect(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		if (player != null) {
@@ -178,7 +178,7 @@ public class EffectListeners implements Listener {
 	}
 
 	@SuppressWarnings("unchecked")
-	@EventHandler
+	@EventHandler(ignoreCancelled = true)
 	public void onEntityDeath(EntityDeathEvent event) {
 
 		if (!(event.getEntity() instanceof Player)) {
@@ -213,7 +213,7 @@ public class EffectListeners implements Listener {
 
 	}
 
-	@EventHandler
+	@EventHandler(ignoreCancelled = true)
 	public void onJoin(PlayerJoinEvent event) {
 		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
 
@@ -290,7 +290,7 @@ public class EffectListeners implements Listener {
 		}
 	}
 
-	@EventHandler
+	@EventHandler(ignoreCancelled = true)
 	public void onPlayerMove(PlayerMoveEvent event) {
 		Player player = event.getPlayer();
 		if (!plugin.flyingUUIDs.containsKey(player.getUniqueId().toString())) {
@@ -313,7 +313,7 @@ public class EffectListeners implements Listener {
 
 	}
 
-	@EventHandler
+	@EventHandler(ignoreCancelled = true)
 	public void onPlayerToggleFlight(PlayerToggleFlightEvent event) {
 		if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, event.getPlayer().getUniqueId().toString())
 				&& !plugin.getPerkHandler().effectActive(Effect.Fly, event.getPlayer().getUniqueId().toString())) {
@@ -329,7 +329,7 @@ public class EffectListeners implements Listener {
 		}
 	}
 
-	@EventHandler
+	@EventHandler(ignoreCancelled = true)
 	public void onWorldSwitch(PlayerChangedWorldEvent event) {
 		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
 

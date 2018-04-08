@@ -177,7 +177,6 @@ public class Main extends JavaPlugin {
 	private void setupFiles() {
 		Config.getInstance().setup();
 		Lang.getInstance().setup(this);
-		ServerData.getInstance().setup(this);
 		perkSystemType = PerkSystemType.valueOf(Config.getInstance().getPerkSystemType());
 	}
 

@@ -3,7 +3,7 @@ Limit: 3
 PercentIncrease: 50
 CoolDown: 86400
 Name: 'Heal All'
-Description: 'Give the gift of healing to everybody.'
+Description: 'Give the gift of healing.'
 Effects:
 - HealAll
 Item:

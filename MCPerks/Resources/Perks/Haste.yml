@@ -1,7 +1,7 @@
 Enabled: true
 CoolDown: 86400
 Name: 'Haste'
-Description: 'Give everyone a mine speed increase.'
+Description: 'Gives a mine speed increase.'
 Effects:
 - Potions
 Potions:

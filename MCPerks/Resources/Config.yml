@@ -146,3 +146,6 @@ Lore:
   - '&aCoolDownLeft: %CoolDownLeft%'
   LimitReached: 
   - '&aPerk limit reached'
+  
+# Data is saved in ServerData.yml
+StorePerkHistory: false
