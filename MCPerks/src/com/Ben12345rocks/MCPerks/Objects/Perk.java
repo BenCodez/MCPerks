@@ -206,8 +206,8 @@ public class Perk {
 				placeholders.put("TimeLasts", "" + length);
 				placeholders.put("TimeLastsMin", "" + length / 60);
 				placeholders.put("TimeLastsHour", "" + length / 60 / 60);
-				msg = StringUtils.getInstance().replacePlaceHolder(Lang.getInstance().getPerkActivatedTimed(),
-						placeholders);
+				msg = StringUtils.getInstance()
+						.replacePlaceHolder(ConfigPerks.getInstance().getPerkActivatedTimed(getPerk()), placeholders);
 				for (Player p : players) {
 					p.sendMessage(StringUtils.getInstance().colorize(msg));
 				}

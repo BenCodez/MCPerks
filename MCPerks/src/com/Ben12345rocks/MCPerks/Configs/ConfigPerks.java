@@ -136,6 +136,10 @@ public class ConfigPerks {
 		return getData(perk).getBoolean("Enabled");
 	}
 
+	public String getPerkActivatedTimed(String perk) {
+		return getData(perk).getString("PerkActivatedTimed", Lang.getInstance().getPerkActivatedTimed());
+	}
+
 	/**
 	 * Gets the vote site file.
 	 *
