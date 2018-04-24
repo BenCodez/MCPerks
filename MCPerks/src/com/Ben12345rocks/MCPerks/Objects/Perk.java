@@ -28,7 +28,6 @@ import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
-import com.Ben12345rocks.MCPerks.Configs.Lang;
 import com.Ben12345rocks.MCPerks.Data.ServerData;
 
 // TODO: Auto-generated Javadoc
@@ -186,8 +185,8 @@ public class Perk {
 	 */
 	public void announcePerk(String playerName, int length) {
 		if (playerName != null) {
-			String msg = Lang.getInstance().getPerkActivated().replace("%Player%", playerName).replace("%Perk%",
-					getName());
+			String msg = ConfigPerks.getInstance().getPerkActivated(perk).replace("%Player%", playerName)
+					.replace("%Perk%", getName());
 			ArrayList<Player> players = new ArrayList<Player>();
 			for (String uuid : getEffectedPlayers()) {
 				Player p = Bukkit.getPlayer(UUID.fromString(uuid));
@@ -256,7 +255,7 @@ public class Perk {
 		// Main.plugin.getEffectHandler().deactivate(this);
 		Main.plugin.debug("Perk '" + getPerk() + "' deactivated for "
 				+ ArrayUtils.getInstance().makeStringList(getEffectedPlayers()));
-		String msg = Lang.getInstance().getPerkDeactivated().replace("%Perk%", getName());
+		String msg = ConfigPerks.getInstance().getPerkDeactivated(perk).replace("%Perk%", getName());
 		ArrayList<User> users = new ArrayList<User>();
 		for (String uuid : getEffectedPlayers()) {
 			User u = UserManager.getInstance().getMCPerksUser(new com.Ben12345rocks.AdvancedCore.Objects.UUID(uuid));
@@ -292,7 +291,7 @@ public class Perk {
 	public void forcePerk(String name, int length) {
 		User user = UserManager.getInstance().getMCPerksUser(name);
 		if (isActive()) {
-			user.sendMessage(Lang.getInstance().getPerkAlreayActive());
+			user.sendMessage(ConfigPerks.getInstance().getPerkAlreayActive(perk));
 			return;
 		}
 
@@ -565,17 +564,17 @@ public class Perk {
 	public void runPerk(User user) {
 
 		if (isPerkActive(user)) {
-			user.sendMessage(Lang.getInstance().getPerkAlreayActive());
+			user.sendMessage(ConfigPerks.getInstance().getPerkAlreayActive(perk));
 			return;
 		}
 
 		if (!checkTimesUsed(user)) {
-			user.sendMessage(Lang.getInstance().getPerkLimitReached());
+			user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
 			return;
 		}
 
 		if (!checkCoolDown(user)) {
-			user.sendMessage(Lang.getInstance().getPerkInCoolDown());
+			user.sendMessage(ConfigPerks.getInstance().getPerkInCoolDown(perk));
 			return;
 		}
 
@@ -585,7 +584,7 @@ public class Perk {
 
 	public void runPerkPerk(User user) {
 		if (Main.plugin.getPerkHandler().getActivePerks().size() != 0 && Config.getInstance().getPerkQue()) {
-			user.sendMessage(Lang.getInstance().getPerkAddedToQue());
+			user.sendMessage(ConfigPerks.getInstance().getPerkAddedToQue(perk));
 			Main.plugin.getPerkHandler().addQue(user, this);
 			return;
 		}

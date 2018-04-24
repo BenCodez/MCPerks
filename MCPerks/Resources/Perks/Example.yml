@@ -61,3 +61,13 @@ Item:
   Material: 'BREAD'
   # Item Data
   Data: 0
+  
+# Per perk options, defaults to options in Lang.yml if not specified
+# Lang:
+  # PerkActivated: '&6&l%Player% &3&lenacted %Perk% for the entire server!'
+  # PerkActivatedTimed: '&3&lThis effect will last for %TimeLasts% seconds.'
+  # PerkDeactivated: '&3&l%Perk% has been deactivated'
+  # PerkLimitReached: '&cPerk limited reached'
+  # PerkInCoolDown: '&cCooldown still in affect'
+  # PerkAlreayActive: '&cPerk already active'
+  # PerkAddedToQue: '&cPerk has been added to queue'

@@ -104,30 +104,37 @@ public class Lang {
 		return getData().getString("NoPermission", "&cSorry, you do not have permission to execute this command.");
 	}
 
+	@Deprecated
 	public String getPerkActivated() {
 		return getData().getString("PerkActivated", "&6&l%Player% &3&lenacted %Perk% for the entire server!");
 	}
 
+	@Deprecated
 	public String getPerkActivatedTimed() {
 		return getData().getString("PerkActivatedTimed", "&3&lThis effect will last for %TimeLasts% seconds.");
 	}
 
+	@Deprecated
 	public String getPerkAddedToQue() {
 		return getData().getString("PerkAddedToQue", "&cPerk has been added to queue");
 	}
 
+	@Deprecated
 	public String getPerkAlreayActive() {
 		return getData().getString("PerkAlreayActive", "&cPerk already active");
 	}
 
+	@Deprecated
 	public String getPerkDeactivated() {
 		return getData().getString("PerkDeactivated", "&3&l%Perk% has been deactivated");
 	}
 
+	@Deprecated
 	public String getPerkInCoolDown() {
 		return getData().getString("PerkInCoolDown", "&cCooldown still in affect");
 	}
 
+	@Deprecated
 	public String getPerkLimitReached() {
 		return getData().getString("PerkLimitReached", "&cPerk limited reached");
 	}

@@ -136,8 +136,39 @@ public class ConfigPerks {
 		return getData(perk).getBoolean("Enabled");
 	}
 
+	@SuppressWarnings("deprecation")
+	public String getPerkActivated(String perk) {
+		return getData(perk).getString("Lang.PerkActivated", Lang.getInstance().getPerkActivated());
+	}
+
+	@SuppressWarnings("deprecation")
 	public String getPerkActivatedTimed(String perk) {
-		return getData(perk).getString("PerkActivatedTimed", Lang.getInstance().getPerkActivatedTimed());
+		return getData(perk).getString("Lang.PerkActivatedTimed", Lang.getInstance().getPerkActivatedTimed());
+	}
+
+	@SuppressWarnings("deprecation")
+	public String getPerkAddedToQue(String perk) {
+		return getData(perk).getString("Lang.PerkAddedToQue", Lang.getInstance().getPerkAddedToQue());
+	}
+
+	@SuppressWarnings("deprecation")
+	public String getPerkAlreayActive(String perk) {
+		return getData(perk).getString("Lang.PerkAlreayActive", Lang.getInstance().getPerkAlreayActive());
+	}
+
+	@SuppressWarnings("deprecation")
+	public String getPerkDeactivated(String perk) {
+		return getData(perk).getString("Lang.PerkDeactivated", Lang.getInstance().getPerkDeactivated());
+	}
+
+	@SuppressWarnings("deprecation")
+	public String getPerkInCoolDown(String perk) {
+		return getData(perk).getString("Lang.PerkInCoolDown", Lang.getInstance().getPerkInCoolDown());
+	}
+
+	@SuppressWarnings("deprecation")
+	public String getPerkLimitReached(String perk) {
+		return getData(perk).getString("Lang.PerkLimitReached", Lang.getInstance().getPerkLimitReached());
 	}
 
 	/**
