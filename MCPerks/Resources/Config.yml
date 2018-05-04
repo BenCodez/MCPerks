@@ -16,6 +16,9 @@ ExtraDebug: false
 # - MYSQL
 DataStorage: FLAT
 
+# Whether or not to create daily backups. (Only the most recent ones get saved)
+CreateBackups: false
+
 # Information for mysql
 MySQL:
   Host: ''
