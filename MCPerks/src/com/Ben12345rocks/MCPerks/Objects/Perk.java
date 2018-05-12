@@ -410,21 +410,21 @@ public class Perk {
 
 		HashMap<String, String> placeholders = new HashMap<String, String>();
 		int timeLasts = getTime();
-		placeholders.put("%TimeLasts%", "" + timeLasts);
-		placeholders.put("%TimeLastsMin%", "" + (timeLasts / 60));
-		placeholders.put("%TimeLastsHour%", "" + (timeLasts / 60 / 60));
-		placeholders.put("%Description%", getDescription());
-		placeholders.put("%HasPerm%", Boolean.toString(hasPerm));
-		placeholders.put("%CoolDownLeft%", "" + coolDownHours + " hours " + coolDownMin + " minutes");
+		placeholders.put("TimeLasts", "" + timeLasts);
+		placeholders.put("TimeLastsMin", "" + (timeLasts / 60));
+		placeholders.put("TimeLastsHour", "" + (timeLasts / 60 / 60));
+		placeholders.put("Description", getDescription());
+		placeholders.put("HasPerm", Boolean.toString(hasPerm));
+		placeholders.put("CoolDownLeft", "" + coolDownHours + " hours " + coolDownMin + " minutes");
 		if (!isLastForever()) {
-			placeholders.put("%TimeLeft%", "" + left / (1000 * 64) + " minutes " + sec + " seconds");
+			placeholders.put("TimeLeft", "" + left / (1000 * 64) + " minutes " + sec + " seconds");
 		} else {
-			placeholders.put("%TimeLeft%", "Forever");
+			placeholders.put("TimeLeft", "Forever");
 		}
 		int CooldownMin = getCoolDown() / 60;
 		int CooldownHour = CooldownMin / 60;
 		CooldownMin = CooldownHour * 60 - CooldownMin;
-		placeholders.put("%CoolDown%", "" + CooldownHour + " Hours " + CooldownMin + " Minutes");
+		placeholders.put("CoolDown", "" + CooldownHour + " Hours " + CooldownMin + " Minutes");
 		// lore = Utils.getInstance().replacePlaceStringList(lore, "", "");
 
 		lore = ArrayUtils.getInstance().replacePlaceHolder(lore, placeholders);
