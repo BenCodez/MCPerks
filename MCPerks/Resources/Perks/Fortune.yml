@@ -15,6 +15,7 @@ Blocks:
 - EMERALD_ORE
 - QUARTZ_ORE
 - GLOWSTONE
+- GOLD_ORE
 Item:
   Material: 'DIAMOND_PICKAXE'
   Data: 0
