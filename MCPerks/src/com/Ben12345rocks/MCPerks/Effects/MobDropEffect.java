@@ -7,15 +7,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Material;
-import org.bukkit.SkullType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.PigZombie;
 import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 
 import com.Ben12345rocks.MCPerks.Objects.Perk;
-import com.Ben12345rocks.MCPerks.Utils.Skeleton.SkeletonHandler;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -87,10 +86,9 @@ public class MobDropEffect {
 			if (ran * 100.0D <= 10.0D) {
 				items.add(new ItemStack(Material.RABBIT_FOOT));
 			}
-		} else if (SkeletonHandler.getInstance().isWitherSkeleton(e)) {
+		} else if (e instanceof WitherSkeleton) {
 			if (ran * 100.0D <= 10.0D) {
-				ItemStack skull = new ItemStack(Material.SKULL_ITEM);
-				skull.setDurability((short) SkullType.WITHER.ordinal());
+				ItemStack skull = new ItemStack(Material.WITHER_SKELETON_SKULL);
 				items.add(skull);
 			}
 		} else if (e instanceof Zombie) {
@@ -101,12 +99,12 @@ public class MobDropEffect {
 
 			ran = Math.random();
 			if (ran * 100.0D <= 10.0D) {
-				items.add(new ItemStack(Material.POTATO_ITEM));
+				items.add(new ItemStack(Material.POTATO));
 			}
 
 			ran = Math.random();
 			if (ran * 100.0D <= 10.0D) {
-				items.add(new ItemStack(Material.CARROT_ITEM));
+				items.add(new ItemStack(Material.CARROT));
 			}
 		} else if (e instanceof PigZombie && ran * 100.0D <= 10.0D) {
 			items.add(new ItemStack(Material.GOLD_INGOT));
