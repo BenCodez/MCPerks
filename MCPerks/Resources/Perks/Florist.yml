@@ -6,5 +6,5 @@ Description: 'Give bonemeal a more flowery touch.'
 Effects:
 - Florist
 Item:
-  Material: 'INK_SAC'
+  Material: 'BONE_MEAL'
   Data: 15
