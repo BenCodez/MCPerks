@@ -7,5 +7,5 @@ Description: 'Double the experience that drop from mobs.'
 Effects:
 - DoubleExperience
 Item:
-  Material: 'EXP_BOTTLE'
+  Material: 'EXPERIENCE_BOTTLE'
   Data: 0

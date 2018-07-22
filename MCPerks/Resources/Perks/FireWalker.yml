@@ -6,5 +6,5 @@ Description: 'Give yourself fire immunity for %TimeLasts% seconds.'
 Effects:
 - FireWalker
 Item:
-  Material: 'FIREBALL'
+  Material: 'FIRE_CHARGE'
   Data: 0

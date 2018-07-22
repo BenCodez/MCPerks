@@ -400,12 +400,17 @@ public class PerkHandler {
 	}
 
 	public void loadPerk(String perkName) {
+		try {
 		Perk perk = new Perk(perkName);
 		if (perk.isEnabled()) {
 			plugin.debug("Loading perk: " + perk.getName() + " : " + perk.getPerkType().toString());
 			addToList(perkName, perk);
 		} else {
 			plugin.debug("Perk " + perk.getName() + " not enabled");
+		}
+		} catch (Exception e) {
+			plugin.getLogger().warning("Failed to load perk: " + perkName);
+			e.printStackTrace();
 		}
 
 	}

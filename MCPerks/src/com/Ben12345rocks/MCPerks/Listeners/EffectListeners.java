@@ -293,17 +293,20 @@ public class EffectListeners implements Listener {
 	@EventHandler(ignoreCancelled = true)
 	public void onPlayerMove(PlayerMoveEvent event) {
 		Player player = event.getPlayer();
+		if (player == null) {
+			return;
+		}
 		if (!plugin.flyingUUIDs.containsKey(player.getUniqueId().toString())) {
 			plugin.flyingUUIDs.put(player.getUniqueId().toString(), false);
 		}
 		if ((player.getGameMode() != GameMode.CREATIVE)
 				&& (player.getLocation().subtract(0, 1, 0).getBlock().getType() != Material.AIR)
 				&& (!player.isFlying())) {
-			if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, event.getPlayer().getUniqueId().toString())) {
+			if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, player.getUniqueId().toString())) {
 				player.setAllowFlight(true);
 				plugin.flyingUUIDs.put(player.getUniqueId().toString(), true);
 			}
-		} else if (!plugin.getPerkHandler().effectActive(Effect.Fly, event.getPlayer().getUniqueId().toString())
+		} else if (!plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString())
 				&& !player.hasPermission("MCPerks.ServerFly.Bypass")) {
 			if (plugin.flyingUUIDs.get(player.getUniqueId().toString())) {
 				player.setAllowFlight(false);

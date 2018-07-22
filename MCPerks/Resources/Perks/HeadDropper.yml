@@ -7,5 +7,5 @@ Description: 'Give a chance for heads to drop for %TimeLasts% seconds.'
 Effects:
 - HeadDropper
 Item:
-  Material: 'SKULL_ITEM'
+  Material: 'PLAYER_HEAD'
   Data: 0

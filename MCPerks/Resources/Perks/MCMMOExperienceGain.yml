@@ -10,5 +10,5 @@ Effects:
 #MCMMOSkills:
 #- MINING
 Item:
-  Material: 'EXP_BOTTLE'
+  Material: 'EXPERIENCE_BOTTLE'
   Data: 0
