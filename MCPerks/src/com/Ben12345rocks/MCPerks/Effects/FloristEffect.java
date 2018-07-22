@@ -26,7 +26,7 @@ public class FloristEffect {
 		// Main.plugin.debug("Amount: " + event.getItem().getAmount());
 		if (event.getItem().getAmount() == 1) {
 			Player player = event.getPlayer();
-			if (player.getItemInHand().equals(new ItemStack(Material.INK_SAC, 1))) {
+			if (player.getItemInHand().equals(new ItemStack(Material.BONE_MEAL, 1))) {
 				player.setItemInHand(new ItemStack(Material.AIR));
 			}
 			event.getPlayer().updateInventory();
