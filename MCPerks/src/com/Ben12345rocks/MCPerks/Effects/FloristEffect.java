@@ -26,7 +26,7 @@ public class FloristEffect {
 		// Main.plugin.debug("Amount: " + event.getItem().getAmount());
 		if (event.getItem().getAmount() == 1) {
 			Player player = event.getPlayer();
-			if (player.getItemInHand().equals(new ItemStack(Material.BONE_MEAL, 1))) {
+			if (player.getItemInHand().getType().equals(Material.BONE_MEAL)) {
 				player.setItemInHand(new ItemStack(Material.AIR));
 			}
 			event.getPlayer().updateInventory();
@@ -52,10 +52,11 @@ public class FloristEffect {
 
 		for (int i = x - 2; i <= x + 2; ++i) {
 			for (int j = z - 2; j <= z + 2; ++j) {
-				if (loc.getWorld().getBlockAt(i, y, j).getType().equals(Material.GRASS)
-						&& loc.getWorld().getBlockAt(i, y + 1, z).getType().equals(Material.AIR)
-						&& loc.getWorld().getBlockAt(i, y + 2, z).getType().equals(Material.AIR)) {
+				if (loc.getWorld().getBlockAt(i, y, j).getType().equals(Material.GRASS_BLOCK)
+						&& loc.getWorld().getBlockAt(i, y + 1, j).getType().equals(Material.AIR)
+						&& loc.getWorld().getBlockAt(i, y + 1, j).getType().equals(Material.AIR)) {
 					pickFlower(new Location(loc.getWorld(), i, y + 1, j));
+
 				}
 			}
 		}

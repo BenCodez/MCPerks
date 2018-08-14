@@ -3,7 +3,6 @@ package com.Ben12345rocks.MCPerks.Listeners;
 import java.util.Collection;
 
 import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -25,7 +24,6 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.material.Dye;
 import org.bukkit.metadata.FixedMetadataValue;
 
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
@@ -277,8 +275,7 @@ public class EffectListeners implements Listener {
 		Player player = event.getPlayer();
 		if (plugin.getPerkHandler().effectActive(Effect.Florist, player.getUniqueId().toString())) {
 			if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
-				if (event.getItem().getData() instanceof Dye
-						&& ((Dye) event.getItem().getData()).getColor().equals(DyeColor.WHITE)) {
+				if (event.getItem().getType().equals(Material.BONE_MEAL)) {
 
 					event.setCancelled(true);
 					FloristEffect fe = new FloristEffect();
