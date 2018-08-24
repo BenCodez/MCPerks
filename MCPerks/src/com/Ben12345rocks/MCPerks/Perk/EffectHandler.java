@@ -1,10 +1,11 @@
-package com.Ben12345rocks.MCPerks.Objects;
+package com.Ben12345rocks.MCPerks.Perk;
 
 import java.util.ArrayList;
 
 import org.bukkit.event.Listener;
 
 import com.Ben12345rocks.MCPerks.Main;
+import com.Ben12345rocks.MCPerks.UserAPI.User;
 
 public class EffectHandler implements Listener {
 

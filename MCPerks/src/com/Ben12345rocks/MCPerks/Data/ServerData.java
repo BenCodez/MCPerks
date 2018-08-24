@@ -7,7 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 import com.Ben12345rocks.AdvancedCore.TimeChecker.TimeChecker;
 import com.Ben12345rocks.MCPerks.Main;
-import com.Ben12345rocks.MCPerks.Objects.Perk;
+import com.Ben12345rocks.MCPerks.Perk.Perk;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -46,6 +46,12 @@ public class ServerData {
 		ServerData.plugin = plugin;
 	}
 
+	public void addPerkHistory(String data) {
+		String path = "PerkHistory." + TimeChecker.getInstance().getTime().getMonth().toString();
+		getData().set(path, getData().getStringList(path).add(data));
+		saveData();
+	}
+
 	/**
 	 * Gets the data.
 	 *
@@ -75,12 +81,6 @@ public class ServerData {
 
 	public void setPerkExperation(Perk perk, long time) {
 		getData().set("Experation." + perk.getName(), time);
-		saveData();
-	}
-
-	public void addPerkHistory(String data) {
-		String path = "PerkHistory." + TimeChecker.getInstance().getTime().getMonth().toString();
-		getData().set(path, getData().getStringList(path).add(data));
 		saveData();
 	}
 

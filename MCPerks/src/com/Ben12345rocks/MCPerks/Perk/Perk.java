@@ -1,7 +1,7 @@
 /*
  *
  */
-package com.Ben12345rocks.MCPerks.Objects;
+package com.Ben12345rocks.MCPerks.Perk;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -20,7 +20,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import com.Ben12345rocks.AdvancedCore.Objects.RewardBuilder;
+import com.Ben12345rocks.AdvancedCore.Rewards.RewardBuilder;
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
 import com.Ben12345rocks.AdvancedCore.Util.Item.ItemBuilder;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
@@ -29,6 +29,8 @@ import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
 import com.Ben12345rocks.MCPerks.Data.ServerData;
+import com.Ben12345rocks.MCPerks.UserAPI.User;
+import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -258,7 +260,8 @@ public class Perk {
 		String msg = ConfigPerks.getInstance().getPerkDeactivated(perk).replace("%Perk%", getName());
 		ArrayList<User> users = new ArrayList<User>();
 		for (String uuid : getEffectedPlayers()) {
-			User u = UserManager.getInstance().getMCPerksUser(new com.Ben12345rocks.AdvancedCore.Objects.UUID(uuid));
+			User u = UserManager.getInstance()
+					.getMCPerksUser(new com.Ben12345rocks.AdvancedCore.UserManager.UUID(uuid));
 			u.sendMessage(msg);
 			users.add(u);
 			new RewardBuilder(Config.getInstance().getData(), Config.getInstance().getDeactivationEffect())

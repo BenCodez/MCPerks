@@ -1,15 +1,16 @@
-package com.Ben12345rocks.MCPerks.Objects;
+package com.Ben12345rocks.MCPerks.UserAPI;
 
 import org.bukkit.entity.Player;
 
-import com.Ben12345rocks.AdvancedCore.Objects.UUID;
+import com.Ben12345rocks.AdvancedCore.UserManager.UUID;
 import com.Ben12345rocks.MCPerks.Main;
+import com.Ben12345rocks.MCPerks.Perk.Perk;
 
 // TODO: Auto-generated Javadoc
 /**
  * The Class User.
  */
-public class User extends com.Ben12345rocks.AdvancedCore.Objects.User {
+public class User extends com.Ben12345rocks.AdvancedCore.UserManager.User {
 
 	/** The plugin. */
 	static Main plugin = Main.plugin;

@@ -36,10 +36,10 @@ import com.Ben12345rocks.MCPerks.Effects.FortuneEffect;
 import com.Ben12345rocks.MCPerks.Effects.HeadDropperEffect;
 import com.Ben12345rocks.MCPerks.Effects.MobDropEffect;
 import com.Ben12345rocks.MCPerks.Effects.ProtectionEffect;
-import com.Ben12345rocks.MCPerks.Objects.Effect;
-import com.Ben12345rocks.MCPerks.Objects.Perk;
-import com.Ben12345rocks.MCPerks.Objects.PerkSystemType;
-import com.Ben12345rocks.MCPerks.Objects.UserManager;
+import com.Ben12345rocks.MCPerks.Perk.Effect;
+import com.Ben12345rocks.MCPerks.Perk.Perk;
+import com.Ben12345rocks.MCPerks.Perk.PerkSystemType;
+import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 
 public class EffectListeners implements Listener {
 

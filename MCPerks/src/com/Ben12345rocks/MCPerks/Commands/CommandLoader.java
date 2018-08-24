@@ -11,9 +11,9 @@ import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import com.Ben12345rocks.AdvancedCore.Objects.CommandHandler;
-import com.Ben12345rocks.AdvancedCore.Objects.TabCompleteHandle;
-import com.Ben12345rocks.AdvancedCore.Objects.TabCompleteHandler;
+import com.Ben12345rocks.AdvancedCore.CommandAPI.CommandHandler;
+import com.Ben12345rocks.AdvancedCore.CommandAPI.TabCompleteHandle;
+import com.Ben12345rocks.AdvancedCore.CommandAPI.TabCompleteHandler;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventory;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventory.ClickEvent;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventoryButton;
@@ -30,9 +30,9 @@ import com.Ben12345rocks.MCPerks.Commands.Executers.CommandPerkAliases;
 import com.Ben12345rocks.MCPerks.Commands.TabCompleter.AliasesTabCompleter;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
-import com.Ben12345rocks.MCPerks.Objects.Perk;
-import com.Ben12345rocks.MCPerks.Objects.User;
-import com.Ben12345rocks.MCPerks.Objects.UserManager;
+import com.Ben12345rocks.MCPerks.Perk.Perk;
+import com.Ben12345rocks.MCPerks.UserAPI.User;
+import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 
 import net.md_5.bungee.api.chat.TextComponent;
 

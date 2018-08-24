@@ -4,7 +4,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.Ben12345rocks.MCPerks.Main;
-import com.Ben12345rocks.MCPerks.Objects.UserManager;
+import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 
 // TODO: Auto-generated Javadoc
 /**

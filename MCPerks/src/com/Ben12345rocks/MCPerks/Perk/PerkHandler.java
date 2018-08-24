@@ -1,7 +1,7 @@
 /*
  *
  */
-package com.Ben12345rocks.MCPerks.Objects;
+package com.Ben12345rocks.MCPerks.Perk;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,8 +27,8 @@ import java.util.zip.ZipInputStream;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import com.Ben12345rocks.AdvancedCore.Objects.RewardBuilder;
-import com.Ben12345rocks.AdvancedCore.Objects.UUID;
+import com.Ben12345rocks.AdvancedCore.Rewards.RewardBuilder;
+import com.Ben12345rocks.AdvancedCore.UserManager.UUID;
 import com.Ben12345rocks.AdvancedCore.UserManager.UserManager;
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
@@ -38,6 +38,7 @@ import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
 import com.Ben12345rocks.MCPerks.Configs.Lang;
 import com.Ben12345rocks.MCPerks.Data.ServerData;
+import com.Ben12345rocks.MCPerks.UserAPI.User;
 import com.massivecraft.factions.entity.MPlayer;
 import com.palmergames.bukkit.towny.Towny;
 import com.palmergames.bukkit.towny.object.Resident;
@@ -148,12 +149,12 @@ public class PerkHandler {
 						HashMap<String, String> phs = new HashMap<String, String>();
 						phs.putAll(placeholders);
 						for (String uuid : clone.getEffectedPlayers()) {
-							com.Ben12345rocks.AdvancedCore.Objects.User user = UserManager.getInstance()
+							com.Ben12345rocks.AdvancedCore.UserManager.User user = UserManager.getInstance()
 									.getUser(new UUID(uuid));
 							user.sendMessage(msg, phs);
 
 							new RewardBuilder(Config.getInstance().getData(),
-									Config.getInstance().getCountDownEffectPath()).checkOffline(false)
+									Config.getInstance().getCountDownEffectPath()).setGiveOffline(false)
 											.setGiveOffline(false).send(user);
 						}
 					}
@@ -192,7 +193,7 @@ public class PerkHandler {
 			clone.setBossBar(bossBar);
 
 			for (String uuid : clone.getEffectedPlayers()) {
-				if (com.Ben12345rocks.MCPerks.Objects.UserManager.getInstance()
+				if (com.Ben12345rocks.MCPerks.UserAPI.UserManager.getInstance()
 						.getMCPerksUser(java.util.UUID.fromString(uuid)).isUseBossBar()) {
 					bossBar.addPlayer(Bukkit.getPlayer(java.util.UUID.fromString(uuid)));
 				}
@@ -354,7 +355,7 @@ public class PerkHandler {
 				ArrayList<User> users = new ArrayList<User>();
 				for (String uuid : UserManager.getInstance().getAllUUIDs()) {
 					users.add(
-							com.Ben12345rocks.MCPerks.Objects.UserManager.getInstance().getMCPerksUser(new UUID(uuid)));
+							com.Ben12345rocks.MCPerks.UserAPI.UserManager.getInstance().getMCPerksUser(new UUID(uuid)));
 				}
 				for (Perk perk : getLoadedPerks().values()) {
 					for (User user : users) {
@@ -401,13 +402,13 @@ public class PerkHandler {
 
 	public void loadPerk(String perkName) {
 		try {
-		Perk perk = new Perk(perkName);
-		if (perk.isEnabled()) {
-			plugin.debug("Loading perk: " + perk.getName() + " : " + perk.getPerkType().toString());
-			addToList(perkName, perk);
-		} else {
-			plugin.debug("Perk " + perk.getName() + " not enabled");
-		}
+			Perk perk = new Perk(perkName);
+			if (perk.isEnabled()) {
+				plugin.debug("Loading perk: " + perk.getName() + " : " + perk.getPerkType().toString());
+				addToList(perkName, perk);
+			} else {
+				plugin.debug("Perk " + perk.getName() + " not enabled");
+			}
 		} catch (Exception e) {
 			plugin.getLogger().warning("Failed to load perk: " + perkName);
 			e.printStackTrace();

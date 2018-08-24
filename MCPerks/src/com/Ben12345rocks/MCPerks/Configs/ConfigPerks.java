@@ -16,7 +16,7 @@ import org.bukkit.inventory.ItemStack;
 
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
 import com.Ben12345rocks.MCPerks.Main;
-import com.Ben12345rocks.MCPerks.Objects.Effect;
+import com.Ben12345rocks.MCPerks.Perk.Effect;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -104,13 +104,38 @@ public class ConfigPerks {
 				Config.getInstance().getLoreLimitReached());
 	}
 
+	@SuppressWarnings("deprecation")
+	public String getPerkActivated(String perk) {
+		return getData(perk).getString("Lang.PerkActivated", Lang.getInstance().getPerkActivated());
+	}
+
+	@SuppressWarnings("deprecation")
+	public String getPerkActivatedTimed(String perk) {
+		return getData(perk).getString("Lang.PerkActivatedTimed", Lang.getInstance().getPerkActivatedTimed());
+	}
+
+	@SuppressWarnings("deprecation")
+	public String getPerkAddedToQue(String perk) {
+		return getData(perk).getString("Lang.PerkAddedToQue", Lang.getInstance().getPerkAddedToQue());
+	}
+
 	@SuppressWarnings("unchecked")
 	public ArrayList<String> getPerkAliases(String perk) {
 		return (ArrayList<String>) getData(perk).getList("Aliases", new ArrayList<String>());
 	}
 
+	@SuppressWarnings("deprecation")
+	public String getPerkAlreayActive(String perk) {
+		return getData(perk).getString("Lang.PerkAlreayActive", Lang.getInstance().getPerkAlreayActive());
+	}
+
 	public int getPerkCoolDown(String perk) {
 		return getData(perk).getInt("CoolDown");
+	}
+
+	@SuppressWarnings("deprecation")
+	public String getPerkDeactivated(String perk) {
+		return getData(perk).getString("Lang.PerkDeactivated", Lang.getInstance().getPerkDeactivated());
 	}
 
 	public String getPerkDescription(String perk) {
@@ -136,41 +161,6 @@ public class ConfigPerks {
 		return getData(perk).getBoolean("Enabled");
 	}
 
-	@SuppressWarnings("deprecation")
-	public String getPerkActivated(String perk) {
-		return getData(perk).getString("Lang.PerkActivated", Lang.getInstance().getPerkActivated());
-	}
-
-	@SuppressWarnings("deprecation")
-	public String getPerkActivatedTimed(String perk) {
-		return getData(perk).getString("Lang.PerkActivatedTimed", Lang.getInstance().getPerkActivatedTimed());
-	}
-
-	@SuppressWarnings("deprecation")
-	public String getPerkAddedToQue(String perk) {
-		return getData(perk).getString("Lang.PerkAddedToQue", Lang.getInstance().getPerkAddedToQue());
-	}
-
-	@SuppressWarnings("deprecation")
-	public String getPerkAlreayActive(String perk) {
-		return getData(perk).getString("Lang.PerkAlreayActive", Lang.getInstance().getPerkAlreayActive());
-	}
-
-	@SuppressWarnings("deprecation")
-	public String getPerkDeactivated(String perk) {
-		return getData(perk).getString("Lang.PerkDeactivated", Lang.getInstance().getPerkDeactivated());
-	}
-
-	@SuppressWarnings("deprecation")
-	public String getPerkInCoolDown(String perk) {
-		return getData(perk).getString("Lang.PerkInCoolDown", Lang.getInstance().getPerkInCoolDown());
-	}
-
-	@SuppressWarnings("deprecation")
-	public String getPerkLimitReached(String perk) {
-		return getData(perk).getString("Lang.PerkLimitReached", Lang.getInstance().getPerkLimitReached());
-	}
-
 	/**
 	 * Gets the vote site file.
 	 *
@@ -193,6 +183,11 @@ public class ConfigPerks {
 
 	}
 
+	@SuppressWarnings("deprecation")
+	public String getPerkInCoolDown(String perk) {
+		return getData(perk).getString("Lang.PerkInCoolDown", Lang.getInstance().getPerkInCoolDown());
+	}
+
 	public ConfigurationSection getPerkItem(String perk) {
 		return getData(perk).getConfigurationSection("Item");
 	}
@@ -209,6 +204,11 @@ public class ConfigPerks {
 
 	public int getPerkLimit(String perk) {
 		return getData(perk).getInt("Limit");
+	}
+
+	@SuppressWarnings("deprecation")
+	public String getPerkLimitReached(String perk) {
+		return getData(perk).getString("Lang.PerkLimitReached", Lang.getInstance().getPerkLimitReached());
 	}
 
 	@SuppressWarnings("unchecked")

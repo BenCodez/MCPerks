@@ -10,8 +10,8 @@ import org.bukkit.event.Listener;
 
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Effects.McmmoXPEffect;
-import com.Ben12345rocks.MCPerks.Objects.Effect;
-import com.Ben12345rocks.MCPerks.Objects.Perk;
+import com.Ben12345rocks.MCPerks.Perk.Effect;
+import com.Ben12345rocks.MCPerks.Perk.Perk;
 import com.gmail.nossr50.events.experience.McMMOPlayerXpGainEvent;
 
 // TODO: Auto-generated Javadoc

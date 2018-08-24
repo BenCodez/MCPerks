@@ -14,7 +14,7 @@ import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 
-import com.Ben12345rocks.MCPerks.Objects.Perk;
+import com.Ben12345rocks.MCPerks.Perk.Perk;
 
 // TODO: Auto-generated Javadoc
 /**

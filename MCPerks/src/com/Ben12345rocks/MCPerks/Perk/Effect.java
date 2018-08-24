@@ -1,4 +1,4 @@
-package com.Ben12345rocks.MCPerks.Objects;
+package com.Ben12345rocks.MCPerks.Perk;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,7 +8,8 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import com.Ben12345rocks.AdvancedCore.Objects.RewardHandler;
+import com.Ben12345rocks.AdvancedCore.Rewards.RewardHandler;
+import com.Ben12345rocks.AdvancedCore.Rewards.RewardOptions;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
@@ -17,6 +18,8 @@ import com.Ben12345rocks.MCPerks.Effects.CureSpellsEffect;
 import com.Ben12345rocks.MCPerks.Effects.FlyEffect;
 import com.Ben12345rocks.MCPerks.Effects.HealAllEffect;
 import com.Ben12345rocks.MCPerks.Effects.PotionEffect;
+import com.Ben12345rocks.MCPerks.UserAPI.User;
+import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 
 public enum Effect {
 
@@ -116,7 +119,7 @@ public enum Effect {
 			for (Player p : players) {
 				RewardHandler.getInstance().giveReward(UserManager.getInstance().getMCPerksUser(p), perk.getPerk(),
 						ConfigPerks.getInstance().getData(perk.getPerk()),
-						ConfigPerks.getInstance().getPerkRewardsPath(perk.getPerk()));
+						ConfigPerks.getInstance().getPerkRewardsPath(perk.getPerk()), new RewardOptions());
 			}
 
 			break;

@@ -3,7 +3,7 @@
  */
 package com.Ben12345rocks.MCPerks.Effects;
 
-import com.Ben12345rocks.MCPerks.Objects.Perk;
+import com.Ben12345rocks.MCPerks.Perk.Perk;
 
 // TODO: Auto-generated Javadoc
 /**

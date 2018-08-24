@@ -1,4 +1,4 @@
-package com.Ben12345rocks.MCPerks.Objects;
+package com.Ben12345rocks.MCPerks.Perk;
 
 import com.Ben12345rocks.MCPerks.Main;
 
