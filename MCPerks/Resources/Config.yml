@@ -56,6 +56,9 @@ RequirePermToView: true
 # - TOWNY
 PerkSystemType: 'ALL'
 
+# Global perk options
+# Add the following in any perk fine to override these
+
 # At how many seconds left a count should be broadcasted
 CountDownTimes:
 - '10'

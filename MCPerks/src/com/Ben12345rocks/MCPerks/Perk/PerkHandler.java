@@ -28,6 +28,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.Ben12345rocks.AdvancedCore.Rewards.RewardBuilder;
+import com.Ben12345rocks.AdvancedCore.Rewards.RewardHandler;
 import com.Ben12345rocks.AdvancedCore.UserManager.UUID;
 import com.Ben12345rocks.AdvancedCore.UserManager.UserManager;
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
@@ -79,7 +80,7 @@ public class PerkHandler {
 		clone.getEffectedPlayers().clear();
 		ArrayList<Integer> times = new ArrayList<Integer>();
 		if (perk.getTime() > 0) {
-			for (String str : Config.getInstance().getCountDownTimes()) {
+			for (String str : ConfigPerks.getInstance().getCountDownTimes(perk.getPerk())) {
 				if (StringUtils.getInstance().isInt(str)) {
 					int num = Integer.parseInt(str);
 					if (num > 0) {
@@ -153,9 +154,17 @@ public class PerkHandler {
 									.getUser(new UUID(uuid));
 							user.sendMessage(msg, phs);
 
-							new RewardBuilder(Config.getInstance().getData(),
-									Config.getInstance().getCountDownEffectPath()).setGiveOffline(false)
-											.setGiveOffline(false).send(user);
+							if (RewardHandler.getInstance().hasRewards(
+									ConfigPerks.getInstance().getData(perk.getPerk()),
+									ConfigPerks.getInstance().getCountDownEffectPath())) {
+								new RewardBuilder(ConfigPerks.getInstance().getData(perk.getPerk()),
+										ConfigPerks.getInstance().getCountDownEffectPath()).setGiveOffline(false)
+												.setGiveOffline(false).send(user);
+							} else {
+								new RewardBuilder(Config.getInstance().getData(),
+										Config.getInstance().getCountDownEffectPath()).setGiveOffline(false)
+												.setGiveOffline(false).send(user);
+							}
 						}
 					}
 				}, time * 1000);
@@ -177,9 +186,17 @@ public class PerkHandler {
 			activePerks.add(clone);
 		}
 
+		boolean perkRewards = RewardHandler.getInstance().hasRewards(ConfigPerks.getInstance().getData(perk.getPerk()),
+				ConfigPerks.getInstance().getActivationEffectPath());
 		for (String uuid : clone.getEffectedPlayers()) {
-			new RewardBuilder(Config.getInstance().getData(), Config.getInstance().getActivationEffectPath())
-					.setGiveOffline(false).send(UserManager.getInstance().getUser(new UUID(uuid)));
+			if (perkRewards) {
+				new RewardBuilder(ConfigPerks.getInstance().getData(perk.getPerk()),
+						ConfigPerks.getInstance().getActivationEffectPath()).setGiveOffline(false)
+								.send(UserManager.getInstance().getUser(new UUID(uuid)));
+			} else {
+				new RewardBuilder(Config.getInstance().getData(), Config.getInstance().getActivationEffectPath())
+						.setGiveOffline(false).send(UserManager.getInstance().getUser(new UUID(uuid)));
+			}
 		}
 
 		if (Config.getInstance().getBossBarEnabled() && clone.isTimed() && !clone.isLastForever()) {

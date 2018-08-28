@@ -73,6 +73,23 @@ public class ConfigPerks {
 		return data;
 	}
 
+	public String getCountDownEffectPath() {
+		return "CountDownEffect";
+	}
+
+	@SuppressWarnings("unchecked")
+	public ArrayList<String> getCountDownTimes(String perk) {
+		return (ArrayList<String>) getData(perk).getList("CountDownTimes", Config.getInstance().getCountDownTimes());
+	}
+
+	public String getDeactivationEffect() {
+		return "DeactivationEffect";
+	}
+
+	public String getActivationEffectPath() {
+		return "ActivationEffect";
+	}
+
 	@SuppressWarnings("unchecked")
 	public ArrayList<String> getFlyWorlds(String perk) {
 		ArrayList<String> worlds = (ArrayList<String>) getData(perk).getList("FlyWorlds", new ArrayList<String>());

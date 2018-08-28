@@ -62,6 +62,69 @@ Item:
   # Item Data
   Data: 0
   
+
+# Defaults to options in Config.yml if not specificed
+
+# CountDownTimes:
+# - '10'
+# - '3'
+# - '2'
+# - '1'
+
+# CountDownEffect:
+  # Firework:
+    # Enabled: false
+    # Power: 2
+    # # Colors can be found here:
+    # # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Color.html
+    # Colors:
+    # - GRAY
+    # - SILVER
+    # FadeOutColor: 
+    # - RED
+    # Trail: true
+    # Flicker: true
+    # # Types can be found here:
+    # # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/FireworkEffect.Type.html
+    # Types:
+    # - BALL_LARGE
+    
+# ActivationEffect:
+  # Firework:
+    # Enabled: false
+    # Power: 2
+    # # Colors can be found here:
+    # # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Color.html
+    # Colors:
+    # - GRAY
+    # - SILVER
+    # FadeOutColor: 
+    # - RED
+    # Trail: true
+    # Flicker: true
+    # # Types can be found here:
+    # # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/FireworkEffect.Type.html
+    # Types:
+    # - BALL_LARGE
+    
+# DeactivationEffect:
+  # Firework:
+    # Enabled: false
+    # Power: 2
+    # # Colors can be found here:
+    # # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Color.html
+    # Colors:
+    # - GRAY
+    # - SILVER
+    # FadeOutColor: 
+    # - RED
+    # Trail: true
+    # Flicker: true
+    # # Types can be found here:
+    # # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/FireworkEffect.Type.html
+    # Types:
+    # - BALL_LARGE
+  
 # Per perk options, defaults to options in Lang.yml if not specified
 # Lang:
   # PerkActivated: '&6&l%Player% &3&lenacted %Perk% for the entire server!'

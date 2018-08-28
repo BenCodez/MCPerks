@@ -21,6 +21,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import com.Ben12345rocks.AdvancedCore.Rewards.RewardBuilder;
+import com.Ben12345rocks.AdvancedCore.Rewards.RewardHandler;
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
 import com.Ben12345rocks.AdvancedCore.Util.Item.ItemBuilder;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
@@ -166,6 +167,7 @@ public class Perk {
 		commands = ConfigPerks.getInstance().getCommands(perk);
 		mcmmoSkills = ConfigPerks.getInstance().getPerkMCMMOSkills(perk);
 		perkType = ConfigPerks.getInstance().getPerkType(perk);
+
 	}
 
 	/**
@@ -258,14 +260,21 @@ public class Perk {
 		Main.plugin.debug("Perk '" + getPerk() + "' deactivated for "
 				+ ArrayUtils.getInstance().makeStringList(getEffectedPlayers()));
 		String msg = ConfigPerks.getInstance().getPerkDeactivated(perk).replace("%Perk%", getName());
-		ArrayList<User> users = new ArrayList<User>();
+		// ArrayList<User> users = new ArrayList<User>();
+		boolean perkRewards = RewardHandler.getInstance().hasRewards(ConfigPerks.getInstance().getData(perk),
+				ConfigPerks.getInstance().getDeactivationEffect());
 		for (String uuid : getEffectedPlayers()) {
 			User u = UserManager.getInstance()
 					.getMCPerksUser(new com.Ben12345rocks.AdvancedCore.UserManager.UUID(uuid));
 			u.sendMessage(msg);
-			users.add(u);
-			new RewardBuilder(Config.getInstance().getData(), Config.getInstance().getDeactivationEffect())
-					.setGiveOffline(false).send(user);
+			// users.add(u);
+			if (perkRewards) {
+				new RewardBuilder(ConfigPerks.getInstance().getData(perk),
+						ConfigPerks.getInstance().getDeactivationEffect()).setGiveOffline(false).send(user);
+			} else {
+				new RewardBuilder(Config.getInstance().getData(), Config.getInstance().getDeactivationEffect())
+						.setGiveOffline(false).send(user);
+			}
 		}
 
 		if (getBossBar() != null) {
