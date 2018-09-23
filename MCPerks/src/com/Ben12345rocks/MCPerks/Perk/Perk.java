@@ -66,7 +66,7 @@ public class Perk {
 	/** The is enabled. */
 	private boolean isEnabled;
 
-	private ArrayList<Effect> effects;
+	private ArrayList<Effect> effects = new ArrayList<Effect>();
 
 	private boolean active;
 
@@ -146,7 +146,6 @@ public class Perk {
 		coolDown = ConfigPerks.getInstance().getPerkCoolDown(perk);
 		increasePercent = ConfigPerks.getInstance().getPerkPercentIncrease(perk);
 		limit = ConfigPerks.getInstance().getPerkLimit(perk);
-		setEffects(ConfigPerks.getInstance().getPerkEffects(perk));
 		specialDrops = ConfigPerks.getInstance().getPerkSpecialDrops(perk);
 		blocks = ConfigPerks.getInstance().getPerkSpecialBlocks(perk);
 		aliases = ConfigPerks.getInstance().getPerkAliases(perk);
@@ -168,6 +167,16 @@ public class Perk {
 		mcmmoSkills = ConfigPerks.getInstance().getPerkMCMMOSkills(perk);
 		perkType = ConfigPerks.getInstance().getPerkType(perk);
 
+		for (String effectLine : ConfigPerks.getInstance().getPerkEffects(perk)) {
+			String[] data = effectLine.split(":");
+			Effect effect = Effect.valueOf(data[0]);
+			if (data.length > 1) {
+				if (effect.isEffect(Effect.IncreaseMaxHealth, Effect.MoveSpeed)) {
+					effect.setModifier(Integer.parseInt(data[1]));
+				}
+			}
+			effects.add(effect);
+		}
 	}
 
 	/**

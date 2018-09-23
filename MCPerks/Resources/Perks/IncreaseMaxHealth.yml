@@ -1,0 +1,9 @@
+Enabled: true
+CoolDown: 86400
+TimeLasts: 60
+Name: 'Increase max health'
+Description: 'Increase max health'
+Effects:
+- 'IncreaseMaxHealth:10' 
+Item:
+  Material: 'GOLDEN_APPLE'

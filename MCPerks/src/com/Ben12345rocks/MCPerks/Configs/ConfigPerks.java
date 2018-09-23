@@ -16,7 +16,6 @@ import org.bukkit.inventory.ItemStack;
 
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
 import com.Ben12345rocks.MCPerks.Main;
-import com.Ben12345rocks.MCPerks.Perk.Effect;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -163,15 +162,9 @@ public class ConfigPerks {
 		return "Issue perk " + perk;
 	}
 
-	public ArrayList<Effect> getPerkEffects(String perk) {
-		@SuppressWarnings("unchecked")
-		ArrayList<String> list = (ArrayList<String>) getData(perk).getList("Effects", new ArrayList<String>());
-		ArrayList<Effect> effects = new ArrayList<Effect>();
-		for (String str : list) {
-			effects.add(Effect.fromString(str));
-		}
-		return effects;
-
+	@SuppressWarnings("unchecked")
+	public ArrayList<String> getPerkEffects(String perk) {
+		return (ArrayList<String>) getData(perk).getList("Effects", new ArrayList<String>());
 	}
 
 	public boolean getPerkEnabled(String perk) {
@@ -436,6 +429,14 @@ public class ConfigPerks {
 				plugin.getLogger().severe(ChatColor.RED + "Could not create Perks/" + perk + ".yml!");
 			}
 		}
+	}
+
+	public double getFlySpeed(String perk) {
+		return getData(perk).getDouble("FlySpeed", 1);
+	}
+
+	public double getMoveSpeed(String perk) {
+		return getData(perk).getDouble("MoveSpeed", 1);
 	}
 
 }

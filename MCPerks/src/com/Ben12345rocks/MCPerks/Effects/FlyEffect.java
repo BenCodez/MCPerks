@@ -1,7 +1,6 @@
 package com.Ben12345rocks.MCPerks.Effects;
 
 import java.util.ArrayList;
-import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -10,9 +9,8 @@ import com.Ben12345rocks.MCPerks.Main;
 
 public class FlyEffect {
 
-	public void disableFly(ArrayList<String> arrayList) {
-		for (String uuid : arrayList) {
-			Player player = Bukkit.getPlayer(UUID.fromString(uuid));
+	public void disableFly(ArrayList<Player> players) {
+		for (Player player : players) {
 			disableFly(player);
 		}
 
