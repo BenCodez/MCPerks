@@ -235,7 +235,7 @@ public class ConfigPerks {
 	}
 
 	public int getPerkPercentIncrease(String perk) {
-		return getData(perk).getInt("PercentIncrease");
+		return getData(perk).getInt("PercentIncrease", -1);
 	}
 
 	public int getPerkPotionAmplifier(String perk, String potion) {

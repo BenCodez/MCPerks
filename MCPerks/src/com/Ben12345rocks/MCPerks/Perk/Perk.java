@@ -144,7 +144,6 @@ public class Perk {
 		isEnabled = ConfigPerks.getInstance().getPerkEnabled(perk);
 		time = ConfigPerks.getInstance().getPerkTimeLasts(perk);
 		coolDown = ConfigPerks.getInstance().getPerkCoolDown(perk);
-		increasePercent = ConfigPerks.getInstance().getPerkPercentIncrease(perk);
 		limit = ConfigPerks.getInstance().getPerkLimit(perk);
 		specialDrops = ConfigPerks.getInstance().getPerkSpecialDrops(perk);
 		blocks = ConfigPerks.getInstance().getPerkSpecialBlocks(perk);
@@ -167,16 +166,25 @@ public class Perk {
 		mcmmoSkills = ConfigPerks.getInstance().getPerkMCMMOSkills(perk);
 		perkType = ConfigPerks.getInstance().getPerkType(perk);
 
+		increasePercent = ConfigPerks.getInstance().getPerkPercentIncrease(perk);
+
 		for (String effectLine : ConfigPerks.getInstance().getPerkEffects(perk)) {
 			String[] data = effectLine.split(":");
 			Effect effect = Effect.valueOf(data[0]);
 			if (data.length > 1) {
-				if (effect.isEffect(Effect.IncreaseMaxHealth, Effect.MoveSpeed)) {
+				if (StringUtils.getInstance().isInt(data[1])) {
 					effect.setModifier(Integer.parseInt(data[1]));
+					if (effect.isEffect(Effect.IncreaseMobDrops)) {
+						if (increasePercent == -1) {
+							increasePercent = effect.getModifier();
+						}
+					}
 				}
+
 			}
 			effects.add(effect);
 		}
+
 	}
 
 	/**
