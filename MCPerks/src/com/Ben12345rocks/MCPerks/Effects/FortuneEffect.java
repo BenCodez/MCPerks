@@ -5,6 +5,7 @@ package com.Ben12345rocks.MCPerks.Effects;
 
 import org.bukkit.block.Block;
 
+import com.Ben12345rocks.MCPerks.Perk.Effect;
 import com.Ben12345rocks.MCPerks.Perk.Perk;
 
 // TODO: Auto-generated Javadoc
@@ -26,7 +27,7 @@ public class FortuneEffect {
 	 */
 	public FortuneEffect(Perk perk) {
 		this.perk = perk;
-		percentIncrease = perk.getIncreasePercent();
+		percentIncrease = perk.getIncreasePercent(Effect.Fortune);
 	}
 
 	/**

@@ -1,11 +1,12 @@
 Enabled: true
 TimeLasts: 60
-PercentIncrease: 100
+# No longer set here
+#PercentIncrease: 100
 CoolDown: 86400
 Name: 'Fortune Effect'
 Description: 'Give yourself fortune for %TimeLasts% seconds.'
 Effects:
-- Fortune
+- 'Fortune:100'
 Blocks:
 - IRON_ORE
 - DIAMOND_ORE

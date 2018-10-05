@@ -1,11 +1,12 @@
 Enabled: true
 TimeLasts: 60
-PercentIncrease: 50
+# No longer set here
+#PercentIncrease: 50
 CoolDown: 86400
 Name: 'Head Dropper'
 Description: 'Give a chance for heads to drop for %TimeLasts% seconds.'
 Effects:
-- HeadDropper
+- 'HeadDropper:50'
 Item:
   Material: 'PLAYER_HEAD'
   Data: 0

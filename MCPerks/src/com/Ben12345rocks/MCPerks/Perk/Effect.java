@@ -10,15 +10,13 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.attribute.AttributeModifier.Operation;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffectType;
 
 import com.Ben12345rocks.AdvancedCore.Rewards.RewardBuilder;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
-import com.Ben12345rocks.MCPerks.Effects.CureHungerEffect;
-import com.Ben12345rocks.MCPerks.Effects.CureSpellsEffect;
 import com.Ben12345rocks.MCPerks.Effects.FlyEffect;
-import com.Ben12345rocks.MCPerks.Effects.HealAllEffect;
 import com.Ben12345rocks.MCPerks.Effects.PotionEffect;
 import com.Ben12345rocks.MCPerks.UserAPI.User;
 import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
@@ -121,7 +119,7 @@ public enum Effect {
 		}
 	}
 
-	public int modifier = 1;
+	private int modifier = 1;
 
 	/**
 	 * @return the modifier
@@ -148,13 +146,61 @@ public enum Effect {
 		}
 		switch (this) {
 		case CureHunger:
-			new CureHungerEffect().healPlayersHunger(players);
+			Bukkit.getScheduler().runTask(Main.plugin, new Runnable() {
+
+				@Override
+				public void run() {
+					for (Player player : players) {
+						player.setFoodLevel(20);
+					}
+				}
+			});
 			break;
 		case HealAll:
-			new HealAllEffect().healPlayers(players);
+			Bukkit.getScheduler().runTask(Main.plugin, new Runnable() {
+
+				@Override
+				public void run() {
+					for (Player player : players) {
+						player.setHealth(player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
+					}
+				}
+			});
 			break;
 		case CureSpells:
-			new CureSpellsEffect().clearBadEffects(players);
+			for (Player player : players) {
+				if (player.hasPotionEffect(PotionEffectType.BLINDNESS)) {
+					player.removePotionEffect(PotionEffectType.BLINDNESS);
+				}
+
+				if (player.hasPotionEffect(PotionEffectType.CONFUSION)) {
+					player.removePotionEffect(PotionEffectType.CONFUSION);
+				}
+
+				if (player.hasPotionEffect(PotionEffectType.HARM)) {
+					player.removePotionEffect(PotionEffectType.HARM);
+				}
+
+				if (player.hasPotionEffect(PotionEffectType.POISON)) {
+					player.removePotionEffect(PotionEffectType.POISON);
+				}
+
+				if (player.hasPotionEffect(PotionEffectType.SLOW)) {
+					player.removePotionEffect(PotionEffectType.SLOW);
+				}
+
+				if (player.hasPotionEffect(PotionEffectType.SLOW_DIGGING)) {
+					player.removePotionEffect(PotionEffectType.SLOW_DIGGING);
+				}
+
+				if (player.hasPotionEffect(PotionEffectType.WEAKNESS)) {
+					player.removePotionEffect(PotionEffectType.WEAKNESS);
+				}
+
+				if (player.hasPotionEffect(PotionEffectType.WITHER)) {
+					player.removePotionEffect(PotionEffectType.WITHER);
+				}
+			}
 			break;
 		case Fly:
 			new FlyEffect().enableFly(perk.getFlyWorlds(), players);
@@ -201,6 +247,11 @@ public enum Effect {
 			break;
 
 		}
+	}
+
+	public boolean usesModifier() {
+		return isEffect(Effect.IncreaseMobDrops, Effect.DoubleExperience, Effect.Farmer, Effect.Fortune, Effect.McmmoXP,
+				Effect.HeadDropper);
 	}
 
 	public boolean isEffect(Effect... effects) {

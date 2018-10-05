@@ -6,6 +6,7 @@ package com.Ben12345rocks.MCPerks.Effects;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 
+import com.Ben12345rocks.MCPerks.Perk.Effect;
 import com.Ben12345rocks.MCPerks.Perk.Perk;
 
 // TODO: Auto-generated Javadoc
@@ -24,7 +25,7 @@ public class FarmerEffect {
 	 *            the perk
 	 */
 	public FarmerEffect(Perk perk) {
-		percentIncrease = perk.getIncreasePercent();
+		percentIncrease = perk.getIncreasePercent(Effect.Farmer);
 	}
 
 	/**

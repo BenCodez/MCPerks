@@ -6,7 +6,7 @@ CoolDown: 86400
 Name: 'Increase Mob Rare Drop'
 Description: 'Special effect on Mob drops for %TimeLasts% seconds.'
 Effects:
-- IncreaseMobDrops:10 # 10 percent
+- 'IncreaseMobDrops:10' # 10 percent
 Item:
   Material: 'ROTTEN_FLESH'
   Data: 0

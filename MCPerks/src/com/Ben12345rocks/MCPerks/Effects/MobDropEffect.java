@@ -14,6 +14,7 @@ import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 
+import com.Ben12345rocks.MCPerks.Perk.Effect;
 import com.Ben12345rocks.MCPerks.Perk.Perk;
 
 // TODO: Auto-generated Javadoc
@@ -39,7 +40,7 @@ public class MobDropEffect {
 	public MobDropEffect(Perk perk) {
 		this.perk = perk;
 		customItems = new ArrayList<ItemStack>();
-		percentIncrease = perk.getIncreasePercent();
+		percentIncrease = perk.getIncreasePercent(Effect.IncreaseMobDrops);
 	}
 
 	/**

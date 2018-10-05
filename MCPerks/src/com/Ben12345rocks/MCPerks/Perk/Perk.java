@@ -174,13 +174,17 @@ public class Perk {
 			if (data.length > 1) {
 				if (StringUtils.getInstance().isInt(data[1])) {
 					effect.setModifier(Integer.parseInt(data[1]));
-					if (effect.isEffect(Effect.IncreaseMobDrops)) {
+					if (effect.usesModifier()) {
 						if (increasePercent == -1) {
 							increasePercent = effect.getModifier();
 						}
 					}
 				}
 
+			} else {
+				if (effect.usesModifier()) {
+					effect.setModifier(increasePercent);
+				}
 			}
 			effects.add(effect);
 		}
@@ -400,7 +404,12 @@ public class Perk {
 	 *
 	 * @return the increase percent
 	 */
-	public int getIncreasePercent() {
+	public int getIncreasePercent(Effect effect) {
+		for (Effect eff : effects) {
+			if (eff.isEffect(effect)) {
+				return eff.getModifier();
+			}
+		}
 		return increasePercent;
 	}
 

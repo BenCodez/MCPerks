@@ -34,6 +34,7 @@ import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
+import com.Ben12345rocks.MCPerks.Perk.Effect;
 import com.Ben12345rocks.MCPerks.Perk.Perk;
 
 // TODO: Auto-generated Javadoc
@@ -68,7 +69,7 @@ public class HeadDropperEffect {
 	public HeadDropperEffect(Perk timedPerk, LivingEntity e) {
 		skull = new ItemStack(Material.SKELETON_SKULL);
 		random = Math.random();
-		percentIncrease = timedPerk.getIncreasePercent();
+		percentIncrease = timedPerk.getIncreasePercent(Effect.HeadDropper);
 		entity = e;
 		checkEntity();
 	}

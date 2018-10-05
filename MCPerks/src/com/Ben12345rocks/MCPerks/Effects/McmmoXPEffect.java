@@ -3,6 +3,7 @@
  */
 package com.Ben12345rocks.MCPerks.Effects;
 
+import com.Ben12345rocks.MCPerks.Perk.Effect;
 import com.Ben12345rocks.MCPerks.Perk.Perk;
 
 // TODO: Auto-generated Javadoc
@@ -21,7 +22,7 @@ public class McmmoXPEffect {
 	 *            the perk
 	 */
 	public McmmoXPEffect(Perk perk) {
-		percentIncrease = perk.getIncreasePercent();
+		percentIncrease = perk.getIncreasePercent(Effect.McmmoXP);
 	}
 
 	/**
