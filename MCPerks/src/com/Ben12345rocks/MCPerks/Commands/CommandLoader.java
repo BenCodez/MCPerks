@@ -331,6 +331,19 @@ public class CommandLoader {
 			loadAlias(cmdHandle, perk);
 		}
 
+		// advancedcore commands
+		for (CommandHandler handle : com.Ben12345rocks.AdvancedCore.Commands.CommandLoader.getInstance()
+				.getBasicAdminCommands(Main.plugin.getName())) {
+			String[] args = handle.getArgs();
+			String[] newArgs = new String[args.length + 1];
+			newArgs[0] = "AdvancedCore";
+			for (int i = 0; i < args.length; i++) {
+				newArgs[i + 1] = args[i];
+			}
+			handle.setArgs(newArgs);
+			plugin.commands.add(handle);
+		}
+
 		loadTabComplete();
 
 	}
