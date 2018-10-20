@@ -54,6 +54,7 @@ RequirePermToView: true
 # - ALL
 # - PLAYER
 # - TOWNY
+# - FACTIONS
 PerkSystemType: 'ALL'
 
 # Global perk options
@@ -78,15 +79,19 @@ BossBar:
   # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/boss/BarStyle.html
   Style: 'SOLID'
 
+  
+# CountDown, activation, and deactivation can have mutiple different effects
+# They execute reward files, see here what can be done:
+# https://github.com/Ben12345rocks/AdvancedCore/wiki/Rewards
+# https://github.com/Ben12345rocks/AdvancedCore/wiki/Reward-files
 CountDownEffect:
   Firework:
     Enabled: false
     Power: 2
     # Colors can be found here:
-    # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Color.html
+    # https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/DyeColor.html
     Colors:
-    - GRAY
-    - SILVER
+    - BLUE
     FadeOutColor: 
     - RED
     Trail: true
@@ -101,10 +106,9 @@ ActivationEffect:
     Enabled: false
     Power: 2
     # Colors can be found here:
-    # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Color.html
+    # https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/DyeColor.html
     Colors:
-    - GRAY
-    - SILVER
+    - BLUE
     FadeOutColor: 
     - RED
     Trail: true
@@ -119,10 +123,9 @@ DeactivationEffect:
     Enabled: false
     Power: 2
     # Colors can be found here:
-    # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Color.html
+    # https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/DyeColor.html
     Colors:
-    - GRAY
-    - SILVER
+    - BLUE
     FadeOutColor: 
     - RED
     Trail: true
