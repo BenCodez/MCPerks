@@ -113,7 +113,7 @@ public class AliasesTabCompleter implements TabCompleter {
 		ArrayList<String> cmds = new ArrayList<String>();
 
 		ArrayList<CommandHandler> cmdHandlers = new ArrayList<CommandHandler>();
-		cmdHandlers.addAll(plugin.commands);
+		cmdHandlers.addAll(plugin.getCommands());
 		for (CommandHandler cmdHandle : cmdHandlers) {
 			if (cmdHandle.getArgs().length >= argsIn.length) {
 				for (String arg : cmdHandle.getArgs()[0].split("&")) {

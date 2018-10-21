@@ -53,7 +53,7 @@ public class CommandAliases implements CommandExecutor {
 		plugin.debug("Inputed args: " + ArrayUtils.getInstance().makeStringList(argsNew));
 
 		ArrayList<CommandHandler> cmdHandlers = new ArrayList<CommandHandler>();
-		cmdHandlers.addAll(plugin.commands);
+		cmdHandlers.addAll(plugin.getCommands());
 		for (CommandHandler cmdHandle : cmdHandlers) {
 			if (cmdHandle.getArgs().length > args.length) {
 				for (String arg : cmdHandle.getArgs()[0].split("&")) {

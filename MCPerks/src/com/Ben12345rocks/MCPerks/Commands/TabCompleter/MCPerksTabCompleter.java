@@ -35,7 +35,7 @@ public class MCPerksTabCompleter implements TabCompleter {
 	 */
 	public ArrayList<String> getAdminTabCompleteOptions(CommandSender sender, String[] args, int argNum) {
 		ArrayList<String> cmds = new ArrayList<String>();
-		for (CommandHandler commandHandler : plugin.commands) {
+		for (CommandHandler commandHandler : plugin.getCommands()) {
 			if (sender.hasPermission(commandHandler.getPerm())) {
 				String[] cmdArgs = commandHandler.getArgs();
 				if (cmdArgs.length > argNum) {
@@ -91,7 +91,6 @@ public class MCPerksTabCompleter implements TabCompleter {
 
 	/*
 	 * (non-Javadoc)
-	 *
 	 * @see org.bukkit.command.TabCompleter#onTabComplete(org.bukkit.command.
 	 * CommandSender, org.bukkit.command.Command, java.lang.String,
 	 * java.lang.String[])

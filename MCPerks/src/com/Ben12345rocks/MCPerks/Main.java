@@ -31,6 +31,9 @@ import com.Ben12345rocks.MCPerks.Perk.EffectHandler;
 import com.Ben12345rocks.MCPerks.Perk.PerkHandler;
 import com.Ben12345rocks.MCPerks.Perk.PerkSystemType;
 
+import lombok.Getter;
+import lombok.Setter;
+
 // TODO: Auto-generated Javadoc
 /**
  * The Class Main.
@@ -41,14 +44,20 @@ public class Main extends JavaPlugin {
 	public static Main plugin;
 
 	/** The mh. */
-	private PerkHandler perks;
+	@Getter
+	private PerkHandler perkHandler;
 
-	private EffectHandler effects;
+	@Getter
+	private EffectHandler effectHandler;
 
-	public ArrayList<CommandHandler> commands;
+	@Getter
+	@Setter
+	private ArrayList<CommandHandler> commands;
 
-	public HashMap<String, Boolean> flyingUUIDs;
+	@Getter
+	private HashMap<String, Boolean> flyingUUIDs;
 
+	@Getter
 	private PerkSystemType perkSystemType;
 
 	public void broadcast(String msg) {
@@ -61,10 +70,6 @@ public class Main extends JavaPlugin {
 		}
 	}
 
-	public EffectHandler getEffectHandler() {
-		return effects;
-	}
-
 	/**
 	 * Gets the main.
 	 *
@@ -72,19 +77,6 @@ public class Main extends JavaPlugin {
 	 */
 	public Main getMain() {
 		return this;
-	}
-
-	/**
-	 * Gets the perk handler.
-	 *
-	 * @return the perk handler
-	 */
-	public PerkHandler getPerkHandler() {
-		return perks;
-	}
-
-	public PerkSystemType getPerkSystemType() {
-		return perkSystemType;
 	}
 
 	public void loadEvents() {
@@ -99,7 +91,6 @@ public class Main extends JavaPlugin {
 
 	/*
 	 * (non-Javadoc)
-	 *
 	 * @see org.bukkit.plugin.java.JavaPlugin#onDisable()
 	 */
 	@Override
@@ -110,7 +101,6 @@ public class Main extends JavaPlugin {
 
 	/*
 	 * (non-Javadoc)
-	 *
 	 * @see org.bukkit.plugin.java.JavaPlugin#onEnable()
 	 */
 	@Override
@@ -121,8 +111,8 @@ public class Main extends JavaPlugin {
 		setupFiles();
 		updateHook();
 		AdvancedCoreHook.getInstance().loadHook(this);
-		perks = new PerkHandler();
-		effects = new EffectHandler();
+		perkHandler = new PerkHandler();
+		effectHandler = new EffectHandler();
 
 		CommandLoader.getInstance().loadCommands();
 

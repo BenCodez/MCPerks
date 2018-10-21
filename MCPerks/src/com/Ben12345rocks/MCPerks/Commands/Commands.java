@@ -113,7 +113,7 @@ public class Commands {
 
 		boolean requirePerms = true;
 
-		for (CommandHandler cmdHandle : plugin.commands) {
+		for (CommandHandler cmdHandle : plugin.getCommands()) {
 			if (cmdHandle.hasPerm(sender) && requirePerms) {
 				unsorted.put("&3" + cmdHandle.getHelpLineCommand("/mcperks"), cmdHandle.getHelpLine("/mcperks"));
 			} else {

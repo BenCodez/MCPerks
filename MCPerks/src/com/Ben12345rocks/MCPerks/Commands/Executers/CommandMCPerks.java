@@ -24,7 +24,6 @@ public class CommandMCPerks implements CommandExecutor {
 
 	/*
 	 * (non-Javadoc)
-	 *
 	 * @see org.bukkit.command.CommandExecutor#onCommand(org.bukkit.command.
 	 * CommandSender , org.bukkit.command.Command, java.lang.String,
 	 * java.lang.String[])
@@ -32,7 +31,7 @@ public class CommandMCPerks implements CommandExecutor {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
-		for (CommandHandler commandHandler : plugin.commands) {
+		for (CommandHandler commandHandler : plugin.getCommands()) {
 			if (commandHandler.runCommand(sender, args)) {
 				return true;
 			}

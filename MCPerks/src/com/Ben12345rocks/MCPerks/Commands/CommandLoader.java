@@ -97,7 +97,7 @@ public class CommandLoader {
 	 */
 	public void loadAliases() {
 
-		for (CommandHandler cmdHandle : plugin.commands) {
+		for (CommandHandler cmdHandle : plugin.getCommands()) {
 			if (cmdHandle.getArgs().length > 0) {
 				String[] args = cmdHandle.getArgs()[0].split("&");
 				for (String arg : args) {
@@ -134,10 +134,10 @@ public class CommandLoader {
 	}
 
 	public void loadCommands() {
-		plugin.commands = new ArrayList<CommandHandler>();
+		plugin.setCommands(new ArrayList<CommandHandler>());
 		commands = new HashMap<String, CommandHandler>();
 
-		plugin.commands.add(
+		plugin.getCommands().add(
 				new CommandHandler(new String[] { "ToggleBossBar" }, "MCPerks.ToggleBossBar", "Toggle BossBar", false) {
 
 					@Override
@@ -149,7 +149,7 @@ public class CommandLoader {
 					}
 				});
 
-		plugin.commands.add(new CommandHandler(new String[] { "Reload" }, "MCPerks.Reload", "Reloads the plugin") {
+		plugin.getCommands().add(new CommandHandler(new String[] { "Reload" }, "MCPerks.Reload", "Reloads the plugin") {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
@@ -159,7 +159,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.commands.add(new CommandHandler(new String[] { "Edit" }, "MCPerks.Edit", "Edit perks", false) {
+		plugin.getCommands().add(new CommandHandler(new String[] { "Edit" }, "MCPerks.Edit", "Edit perks", false) {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
@@ -179,21 +179,22 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.commands.add(new CommandHandler(new String[] { "Perms" }, "MCPerks.Perms", "List perms from plugin") {
+		plugin.getCommands()
+				.add(new CommandHandler(new String[] { "Perms" }, "MCPerks.Perms", "List perms from plugin") {
 
-			@Override
-			public void execute(CommandSender sender, String[] args) {
-				ArrayList<String> msg = new ArrayList<String>();
-				for (CommandHandler cmdHandle : plugin.commands) {
-					msg.add("&c&l" + cmdHandle.getHelpLineCommand("/mcperks") + ": &c" + cmdHandle.getPerm());
-				}
-				msg.add("&cMCPerks.AllPerks");
-				msg.add("&cMCPerks.Perks.BypassCoolDown");
-				sender.sendMessage(ArrayUtils.getInstance().convert(ArrayUtils.getInstance().colorize(msg)));
-			}
-		});
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						ArrayList<String> msg = new ArrayList<String>();
+						for (CommandHandler cmdHandle : plugin.getCommands()) {
+							msg.add("&c&l" + cmdHandle.getHelpLineCommand("/mcperks") + ": &c" + cmdHandle.getPerm());
+						}
+						msg.add("&cMCPerks.AllPerks");
+						msg.add("&cMCPerks.Perks.BypassCoolDown");
+						sender.sendMessage(ArrayUtils.getInstance().convert(ArrayUtils.getInstance().colorize(msg)));
+					}
+				});
 
-		plugin.commands.add(
+		plugin.getCommands().add(
 				new CommandHandler(new String[] { "Random" }, "MCPerks.Random", "Give yourself a random perk", false) {
 
 					@Override
@@ -205,7 +206,7 @@ public class CommandLoader {
 					}
 				});
 
-		plugin.commands.add(new CommandHandler(new String[] { "Random", "(player)" }, "MCPerks.Random",
+		plugin.getCommands().add(new CommandHandler(new String[] { "Random", "(player)" }, "MCPerks.Random",
 				"Give someone else a random perk") {
 
 			@Override
@@ -219,7 +220,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.commands.add(new CommandHandler(new String[] { "Help" }, "MCPerks.Help", "View This Page") {
+		plugin.getCommands().add(new CommandHandler(new String[] { "Help" }, "MCPerks.Help", "View This Page") {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
@@ -237,15 +238,16 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.commands.add(new CommandHandler(new String[] {}, "MCPerks.GUI" + "|MCPerks.AllPerks", "Open Perk GUI") {
+		plugin.getCommands()
+				.add(new CommandHandler(new String[] {}, "MCPerks.GUI" + "|MCPerks.AllPerks", "Open Perk GUI") {
 
-			@Override
-			public void execute(CommandSender sender, String[] args) {
-				Commands.getInstance().openGUI(sender);
-			}
-		});
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						Commands.getInstance().openGUI(sender);
+					}
+				});
 
-		plugin.commands.add(
+		plugin.getCommands().add(
 				new CommandHandler(new String[] { "Perks" }, "MCPerks.GUI" + "|MCPerks.AllPerks", "Open Perk GUI") {
 
 					@Override
@@ -254,7 +256,7 @@ public class CommandLoader {
 					}
 				});
 
-		plugin.commands
+		plugin.getCommands()
 				.add(new CommandHandler(new String[] { "ClearQueue" }, "MCPerks.ClearQueue", "Clear Perk Queue") {
 
 					@Override
@@ -264,7 +266,7 @@ public class CommandLoader {
 					}
 				});
 
-		plugin.commands.add(new CommandHandler(new String[] { "ActivatePerk", "(player)", "(perk)" },
+		plugin.getCommands().add(new CommandHandler(new String[] { "ActivatePerk", "(player)", "(perk)" },
 				"MCPerks.ActivatePerk", "Forcefly Activate Perk") {
 
 			@Override
@@ -276,7 +278,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.commands.add(new CommandHandler(new String[] { "ActivatePerk", "(player)", "(perk)", "(number)" },
+		plugin.getCommands().add(new CommandHandler(new String[] { "ActivatePerk", "(player)", "(perk)", "(number)" },
 				"MCPerks.ActivatePerkLength", "Forcefly Activate Perk with a set length") {
 
 			@Override
@@ -289,7 +291,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.commands
+		plugin.getCommands()
 				.add(new CommandHandler(new String[] { "ActivePerks" }, "MCPerks.ActivePerks", "See Active Perks") {
 
 					@Override
@@ -305,7 +307,7 @@ public class CommandLoader {
 					}
 				});
 
-		plugin.commands.add(new CommandHandler(new String[] { "DeactivatePerk", "(player)", "(perk)" },
+		plugin.getCommands().add(new CommandHandler(new String[] { "DeactivatePerk", "(player)", "(perk)" },
 				"MCPerks.DeactivatePerk", "Forcefly deactivate Perk") {
 
 			@Override
@@ -327,7 +329,7 @@ public class CommandLoader {
 							plugin.getPerkHandler().getPerk(args[0]).isTimed());
 				}
 			};
-			plugin.commands.add(cmdHandle);
+			plugin.getCommands().add(cmdHandle);
 			loadAlias(cmdHandle, perk);
 		}
 
@@ -341,7 +343,7 @@ public class CommandLoader {
 				newArgs[i + 1] = args[i];
 			}
 			handle.setArgs(newArgs);
-			plugin.commands.add(handle);
+			plugin.getCommands().add(handle);
 		}
 
 		loadTabComplete();

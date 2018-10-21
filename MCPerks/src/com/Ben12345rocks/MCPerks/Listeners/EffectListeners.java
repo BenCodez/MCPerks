@@ -225,7 +225,6 @@ public class EffectListeners implements Listener {
 					 * (plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString())
 					 * .contains(player.getWorld().getName())) { new FlyEffect().enableFly(player);
 					 * } else { new FlyEffect().disableFly(player); }
-					 *
 					 * }
 					 */
 					if (plugin.getPerkHandler().getActivePerks().size() != 0) {
@@ -293,21 +292,21 @@ public class EffectListeners implements Listener {
 		if (player == null) {
 			return;
 		}
-		if (!plugin.flyingUUIDs.containsKey(player.getUniqueId().toString())) {
-			plugin.flyingUUIDs.put(player.getUniqueId().toString(), false);
+		if (!plugin.getFlyingUUIDs().containsKey(player.getUniqueId().toString())) {
+			plugin.getFlyingUUIDs().put(player.getUniqueId().toString(), false);
 		}
 		if ((player.getGameMode() != GameMode.CREATIVE)
 				&& (player.getLocation().subtract(0, 1, 0).getBlock().getType() != Material.AIR)
 				&& (!player.isFlying())) {
 			if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, player.getUniqueId().toString())) {
 				player.setAllowFlight(true);
-				plugin.flyingUUIDs.put(player.getUniqueId().toString(), true);
+				plugin.getFlyingUUIDs().put(player.getUniqueId().toString(), true);
 			}
 		} else if (!plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString())
 				&& !player.hasPermission("MCPerks.ServerFly.Bypass")) {
-			if (plugin.flyingUUIDs.get(player.getUniqueId().toString())) {
+			if (plugin.getFlyingUUIDs().get(player.getUniqueId().toString())) {
 				player.setAllowFlight(false);
-				plugin.flyingUUIDs.put(player.getUniqueId().toString(), false);
+				plugin.getFlyingUUIDs().put(player.getUniqueId().toString(), false);
 			}
 		}
 
