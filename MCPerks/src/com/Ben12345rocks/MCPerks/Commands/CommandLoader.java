@@ -334,8 +334,12 @@ public class CommandLoader {
 		}
 
 		// advancedcore commands
-		for (CommandHandler handle : com.Ben12345rocks.AdvancedCore.Commands.CommandLoader.getInstance()
-				.getBasicAdminCommands(Main.plugin.getName())) {
+		ArrayList<CommandHandler> advancedCoreCommands = new ArrayList<CommandHandler>();
+		advancedCoreCommands.addAll(com.Ben12345rocks.AdvancedCore.Commands.CommandLoader.getInstance()
+				.getBasicAdminCommands(Main.plugin.getName()));
+		advancedCoreCommands.addAll(com.Ben12345rocks.AdvancedCore.Commands.CommandLoader.getInstance()
+				.getBasicCommands(Main.plugin.getName()));
+		for (CommandHandler handle : advancedCoreCommands) {
 			String[] args = handle.getArgs();
 			String[] newArgs = new String[args.length + 1];
 			newArgs[0] = "AdvancedCore";
