@@ -224,11 +224,15 @@ public class PerkHandler {
 
 					@Override
 					public void run() {
-						bossBar.setTitle(
-								StringUtils.getInstance()
-										.replacePlaceHolder(StringUtils.getInstance().replacePlaceHolder(
-												Config.getInstance().getBossBarMessage(), "perk", clone.getName()),
-												"seconds", "" + (perk.getTime() - time)));
+						HashMap<String, String> placeholders = new HashMap<String, String>();
+						placeholders.put("perk", clone.getName());
+						placeholders.put("seconds", "" + (perk.getTime() - time));
+						int minutes = (perk.getTime() - time) / 60;
+						placeholders.put("minutes", "" + minutes);
+						int hours = minutes / 24;
+						placeholders.put("hours", "" + hours);
+						bossBar.setTitle(StringUtils.getInstance()
+								.replacePlaceHolder(Config.getInstance().getBossBarMessage(), placeholders));
 						double time1 = time;
 						double perkTime = perk.getTime();
 						double prog = 1.0 - time1 / perkTime;
