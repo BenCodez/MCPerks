@@ -239,7 +239,7 @@ public class CommandLoader {
 		});
 
 		plugin.getCommands()
-				.add(new CommandHandler(new String[] {}, "MCPerks.GUI" + "|MCPerks.AllPerks", "Open Perk GUI") {
+				.add(new CommandHandler(new String[] {}, "MCPerks.GUI" + "|MCPerks.AllPerks", "Open Perk GUI", false) {
 
 					@Override
 					public void execute(CommandSender sender, String[] args) {
@@ -247,14 +247,14 @@ public class CommandLoader {
 					}
 				});
 
-		plugin.getCommands().add(
-				new CommandHandler(new String[] { "Perks" }, "MCPerks.GUI" + "|MCPerks.AllPerks", "Open Perk GUI") {
+		plugin.getCommands().add(new CommandHandler(new String[] { "Perks" }, "MCPerks.GUI" + "|MCPerks.AllPerks",
+				"Open Perk GUI", false) {
 
-					@Override
-					public void execute(CommandSender sender, String[] args) {
-						Commands.getInstance().openGUI(sender);
-					}
-				});
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				Commands.getInstance().openGUI(sender);
+			}
+		});
 
 		plugin.getCommands()
 				.add(new CommandHandler(new String[] { "ClearQueue" }, "MCPerks.ClearQueue", "Clear Perk Queue") {
@@ -321,7 +321,7 @@ public class CommandLoader {
 		// load perk commands
 		for (Perk perk : plugin.getPerkHandler().getLoadedPerks().values()) {
 			CommandHandler cmdHandle = new CommandHandler(new String[] { perk.getPerk() },
-					"MCPerks." + perk.getPerk() + "|MCPerks.AllPerks", perk.getDescription()) {
+					"MCPerks." + perk.getPerk() + "|MCPerks.AllPerks", perk.getDescription(), false) {
 
 				@Override
 				public void execute(CommandSender sender, String[] args) {
@@ -331,6 +331,31 @@ public class CommandLoader {
 			};
 			plugin.getCommands().add(cmdHandle);
 			loadAlias(cmdHandle, perk);
+
+			plugin.getCommands().add(new CommandHandler(new String[] { perk.getPerk(), "(player)" },
+					"MCPerks.ActivatePerk", "Forcefly Activate Perk") {
+
+				@Override
+				public void execute(CommandSender sender, String[] args) {
+
+					Perk perk = plugin.getPerkHandler().getPerk(args[0]);
+					perk.forcePerk(args[1]);
+					sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " + args[1]);
+				}
+			});
+
+			plugin.getCommands().add(new CommandHandler(new String[] { perk.getName(), "(player)", "(number)" },
+					"MCPerks.ActivatePerkLength", "Forcefly Activate Perk with a set length") {
+
+				@Override
+				public void execute(CommandSender sender, String[] args) {
+
+					Perk perk = plugin.getPerkHandler().getPerk(args[0]);
+					perk.forcePerk(args[1], Integer.parseInt(args[2]));
+					sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " + args[1] + " for "
+							+ args[2] + " seconds");
+				}
+			});
 		}
 
 		// advancedcore commands
