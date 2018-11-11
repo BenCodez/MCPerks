@@ -38,7 +38,7 @@ public class FortuneEffect {
 	 * @return the int
 	 */
 	public int increaseDrops(int ammount) {
-		return ammount + ammount * percentIncrease / 100;
+		return ammount * percentIncrease / 100;
 	}
 
 	/**

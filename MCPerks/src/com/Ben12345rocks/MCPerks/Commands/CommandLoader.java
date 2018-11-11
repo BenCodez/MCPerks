@@ -344,7 +344,7 @@ public class CommandLoader {
 				}
 			});
 
-			plugin.getCommands().add(new CommandHandler(new String[] { perk.getName(), "(player)", "(number)" },
+			plugin.getCommands().add(new CommandHandler(new String[] { perk.getPerk(), "(player)", "(number)" },
 					"MCPerks.ActivatePerkLength", "Forcefly Activate Perk with a set length") {
 
 				@Override

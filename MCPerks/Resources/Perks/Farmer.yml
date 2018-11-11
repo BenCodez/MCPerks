@@ -4,7 +4,7 @@ CoolDown: 86400
 Name: 'Farmer'
 Description: 'Increase the harvests of the world.'
 Effects:
-- 'Farmer:200'
+- 'Farmer:100'
 Item:
   Material: 'DIAMOND_HOE'
   Data: 0

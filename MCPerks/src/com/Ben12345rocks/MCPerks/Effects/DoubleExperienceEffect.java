@@ -32,7 +32,7 @@ public class DoubleExperienceEffect {
 	 *            the ammount
 	 * @return the int
 	 */
-	public int increaseExperience(int ammount) {
-		return ammount + ammount * percentIncrease / 100;
+	public int increaseExperience(int amount) {
+		return amount * percentIncrease / 100;
 	}
 }

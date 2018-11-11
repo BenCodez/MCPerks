@@ -4,7 +4,7 @@ CoolDown: 86400
 Name: 'Fortune Effect'
 Description: 'Give yourself fortune for %TimeLasts% seconds.'
 Effects:
-- 'Fortune:200'
+- 'Fortune:100'
 Blocks:
 - IRON_ORE
 - DIAMOND_ORE
