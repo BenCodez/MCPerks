@@ -212,7 +212,8 @@ public class PerkHandler {
 			for (String uuid : clone.getEffectedPlayers()) {
 				if (com.Ben12345rocks.MCPerks.UserAPI.UserManager.getInstance()
 						.getMCPerksUser(java.util.UUID.fromString(uuid)).isUseBossBar()) {
-					bossBar.addPlayer(Bukkit.getPlayer(java.util.UUID.fromString(uuid)));
+					bossBar.addPlayer(Bukkit.getPlayer(java.util.UUID.fromString(uuid)),
+							Config.getInstance().getBossBarHideInDelay());
 				}
 			}
 
@@ -224,6 +225,7 @@ public class PerkHandler {
 
 					@Override
 					public void run() {
+						// set bossbar text
 						HashMap<String, String> placeholders = new HashMap<String, String>();
 						placeholders.put("perk", clone.getName());
 						placeholders.put("seconds", "" + (perk.getTime() - time));
@@ -233,6 +235,8 @@ public class PerkHandler {
 						placeholders.put("hours", "" + hours);
 						bossBar.setTitle(StringUtils.getInstance()
 								.replacePlaceHolder(Config.getInstance().getBossBarMessage(), placeholders));
+
+						// process time for progress bar
 						double time1 = time;
 						double perkTime = perk.getTime();
 						double prog = 1.0 - time1 / perkTime;
@@ -243,6 +247,7 @@ public class PerkHandler {
 							prog = 1;
 						}
 						bossBar.setProgress(prog);
+
 						bossBar.setVisible(true);
 					}
 				}, delay);

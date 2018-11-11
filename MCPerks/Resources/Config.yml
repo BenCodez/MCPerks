@@ -71,6 +71,7 @@ CountDownTimes:
 BossBar:
   Enabled: false
   # Message to send
+  # Use %minutes% for minutes
   Message: '&a%perk% ends in %seconds% seconds'
   # Bar Colors:
   # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/boss/BarColor.html
@@ -78,6 +79,8 @@ BossBar:
   # Bar Styles:
   # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/boss/BarStyle.html
   Style: 'SOLID'
+  # Hide bossbar after 15 seconds
+  #HideInDelay: 15
 
   
 # CountDown, activation, and deactivation can have mutiple different effects

@@ -28,6 +28,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
 import com.Ben12345rocks.MCPerks.Main;
+import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Effects.DoubleExperienceEffect;
 import com.Ben12345rocks.MCPerks.Effects.FarmerEffect;
 import com.Ben12345rocks.MCPerks.Effects.FloristEffect;
@@ -243,7 +244,7 @@ public class EffectListeners implements Listener {
 								BossBar bar = perk.getBossBar();
 								if (bar != null) {
 									if (UserManager.getInstance().getMCPerksUser(player).isUseBossBar()) {
-										bar.addPlayer(player);
+										bar.addPlayer(player,Config.getInstance().getBossBarHideInDelay());
 									}
 								}
 							}

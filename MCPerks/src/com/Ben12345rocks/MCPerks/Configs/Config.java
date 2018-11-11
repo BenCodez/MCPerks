@@ -63,6 +63,10 @@ public class Config extends YMLFile {
 		return getData().getString("BossBar.Style", "SOLID");
 	}
 
+	public int getBossBarHideInDelay() {
+		return getData().getInt("BossBar.HideInDelay", -1);
+	}
+
 	public String getCountDownEffectPath() {
 		return "CountDownEffect";
 	}
