@@ -1,12 +1,10 @@
 Enabled: true
 TimeLasts: 60
-# No longer need to be set here
-#PercentIncrease: 100
 CoolDown: 86400
 Name: 'Double Experience'
 Description: 'Double the experience that drop from mobs.'
 Effects:
-- 'DoubleExperience:100'
+- 'DoubleExperience:200'
 Item:
   Material: 'EXPERIENCE_BOTTLE'
   Data: 0

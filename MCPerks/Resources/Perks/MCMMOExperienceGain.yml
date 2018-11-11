@@ -1,12 +1,10 @@
 Enabled: true
 TimeLasts: 60
-# No longer set here
-#PercentIncrease: 100
 CoolDown: 86400
 Name: 'MCMMO XP Increase'
 Description: 'Give yourself increase MCMMO XP for %TimeLasts% seconds.'
 Effects:
-- 'McmmoXP:100'
+- 'McmmoXP:200'
 # Skills this get experaince gain
 #MCMMOSkills:
 #- MINING

@@ -1,12 +1,10 @@
 Enabled: true
 TimeLasts: 60
-# No longer set here
-#PercentIncrease: 100
 CoolDown: 86400
 Name: 'Farmer'
 Description: 'Increase the harvests of the world.'
 Effects:
-- 'Farmer:100'
+- 'Farmer:200'
 Item:
   Material: 'DIAMOND_HOE'
   Data: 0
