@@ -28,7 +28,7 @@ public class DoubleExperienceEffect {
 	/**
 	 * Increase experience.
 	 *
-	 * @param ammount
+	 * @param amount
 	 *            the ammount
 	 * @return the int
 	 */

@@ -44,15 +44,8 @@ import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 
 public class EffectListeners implements Listener {
 
-	/** The main. */
 	private Main plugin;
 
-	/**
-	 * Instantiates a new block events.
-	 *
-	 * @param main
-	 *            the main
-	 */
 	public EffectListeners(Main plugin) {
 		this.plugin = plugin;
 	}
@@ -244,7 +237,7 @@ public class EffectListeners implements Listener {
 								BossBar bar = perk.getBossBar();
 								if (bar != null) {
 									if (UserManager.getInstance().getMCPerksUser(player).isUseBossBar()) {
-										bar.addPlayer(player,Config.getInstance().getBossBarHideInDelay());
+										bar.addPlayer(player, Config.getInstance().getBossBarHideInDelay());
 									}
 								}
 							}

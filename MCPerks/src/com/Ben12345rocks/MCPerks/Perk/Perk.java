@@ -435,6 +435,8 @@ public class Perk {
 			if (player != null) {
 				hasPerm = player.hasPermission("mcperks." + getPerk());
 			}
+		} else {
+			return new String[0];
 		}
 
 		long left = getExperation(user) - Calendar.getInstance().getTime().getTime();

@@ -19,21 +19,12 @@ import com.Ben12345rocks.MCPerks.Main;
 @SuppressWarnings("deprecation")
 public class ProtectionEffect {
 
-	/** The player. */
 	private Player player;
 
-	/** The epf. */
 	private double epf = 0.0D;
 
-	/** The event. */
 	private EntityDamageEvent event;
 
-	/**
-	 * Instantiates a new protection effect.
-	 *
-	 * @param event2
-	 *            the event
-	 */
 	public ProtectionEffect(EntityDamageEvent event) {
 		this.event = event;
 		player = (Player) event.getEntity();

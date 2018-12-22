@@ -15,12 +15,6 @@ import org.bukkit.inventory.ItemStack;
  */
 public class FloristEffect {
 
-	/**
-	 * Deduct bone meal.
-	 *
-	 * @param player
-	 *            the player
-	 */
 	@SuppressWarnings("deprecation")
 	public void deductBoneMeal(PlayerInteractEvent event) {
 		// Main.plugin.debug("Amount: " + event.getItem().getAmount());

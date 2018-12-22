@@ -95,6 +95,7 @@ public enum Effect {
 		switch (this) {
 		case Fly:
 			new FlyEffect().disableFly(players);
+			break;
 		case IncreaseMaxHealth:
 			for (Player p : players) {
 				for (AttributeModifier modifier : p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers()) {

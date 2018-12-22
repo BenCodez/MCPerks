@@ -51,19 +51,6 @@ public class PerkCommandExecutor {
 		return perk;
 	}
 
-	/**
-	 * Checks if is sue command.
-	 *
-	 * @param sender
-	 *            the sender
-	 * @param args
-	 *            the args
-	 * @param key
-	 *            the key
-	 * @param timed
-	 *            the timed
-	 * @return true, if is sue command
-	 */
 	public boolean issuePerkCommand(CommandSender sender, String perk, boolean timed) {
 		if (sender instanceof Player) {
 			perk = getPerk(perk);

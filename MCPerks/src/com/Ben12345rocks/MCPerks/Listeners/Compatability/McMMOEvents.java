@@ -1,6 +1,3 @@
-/*
- *
- */
 package com.Ben12345rocks.MCPerks.Listeners.Compatability;
 
 import java.util.ArrayList;
@@ -14,24 +11,12 @@ import com.Ben12345rocks.MCPerks.Perk.Effect;
 import com.Ben12345rocks.MCPerks.Perk.Perk;
 import com.gmail.nossr50.events.experience.McMMOPlayerXpGainEvent;
 
-// TODO: Auto-generated Javadoc
-/**
- * The Class McMMOEvents.
- */
 public class McMMOEvents implements Listener {
 
-	/** The main. */
 	private Main plugin;
 
-	/**
-	 * Instantiates a new mc MMO events.
-	 *
-	 * @param main
-	 *            the main
-	 */
 	public McMMOEvents(Main plugin) {
 		this.plugin = plugin;
-
 	}
 
 	@EventHandler
