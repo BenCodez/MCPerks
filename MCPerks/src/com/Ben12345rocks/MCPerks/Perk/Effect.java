@@ -69,7 +69,9 @@ public enum Effect {
 
 	MoveSpeed,
 
-	IncreaseStrength;
+	IncreaseStrength,
+
+	IncreaseLuck;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {
@@ -112,6 +114,15 @@ public enum Effect {
 					for (AttributeModifier modifier : p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getModifiers()) {
 						if (modifier.getName().equalsIgnoreCase("Increase strength")) {
 							p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).removeModifier(modifier);
+						}
+					}
+				}
+				break;
+			case IncreaseLuck:
+				for (Player p : players) {
+					for (AttributeModifier modifier : p.getAttribute(Attribute.GENERIC_LUCK).getModifiers()) {
+						if (modifier.getName().equalsIgnoreCase("Increase luck")) {
+							p.getAttribute(Attribute.GENERIC_LUCK).removeModifier(modifier);
 						}
 					}
 				}
@@ -253,6 +264,12 @@ public enum Effect {
 				for (Player p : players) {
 					p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).addModifier(
 							new AttributeModifier("Increase strength", getModifier(), Operation.ADD_NUMBER));
+				}
+				break;
+			case IncreaseLuck:
+				for (Player p : players) {
+					p.getAttribute(Attribute.GENERIC_LUCK)
+							.addModifier(new AttributeModifier("Increase luck", getModifier(), Operation.ADD_NUMBER));
 				}
 				break;
 			case MoveSpeed:
