@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.CodeSource;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -32,6 +33,7 @@ import com.Ben12345rocks.AdvancedCore.Rewards.RewardHandler;
 import com.Ben12345rocks.AdvancedCore.UserManager.UUID;
 import com.Ben12345rocks.AdvancedCore.UserManager.UserManager;
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
+import com.Ben12345rocks.AdvancedCore.Util.Logger.Logger;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
 import com.Ben12345rocks.MCPerks.Main;
@@ -64,6 +66,8 @@ public class PerkHandler {
 
 	private Timer timer = new Timer();
 
+	private Logger activationLog;
+
 	public PerkHandler() {
 		try {
 			copyPerks();
@@ -72,6 +76,10 @@ public class PerkHandler {
 			e.printStackTrace();
 		}
 		loadEnabledPerks();
+
+		if (Config.getInstance().getLogActivation()) {
+			activationLog = new Logger(plugin, new File(plugin.getDataFolder(), "ActivationLog.txt"));
+		}
 	}
 
 	public void activePerk(Perk perk, User user, int length) {
@@ -205,7 +213,7 @@ public class PerkHandler {
 							.replacePlaceHolder(
 									StringUtils.getInstance().replacePlaceHolder(
 											Config.getInstance().getBossBarMessage(), "perk", clone.getName()),
-									"seconds", "" + (perk.getTime())),
+									"seconds", "" + (length)),
 					Config.getInstance().getBossBarColor(), Config.getInstance().getBossBarStyle(), 1);
 			clone.setBossBar(bossBar);
 
@@ -218,7 +226,7 @@ public class PerkHandler {
 			}
 
 			long delay = 0;
-			for (int i = 0; i <= clone.getTime(); i++) {
+			for (int i = 0; i <= length; i++) {
 				final int time = i + 1;
 				delay += 1000;
 				timer.schedule(new TimerTask() {
@@ -228,8 +236,8 @@ public class PerkHandler {
 						// set bossbar text
 						HashMap<String, String> placeholders = new HashMap<String, String>();
 						placeholders.put("perk", clone.getName());
-						placeholders.put("seconds", "" + (perk.getTime() - time));
-						int minutes = (perk.getTime() - time) / 60;
+						placeholders.put("seconds", "" + (length - time));
+						int minutes = (length - time) / 60;
 						placeholders.put("minutes", "" + minutes);
 						int hours = minutes / 24;
 						placeholders.put("hours", "" + hours);
@@ -238,7 +246,7 @@ public class PerkHandler {
 
 						// process time for progress bar
 						double time1 = time;
-						double perkTime = perk.getTime();
+						double perkTime = length;
 						double prog = 1.0 - time1 / perkTime;
 						if (prog < 0) {
 							prog = 0;
@@ -263,6 +271,12 @@ public class PerkHandler {
 
 		printActivePerks();
 
+		if (Config.getInstance().getLogActivation() && activationLog != null) {
+			String str = new SimpleDateFormat("EEE, d MMM yyyy HH:mm").format(Calendar.getInstance().getTime());
+			activationLog.logToFile(str + " Activated perk " + perk.getName() + " by "
+					+ perk.getActivater().getPlayerName() + ". Affected users: "
+					+ ArrayUtils.getInstance().makeStringList(perk.getEffectedPlayers()) + ". Lasted for " + length);
+		}
 	}
 
 	public void addQue(User user, Perk perk) {

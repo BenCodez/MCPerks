@@ -16,6 +16,9 @@ ExtraDebug: false
 # - MYSQL
 DataStorage: FLAT
 
+# Log perks being activated
+LogActivation: false
+
 # Whether or not to create daily backups. (Only the most recent ones get saved)
 CreateBackups: false
 

@@ -54,6 +54,10 @@ public class Config extends YMLFile {
 	public boolean getBossBarEnabled() {
 		return getData().getBoolean("BossBar.Enabled");
 	}
+	
+	public boolean getLogActivation() {
+		return getData().getBoolean("LogActivation");
+	}
 
 	public String getBossBarMessage() {
 		return getData().getString("BossBar.Message", "%perk% ends in %seconds% seconds");
