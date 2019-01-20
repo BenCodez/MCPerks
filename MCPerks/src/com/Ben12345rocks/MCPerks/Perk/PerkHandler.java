@@ -274,8 +274,8 @@ public class PerkHandler {
 		if (Config.getInstance().getLogActivation() && activationLog != null) {
 			String str = new SimpleDateFormat("EEE, d MMM yyyy HH:mm").format(Calendar.getInstance().getTime());
 			activationLog.logToFile(str + " Activated perk " + perk.getName() + " by "
-					+ perk.getActivater().getPlayerName() + ". Affected users: "
-					+ ArrayUtils.getInstance().makeStringList(perk.getEffectedPlayers()) + ". Lasted for " + length);
+					+ clone.getActivater().getPlayerName() + ". Affected users: "
+					+ ArrayUtils.getInstance().makeStringList(clone.getEffectedPlayers()) + ". Lasted for " + length);
 		}
 	}
 
