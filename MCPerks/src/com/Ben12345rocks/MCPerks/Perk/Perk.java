@@ -312,6 +312,12 @@ public class Perk {
 	}
 
 	public void execute(User user, int length) {
+		if (Config.getInstance().getLimitPermission()) {
+			if (user.getActivePerks() + 1 > user.getPerkLimit()) {
+				user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
+				return;
+			}
+		}
 
 		user.setPerkCoolDown(this, DateUtils.addSeconds(new Date(), getCoolDown()).getTime());
 		activatePerk(user, length);

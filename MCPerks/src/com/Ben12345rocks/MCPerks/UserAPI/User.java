@@ -103,6 +103,27 @@ public class User extends com.Ben12345rocks.AdvancedCore.UserManager.User {
 		getUserData().setInt(perk.getPerk() + "_TimesUsed", value);
 	}
 
+	public int getPerkLimit() {
+		for (int i = 1; i < Main.plugin.getPerkHandler().getLoadedPerks().size() + 1; i++) {
+			if (hasPermission("MCPerks.Limit." + i)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	public int getActivePerks() {
+		int perks = 0;
+		for (Perk perk : Main.plugin.getPerkHandler().getActivePerks()) {
+			if (perk.getActivater().getPlayerName().equals(getPlayerName())) {
+				perks++;
+			} else if (perk.getEffectedPlayers().contains(getUUID())) {
+				perks++;
+			}
+		}
+		return perks;
+	}
+
 	public void setUseBossBar(boolean b) {
 		getData().setString("UseBossBar", "" + b);
 	}

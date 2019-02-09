@@ -54,7 +54,7 @@ public class Config extends YMLFile {
 	public boolean getBossBarEnabled() {
 		return getData().getBoolean("BossBar.Enabled");
 	}
-	
+
 	public boolean getLogActivation() {
 		return getData().getBoolean("LogActivation");
 	}
@@ -73,6 +73,10 @@ public class Config extends YMLFile {
 
 	public String getCountDownEffectPath() {
 		return "CountDownEffect";
+	}
+
+	public boolean getLimitPermission() {
+		return getData().getBoolean("LimitPermission", true);
 	}
 
 	@SuppressWarnings("unchecked")
