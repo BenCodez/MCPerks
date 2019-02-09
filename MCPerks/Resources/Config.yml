@@ -144,6 +144,9 @@ DeactivationEffect:
 # Give user MCPerks.Limit.1 to only have 1 active perk at a time
 LimitPermission: true
 
+# If true, players need to be given an activation 
+LimitActivations: false
+
 # Default Item lore
 # Can also put this in each perk file
 # to define specific messages for each perk in gui

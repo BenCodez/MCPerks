@@ -79,6 +79,10 @@ public class Config extends YMLFile {
 		return getData().getBoolean("LimitPermission", true);
 	}
 
+	public boolean getLimitActivations() {
+		return getData().getBoolean("LimitActivations", false);
+	}
+
 	@SuppressWarnings("unchecked")
 	public ArrayList<String> getCountDownTimes() {
 		return (ArrayList<String>) getData().getList("CountDownTimes", new ArrayList<String>());

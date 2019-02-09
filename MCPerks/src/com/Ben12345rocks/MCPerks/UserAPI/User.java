@@ -128,4 +128,20 @@ public class User extends com.Ben12345rocks.AdvancedCore.UserManager.User {
 		getData().setString("UseBossBar", "" + b);
 	}
 
+	public int getActivations() {
+		return getData().getInt("Activations");
+	}
+
+	public void setActivations(int value) {
+		getData().setInt("Activations", value);
+	}
+
+	public void addActivation(int add) {
+		setActivations(getActivations() + add);
+	}
+
+	public void addActivation() {
+		addActivation(1);
+	}
+
 }

@@ -318,6 +318,39 @@ public class CommandLoader {
 			}
 		});
 
+		plugin.getCommands().add(new CommandHandler(new String[] { "SetActivations", "(player)", "(number)" },
+				"MCPerks.SetActivations", "Add amount of activations") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				User user = UserManager.getInstance().getMCPerksUser(args[1]);
+				user.setActivations(Integer.parseInt(args[2]));
+				sendMessage(sender, "&cSet activations to " + args[2]);
+			}
+		});
+
+		plugin.getCommands().add(new CommandHandler(new String[] { "AddActivations", "(player)", "(number)" },
+				"MCPerks.AddActivations", "Add amount of activations") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				User user = UserManager.getInstance().getMCPerksUser(args[1]);
+				user.addActivation(Integer.parseInt(args[2]));
+				sendMessage(sender, "&cSet activations to " + user.getActivations());
+			}
+		});
+
+		plugin.getCommands().add(new CommandHandler(new String[] { "RemoveActivations", "(player)", "(number)" },
+				"MCPerks.RemoveActivations", "Remove amount of activations") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				User user = UserManager.getInstance().getMCPerksUser(args[1]);
+				user.addActivation(-Integer.parseInt(args[2]));
+				sendMessage(sender, "&cSet activations to " + user.getActivations());
+			}
+		});
+
 		// load perk commands
 		for (Perk perk : plugin.getPerkHandler().getLoadedPerks().values()) {
 			CommandHandler cmdHandle = new CommandHandler(new String[] { perk.getPerk() },
