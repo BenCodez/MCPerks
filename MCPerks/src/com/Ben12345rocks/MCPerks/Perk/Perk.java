@@ -625,9 +625,7 @@ public class Perk {
 		}
 
 		if (Config.getInstance().getLimitActivations()) {
-			if (user.getActivations() > 0) {
-				user.addActivation(-1);
-			} else {
+			if (user.getActivations() <= 0) {
 				user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
 				return;
 			}
@@ -642,6 +640,12 @@ public class Perk {
 			user.sendMessage(ConfigPerks.getInstance().getPerkAddedToQue(perk));
 			Main.plugin.getPerkHandler().addQue(user, this);
 			return;
+		}
+
+		if (Config.getInstance().getLimitActivations()) {
+			if (user.getActivations() > 0) {
+				user.addActivation(-1);
+			}
 		}
 
 		execute(user, getTime());
