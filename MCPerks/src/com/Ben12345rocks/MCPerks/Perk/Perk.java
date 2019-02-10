@@ -457,6 +457,7 @@ public class Perk {
 		HashMap<String, String> placeholders = new HashMap<String, String>();
 		int timeLasts = getTime();
 		placeholders.put("TimeLasts", "" + timeLasts);
+		placeholders.put("Activations", "" + user.getActivations());
 		placeholders.put("TimeLastsMin", "" + (timeLasts / 60));
 		placeholders.put("TimeLastsHour", "" + (timeLasts / 60 / 60));
 		placeholders.put("Description", getDescription());
