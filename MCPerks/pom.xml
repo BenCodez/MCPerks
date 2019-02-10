@@ -189,5 +189,11 @@
 			<version>1.18.2</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.github.Ben12345rocks</groupId>
+			<artifactId>VotingPlugin</artifactId>
+			<version>master-SNAPSHOT</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 </project>

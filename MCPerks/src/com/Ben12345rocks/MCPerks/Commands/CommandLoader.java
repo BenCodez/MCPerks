@@ -366,26 +366,26 @@ public class CommandLoader {
 			loadAlias(cmdHandle, perk);
 
 			plugin.getCommands().add(new CommandHandler(new String[] { perk.getPerk(), "(player)" },
-					"MCPerks.ActivatePerk", "Forcefly Activate Perk") {
+					"MCPerks.ActivatePerk", "Forcefully Activate Perk") {
 
 				@Override
 				public void execute(CommandSender sender, String[] args) {
 
 					Perk perk = plugin.getPerkHandler().getPerk(args[0]);
 					perk.forcePerk(args[1]);
-					sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " + args[1]);
+					sender.sendMessage("ForcefullyF activated perk " + perk.getPerk() + " for " + args[1]);
 				}
 			});
 
 			plugin.getCommands().add(new CommandHandler(new String[] { perk.getPerk(), "(player)", "(number)" },
-					"MCPerks.ActivatePerkLength", "Forcefly Activate Perk with a set length") {
+					"MCPerks.ActivatePerkLength", "Forcefully Activate Perk with a set length") {
 
 				@Override
 				public void execute(CommandSender sender, String[] args) {
 
 					Perk perk = plugin.getPerkHandler().getPerk(args[0]);
 					perk.forcePerk(args[1], Integer.parseInt(args[2]));
-					sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " + args[1] + " for "
+					sender.sendMessage("Forcefully activated perk " + perk.getPerk() + " for " + args[1] + " for "
 							+ args[2] + " seconds");
 				}
 			});

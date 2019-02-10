@@ -8,13 +8,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.Ben12345rocks.AdvancedCore.AdvancedCoreHook;
 import com.Ben12345rocks.AdvancedCore.CommandAPI.CommandHandler;
+import com.Ben12345rocks.AdvancedCore.Rewards.Reward;
+import com.Ben12345rocks.AdvancedCore.Rewards.RewardHandler;
+import com.Ben12345rocks.AdvancedCore.Rewards.Injected.RewardInjectInt;
 import com.Ben12345rocks.AdvancedCore.Thread.Thread;
+import com.Ben12345rocks.AdvancedCore.UserManager.User;
+import com.Ben12345rocks.AdvancedCore.Util.EditGUI.EditGUIButton;
+import com.Ben12345rocks.AdvancedCore.Util.EditGUI.ValueTypes.EditGUIValueNumber;
 import com.Ben12345rocks.AdvancedCore.Util.Metrics.BStatsMetrics;
 import com.Ben12345rocks.AdvancedCore.Util.Metrics.MCStatsMetrics;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
@@ -30,6 +37,7 @@ import com.Ben12345rocks.MCPerks.Listeners.Compatability.McMMOEvents;
 import com.Ben12345rocks.MCPerks.Perk.EffectHandler;
 import com.Ben12345rocks.MCPerks.Perk.PerkHandler;
 import com.Ben12345rocks.MCPerks.Perk.PerkSystemType;
+import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -128,6 +136,8 @@ public class Main extends JavaPlugin {
 
 		new BStatsMetrics(this);
 
+		loadInjectedRewards();
+
 		Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, new Runnable() {
 
 			@Override
@@ -146,6 +156,28 @@ public class Main extends JavaPlugin {
 			}
 		}, 10l);
 
+	}
+
+	public void loadInjectedRewards() {
+		if (Bukkit.getPluginManager().getPlugin("VotingPlugin") != null) {
+			VotingPluginHook.getInstance().loadRewards();
+		}
+
+		RewardHandler.getInstance().addInjectedReward(new RewardInjectInt("PerkActivations") {
+
+			@Override
+			public void onRewardRequest(Reward reward, User user, int value, HashMap<String, String> placeholders) {
+				UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(value);
+			}
+		}.addEditButton(new EditGUIButton(new EditGUIValueNumber("PerkActivations", null) {
+
+			@Override
+			public void setValue(Player player, Number num) {
+				Reward reward = (Reward) getInv().getData("Reward");
+				reward.getConfig().set(getKey(), num.intValue());
+				reload();
+			}
+		})));
 	}
 
 	public void reload() {
