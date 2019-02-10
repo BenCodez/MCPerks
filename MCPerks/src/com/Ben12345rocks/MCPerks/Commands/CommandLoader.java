@@ -194,6 +194,36 @@ public class CommandLoader {
 					}
 				});
 
+		plugin.getCommands().add(new CommandHandler(new String[] { "IgnoreEffects" }, "MCPerks.IgnoreEffects",
+				"Toggle ignore perk effects", false) {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				User user = UserManager.getInstance().getMCPerksUser(sender.getName());
+				user.setIgnoreEffects(!user.isIgnorePerkEffects());
+				if (user.isIgnorePerkEffects()) {
+					sendMessage(sender, "&aNow ignoring perk effects");
+				} else {
+					sendMessage(sender, "&aNo longer ignoring perk effects");
+				}
+			}
+		});
+
+		plugin.getCommands().add(new CommandHandler(new String[] { "IgnoreEffects", "(Player)" },
+				"MCPerks.IgnoreEffects.Other", "Toggle ignore perk effects") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				User user = UserManager.getInstance().getMCPerksUser(args[1]);
+				user.setIgnoreEffects(!user.isIgnorePerkEffects());
+				if (user.isIgnorePerkEffects()) {
+					sendMessage(sender, "&aNow ignoring perk effects");
+				} else {
+					sendMessage(sender, "&aNo longer ignoring perk effects");
+				}
+			}
+		});
+
 		plugin.getCommands().add(
 				new CommandHandler(new String[] { "Random" }, "MCPerks.Random", "Give yourself a random perk", false) {
 

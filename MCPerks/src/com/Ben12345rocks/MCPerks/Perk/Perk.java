@@ -29,6 +29,7 @@ import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
+import com.Ben12345rocks.MCPerks.Configs.Lang;
 import com.Ben12345rocks.MCPerks.Data.ServerData;
 import com.Ben12345rocks.MCPerks.UserAPI.User;
 import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
@@ -201,7 +202,13 @@ public class Perk {
 
 	public void addEffectedPlayer(String uuid) {
 		if (!this.effectedPlayers.contains(uuid)) {
-			this.effectedPlayers.add(uuid);
+			User user = UserManager.getInstance()
+					.getMCPerksUser(new com.Ben12345rocks.AdvancedCore.UserManager.UUID(uuid));
+			if (!user.isIgnorePerkEffects()) {
+				this.effectedPlayers.add(uuid);
+			} else {
+				user.sendMessage(Lang.getInstance().getIgnoreEffect());
+			}
 		}
 	}
 

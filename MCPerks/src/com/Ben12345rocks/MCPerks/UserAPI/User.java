@@ -144,4 +144,12 @@ public class User extends com.Ben12345rocks.AdvancedCore.UserManager.User {
 		addActivation(1);
 	}
 
+	public boolean isIgnorePerkEffects() {
+		return getData().getBoolean("IgnoreEffects");
+	}
+
+	public void setIgnoreEffects(boolean value) {
+		getData().setBoolean("IgnoreEffects", value);
+	}
+
 }

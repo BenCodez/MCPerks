@@ -78,6 +78,10 @@ public class Lang {
 		return getData().getString("HelpLine", "&3&l%Command% - &3%HelpMessage%");
 	}
 
+	public String getIgnoreEffect() {
+		return getData().getString("IgnoreEffect", "&aIgnoring perk effect");
+	}
+
 	public String getHelpTitle() {
 		return getData().getString("HelpTitle", "&3&lMCPerks Help");
 	}

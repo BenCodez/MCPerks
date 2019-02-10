@@ -107,10 +107,10 @@ public class PerkHandler {
 		plugin.debug("Activating perk " + clone.getPerk() + " using " + perkType.toString());
 
 		if (perkType.equals(PerkSystemType.PLAYER)) {
-			clone.getEffectedPlayers().add(user.getUUID());
+			clone.addEffectedPlayer(user.getUUID());
 		} else if (perkType.equals(PerkSystemType.ALL)) {
 			for (Player player : Bukkit.getOnlinePlayers()) {
-				clone.getEffectedPlayers().add(player.getUniqueId().toString());
+				clone.addEffectedPlayer(player.getUniqueId().toString());
 			}
 
 		} else if (perkType.equals(PerkSystemType.TOWNY)) {
@@ -119,10 +119,10 @@ public class PerkHandler {
 				Resident res = Towny.plugin.getTownyUniverse().getResident(user.getPlayerName());
 				if (res.hasTown()) {
 					for (Resident r : res.getTown().getResidents()) {
-						clone.getEffectedPlayers().add(UserManager.getInstance().getUser(r.getName()).getUUID());
+						clone.addEffectedPlayer(UserManager.getInstance().getUser(r.getName()).getUUID());
 					}
 				} else {
-					clone.getEffectedPlayers().add(user.getUUID());
+					clone.addEffectedPlayer(user.getUUID());
 
 				}
 			} catch (Exception e) {
@@ -134,11 +134,11 @@ public class PerkHandler {
 				MPlayer mplayer = MPlayer.get(user.getUUID());
 				if (mplayer.hasFaction()) {
 					for (MPlayer p : mplayer.getFaction().getMPlayers()) {
-						clone.getEffectedPlayers().add(p.getUuid().toString());
+						clone.addEffectedPlayer(p.getUuid().toString());
 					}
 
 				} else {
-					clone.getEffectedPlayers().add(user.getUUID());
+					clone.addEffectedPlayer(user.getUUID());
 
 				}
 			} catch (Exception e) {
