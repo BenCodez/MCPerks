@@ -3,7 +3,7 @@ description: Some EULA friendly perks.
 author: Ben12345rocks
 version: ${project.version}
 main: com.Ben12345rocks.MCPerks.Main
-softdepend: [AdvancedCore]
+softdepend: [VotingPlugin]
 api-version: 1.13
 commands:
   mcperks:
