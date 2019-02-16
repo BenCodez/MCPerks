@@ -18,6 +18,7 @@ import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.Lang;
 import com.Ben12345rocks.MCPerks.Perk.Perk;
+import com.Ben12345rocks.MCPerks.UserAPI.User;
 import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 
 import net.md_5.bungee.api.chat.TextComponent;
@@ -61,7 +62,10 @@ public class Commands {
 	public void openGUI(CommandSender sender) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
-			BInventory inv = new BInventory(Lang.getInstance().getGUIName());
+			User user = UserManager.getInstance().getMCPerksUser(player);
+			String title = StringUtils.getInstance().replacePlaceHolder(Lang.getInstance().getGUIName(), "Activations",
+					"" + user.getActivations());
+			BInventory inv = new BInventory(title);
 			int slot = 0;
 			for (final Integer num : plugin.getPerkHandler().invPerks.keySet()) {
 
