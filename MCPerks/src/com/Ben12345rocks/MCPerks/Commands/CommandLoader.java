@@ -385,6 +385,9 @@ public class CommandLoader {
 			public void execute(CommandSender sender, String[] args) {
 				User user = UserManager.getInstance().getMCPerksUser(args[1]);
 				user.addActivation(-Integer.parseInt(args[2]));
+				if (user.getActivations() < 0) {
+					user.setActivations(0);
+				}
 				sendMessage(sender, "&cSet activations to " + user.getActivations());
 			}
 		});
