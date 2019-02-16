@@ -364,9 +364,17 @@ public class CommandLoader {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
-				User user = UserManager.getInstance().getMCPerksUser(args[1]);
-				user.addActivation(Integer.parseInt(args[2]));
-				sendMessage(sender, "&cSet activations to " + user.getActivations());
+				if (args[1].equals("*")) {
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						User user = UserManager.getInstance().getMCPerksUser(p);
+						user.addActivation(Integer.parseInt(args[2]));
+					}
+					sendMessage(sender, "&cAdded activations to " + args[2]);
+				} else {
+					User user = UserManager.getInstance().getMCPerksUser(args[1]);
+					user.addActivation(Integer.parseInt(args[2]));
+					sendMessage(sender, "&cSet activations to " + user.getActivations());
+				}
 			}
 		});
 
