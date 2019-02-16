@@ -2,7 +2,9 @@ package com.Ben12345rocks.MCPerks.Commands.TabCompleter;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -11,6 +13,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import com.Ben12345rocks.AdvancedCore.CommandAPI.CommandHandler;
+import com.Ben12345rocks.AdvancedCore.CommandAPI.TabCompleteHandler;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
 import com.Ben12345rocks.MCPerks.Main;
 
@@ -98,25 +101,22 @@ public class MCPerksTabCompleter implements TabCompleter {
 	@Override
 	public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
 
-		if (cmd.getName().equalsIgnoreCase("mcperks")) {
+		ArrayList<String> tab = new ArrayList<String>();
 
-			List<String> tab = new ArrayList<String>();
+		Set<String> cmds = new HashSet<String>();
 
-			ArrayList<String> cmds = new ArrayList<String>();
+		cmds.addAll(TabCompleteHandler.getInstance().getTabCompleteOptions(plugin.getCommands(), sender, args,
+				args.length - 1));
 
-			cmds.addAll(getAdminTabCompleteOptions(sender, args, args.length - 1));
-
-			for (int i = 0; i < cmds.size(); i++) {
-				if (StringUtils.getInstance().startsWithIgnoreCase(cmds.get(i), args[args.length - 1])) {
-					tab.add(cmds.get(i));
-				}
+		for (String str : cmds) {
+			if (StringUtils.getInstance().startsWithIgnoreCase(str, args[args.length - 1])) {
+				tab.add(str);
 			}
-
-			return tab;
-
 		}
 
-		return null;
+		Collections.sort(tab, String.CASE_INSENSITIVE_ORDER);
+
+		return tab;
 	}
 
 }
