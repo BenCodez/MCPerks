@@ -104,7 +104,7 @@ public class User extends com.Ben12345rocks.AdvancedCore.UserManager.User {
 	}
 
 	public int getPerkLimit() {
-		for (int i = 1; i < Main.plugin.getPerkHandler().getLoadedPerks().size() + 1; i++) {
+		for (int i = Main.plugin.getPerkHandler().getLoadedPerks().size(); i > 0; i--) {
 			if (hasPermission("MCPerks.Limit." + i)) {
 				return i;
 			}

@@ -76,7 +76,7 @@ public class Config extends YMLFile {
 	}
 
 	public boolean getLimitPermission() {
-		return getData().getBoolean("LimitPermission", true);
+		return getData().getBoolean("LimitPermission", false);
 	}
 
 	public boolean getLimitActivations() {
