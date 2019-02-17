@@ -19,13 +19,13 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 
+import com.Ben12345rocks.AdvancedCore.Listeners.AdvancedCoreLoginEvent;
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
@@ -206,7 +206,7 @@ public class EffectListeners implements Listener {
 	}
 
 	@EventHandler(ignoreCancelled = true)
-	public void onJoin(PlayerJoinEvent event) {
+	public void onJoin(AdvancedCoreLoginEvent event) {
 		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
 
 			@Override
