@@ -202,5 +202,6 @@ public class Main extends JavaPlugin {
 
 	public void updateHook() {
 		AdvancedCoreHook.getInstance().setConfigData(Config.getInstance().getData());
+		AdvancedCoreHook.getInstance().getOptions().setPreloadSkulls(false);
 	}
 }
