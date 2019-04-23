@@ -28,6 +28,7 @@ import java.util.zip.ZipInputStream;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import com.Ben12345rocks.AdvancedCore.AdvancedCoreHook;
 import com.Ben12345rocks.AdvancedCore.Rewards.RewardBuilder;
 import com.Ben12345rocks.AdvancedCore.Rewards.RewardHandler;
 import com.Ben12345rocks.AdvancedCore.UserManager.UUID;
@@ -233,6 +234,7 @@ public class PerkHandler {
 
 					@Override
 					public void run() {
+						try {
 						// set bossbar text
 						HashMap<String, String> placeholders = new HashMap<String, String>();
 						placeholders.put("perk", clone.getName());
@@ -257,6 +259,10 @@ public class PerkHandler {
 						bossBar.setProgress(prog);
 
 						bossBar.setVisible(true);
+						} catch (NullPointerException e) {
+							AdvancedCoreHook.getInstance().debug(e);
+							plugin.debug("Failed to update bossbar, turn debug on to see stacktrace");
+						}
 					}
 				}, delay);
 			}

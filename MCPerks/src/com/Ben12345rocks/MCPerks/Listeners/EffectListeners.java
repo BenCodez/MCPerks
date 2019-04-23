@@ -166,7 +166,16 @@ public class EffectListeners implements Listener {
 			if (plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString())) {
 				new FlyEffect().disableFly(player);
 			}
+
+			if (plugin.getPerkHandler().getActivePerks().size() != 0) {
+				for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
+					if (UserManager.getInstance().getMCPerksUser(player).isUseBossBar()) {
+						perk.getBossBar().removePlayer(player);
+					}
+				}
+			}
 		}
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -246,7 +255,7 @@ public class EffectListeners implements Listener {
 				}
 
 			}
-		}, 10);
+		}, 30);
 
 	}
 
