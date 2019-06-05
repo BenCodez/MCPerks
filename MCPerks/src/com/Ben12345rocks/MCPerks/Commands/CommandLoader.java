@@ -392,6 +392,51 @@ public class CommandLoader {
 			}
 		});
 
+		plugin.getCommands().add(new CommandHandler(new String[] { "SetActivations", "(player)", "(Perk)", "(number)" },
+				"MCPerks.SetActivations", "Add amount of activations") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				User user = UserManager.getInstance().getMCPerksUser(args[1]);
+				user.setActivations(args[2], Integer.parseInt(args[3]));
+				sendMessage(sender, "&cSet activations to " + args[3]);
+			}
+		});
+
+		plugin.getCommands().add(new CommandHandler(new String[] { "AddActivations", "(player)", "(Perk)", "(number)" },
+				"MCPerks.AddActivations", "Add amount of activations") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				if (args[1].equals("*")) {
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						User user = UserManager.getInstance().getMCPerksUser(p);
+						user.addActivation(args[2], Integer.parseInt(args[3]));
+					}
+					sendMessage(sender, "&cAdded activations to " + args[3]);
+				} else {
+					User user = UserManager.getInstance().getMCPerksUser(args[1]);
+					user.addActivation(args[2], Integer.parseInt(args[3]));
+					sendMessage(sender, "&cSet activations to " + user.getActivations(args[2]));
+				}
+			}
+		});
+
+		plugin.getCommands()
+				.add(new CommandHandler(new String[] { "RemoveActivations", "(player)", "(Perk)", "(number)" },
+						"MCPerks.RemoveActivations", "Remove amount of activations") {
+
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						User user = UserManager.getInstance().getMCPerksUser(args[1]);
+						user.addActivation(-Integer.parseInt(args[3]));
+						if (user.getActivations(args[2]) < 0) {
+							user.setActivations(args[2], 0);
+						}
+						sendMessage(sender, "&cSet activations to " + user.getActivations());
+					}
+				});
+
 		// load perk commands
 		for (Perk perk : plugin.getPerkHandler().getLoadedPerks().values()) {
 			CommandHandler cmdHandle = new CommandHandler(new String[] { perk.getPerk() },

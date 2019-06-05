@@ -144,6 +144,22 @@ public class User extends com.Ben12345rocks.AdvancedCore.UserManager.User {
 		addActivation(1);
 	}
 
+	public int getActivations(String perk) {
+		return getData().getInt("PerkActivations." + perk);
+	}
+
+	public void setActivations(String perk, int value) {
+		getData().setInt("PerkActivations." + perk, value);
+	}
+
+	public void addActivation(String perk, int add) {
+		setActivations(perk, getActivations() + add);
+	}
+
+	public void addActivation(String perk) {
+		addActivation(perk, 1);
+	}
+
 	public boolean isIgnorePerkEffects() {
 		return getData().getBoolean("IgnoreEffects");
 	}

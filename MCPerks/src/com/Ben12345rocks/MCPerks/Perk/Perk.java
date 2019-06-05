@@ -17,6 +17,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -80,6 +81,9 @@ public class Perk {
 
 	private ArrayList<ItemStack> specialDrops;
 
+	@Getter
+	private ArrayList<EntityType> blackedListedMobs;
+
 	private ArrayList<Material> blocks;
 
 	private ArrayList<String> aliases;
@@ -135,6 +139,7 @@ public class Perk {
 		mcmmoSkills = perk.mcmmoSkills;
 		perkType = perk.perkType;
 		serverWideCoolDown = perk.serverWideCoolDown;
+		blackedListedMobs = perk.blackedListedMobs;
 	}
 
 	/**
@@ -175,6 +180,8 @@ public class Perk {
 		perkType = ConfigPerks.getInstance().getPerkType(perk);
 
 		increasePercent = ConfigPerks.getInstance().getPerkPercentIncrease(perk);
+
+		blackedListedMobs = ConfigPerks.getInstance().getPerkBlackListedMobs(perk);
 
 		for (String effectLine : ConfigPerks.getInstance().getPerkEffects(perk)) {
 			String[] data = effectLine.split(":");
@@ -495,6 +502,7 @@ public class Perk {
 		int timeLasts = getTime();
 		placeholders.put("TimeLasts", "" + timeLasts);
 		placeholders.put("Activations", "" + user.getActivations());
+		placeholders.put("PerkActivations", "" + user.getActivations(perk));
 		placeholders.put("TimeLastsMin", "" + (timeLasts / 60));
 		placeholders.put("TimeLastsHour", "" + (timeLasts / 60 / 60));
 		placeholders.put("Description", getDescription());
@@ -674,18 +682,24 @@ public class Perk {
 			}
 		}
 
+		boolean globalActivation = true;
+
 		if (Config.getInstance().getLimitActivations()) {
-			if (user.getActivations() <= 0) {
+			if (user.getActivations(getPerk()) <= 0) {
+				globalActivation = false;
+				user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
+				return;
+			} else if (user.getActivations() <= 0) {
 				user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
 				return;
 			}
 		}
 
-		runPerkPerk(user);
+		runPerkPerk(user, globalActivation);
 
 	}
 
-	public void runPerkPerk(User user) {
+	public void runPerkPerk(User user, boolean globalActivation) {
 		if (Main.plugin.getPerkHandler().getActivePerks().size() != 0 && Config.getInstance().getPerkQue()) {
 			user.sendMessage(ConfigPerks.getInstance().getPerkAddedToQue(perk));
 			Main.plugin.getPerkHandler().addQue(user, this);
@@ -693,8 +707,14 @@ public class Perk {
 		}
 
 		if (Config.getInstance().getLimitActivations()) {
-			if (user.getActivations() > 0) {
-				user.addActivation(-1);
+			if (globalActivation) {
+				if (user.getActivations() > 0) {
+					user.addActivation(-1);
+				}
+			} else {
+				if (user.getActivations(getPerk()) > 0) {
+					user.addActivation(getPerk(), -1);
+				}
 			}
 		}
 

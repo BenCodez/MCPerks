@@ -206,8 +206,12 @@ public class EffectListeners implements Listener {
 
 		for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 			if (active.getEffects().contains(Effect.HeadDropper)) {
-				HeadDropperEffect effect2 = new HeadDropperEffect(active, event.getEntity());
-				event.getDrops().addAll(effect2.addExtraSkulls());
+				if (!active.getBlackedListedMobs().contains(event.getEntity().getType())) {
+					HeadDropperEffect effect2 = new HeadDropperEffect(active, event.getEntity());
+					event.getDrops().addAll(effect2.addExtraSkulls());
+				} else {
+					plugin.debug(event.getEntity().getType() + " is black listed for headdropper");
+				}
 
 			}
 		}

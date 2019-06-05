@@ -7,6 +7,9 @@ Name: 'Head Dropper'
 Description: 'Give a chance for heads to drop for %TimeLasts% seconds.'
 Effects:
 - 'HeadDropper:50'
+# Blacklisted mobs
+BlackListedMobs:
+- WITHER_SKELETON
 Item:
   Material: 'PLAYER_HEAD'
   Data: 0
