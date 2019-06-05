@@ -20,14 +20,14 @@ public class VotingPluginHook {
 	}
 
 	public void loadRewards() {
-		VotingPluginHooks.getInstance().addCustomReward(new RewardInjectInt("PerkActivations") {
+		VotingPluginHooks.getInstance().addCustomReward(new RewardInjectInt("Activations") {
 
 			@Override
 			public void onRewardRequest(Reward reward, User user, int value, HashMap<String, String> placeholders) {
 				UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(value);
 			}
-		}.addEditButton(new EditGUIButton(new EditGUIValueNumber("PerkActivations",null) {
-			
+		}.addEditButton(new EditGUIButton(new EditGUIValueNumber("Activations", null) {
+
 			@Override
 			public void setValue(Player player, Number num) {
 				Reward reward = (Reward) getInv().getData("Reward");
@@ -35,5 +35,23 @@ public class VotingPluginHook {
 				VotingPluginHooks.getInstance().getMainClass().reload();
 			}
 		})));
+
+		for (final String perk : Main.plugin.getPerkHandler().getLoadedPerks().keySet()) {
+			VotingPluginHooks.getInstance().addCustomReward(new RewardInjectInt("PerkActivations." + perk) {
+
+				@Override
+				public void onRewardRequest(Reward reward, User user, int value, HashMap<String, String> placeholders) {
+					UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(perk, value);
+				}
+			}.addEditButton(new EditGUIButton(new EditGUIValueNumber("PerkActivations." + perk, null) {
+
+				@Override
+				public void setValue(Player player, Number num) {
+					Reward reward = (Reward) getInv().getData("Reward");
+					reward.getConfig().set(getKey(), num.intValue());
+					VotingPluginHooks.getInstance().getMainClass().reload();
+				}
+			})));
+		}
 	}
 }

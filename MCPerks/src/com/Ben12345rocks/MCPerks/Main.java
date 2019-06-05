@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.PluginManager;
@@ -25,6 +26,7 @@ import com.Ben12345rocks.AdvancedCore.Util.EditGUI.ValueTypes.EditGUIValueNumber
 import com.Ben12345rocks.AdvancedCore.Util.Metrics.BStatsMetrics;
 import com.Ben12345rocks.AdvancedCore.Util.Metrics.MCStatsMetrics;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
+import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
 import com.Ben12345rocks.AdvancedCore.Util.Updater.Updater;
 import com.Ben12345rocks.MCPerks.Commands.CommandLoader;
 import com.Ben12345rocks.MCPerks.Commands.Executers.CommandMCPerks;
@@ -179,6 +181,22 @@ public class Main extends JavaPlugin {
 				reload();
 			}
 		})));
+	}
+	
+	public String placeHolder(OfflinePlayer p, String identifier) {
+		identifier = StringUtils.getInstance().replaceJavascript(p, identifier);
+		com.Ben12345rocks.MCPerks.UserAPI.User user = UserManager.getInstance().getMCPerksUser(p);
+		if (identifier.equalsIgnoreCase("activations")) {
+			return "" + user.getActivations();
+		}
+
+		for (String perk : Main.plugin.getPerkHandler().getLoadedPerks().keySet()) {
+			if (identifier.equalsIgnoreCase("activations_" + perk)) {
+				return "" + user.getActivations(perk);
+			}
+		}
+		return "";
+
 	}
 
 	public void reload() {
