@@ -34,6 +34,8 @@ import com.Ben12345rocks.MCPerks.Data.ServerData;
 import com.Ben12345rocks.MCPerks.UserAPI.User;
 import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 
+import lombok.Getter;
+
 // TODO: Auto-generated Javadoc
 /**
  * The Class Perk.
@@ -54,6 +56,9 @@ public class Perk {
 
 	/** The cool down. */
 	private int coolDown;
+
+	@Getter
+	private int serverWideCoolDown;
 
 	/** The increase percent. */
 	private int increasePercent;
@@ -129,6 +134,7 @@ public class Perk {
 		commands = perk.commands;
 		mcmmoSkills = perk.mcmmoSkills;
 		perkType = perk.perkType;
+		serverWideCoolDown = perk.serverWideCoolDown;
 	}
 
 	/**
@@ -145,6 +151,7 @@ public class Perk {
 		isEnabled = ConfigPerks.getInstance().getPerkEnabled(perk);
 		time = ConfigPerks.getInstance().getPerkTimeLasts(perk);
 		coolDown = ConfigPerks.getInstance().getPerkCoolDown(perk);
+		serverWideCoolDown = ConfigPerks.getInstance().getPerkServerWideCoolDown(perk);
 		limit = ConfigPerks.getInstance().getPerkLimit(perk);
 		specialDrops = ConfigPerks.getInstance().getPerkSpecialDrops(perk);
 		blocks = ConfigPerks.getInstance().getPerkSpecialBlocks(perk);
@@ -247,6 +254,25 @@ public class Perk {
 
 	}
 
+	public boolean checkServerWideCoolDown(User user) {
+		Player player = user.getPlayer();
+		if (player != null) {
+			if (player.hasPermission("MCPerks.Perks.BypassCoolDown")) {
+				return true;
+			}
+		}
+		long time = ServerData.getInstance().getData().getLong(getPerk() + ".CoolDown", 0);
+		if (time > 0) {
+			Date date = new Date(time);
+			Date now = new Date();
+			if (now.before(date)) {
+				// in cooldown
+				return false;
+			}
+		}
+		return true;
+	}
+
 	public boolean checkCoolDown(User user) {
 		Player player = user.getPlayer();
 		if (player != null) {
@@ -320,7 +346,14 @@ public class Perk {
 
 	public void execute(User user, int length) {
 		user.setPerkCoolDown(this, DateUtils.addSeconds(new Date(), getCoolDown()).getTime());
+		if (getServerWideCoolDown() > 0) {
+			setServerCoolDownTime(DateUtils.addSeconds(new Date(), getServerWideCoolDown()).getTime());
+		}
 		activatePerk(user, length);
+	}
+
+	public void setServerCoolDownTime(long time) {
+		ServerData.getInstance().getData().set(getPerk() + ".CoolDown", time);
 	}
 
 	public void forcePerk(String name) {
@@ -429,7 +462,7 @@ public class Perk {
 			lore.addAll(ConfigPerks.getInstance().getLoreActive(getPerk()));
 		} else if (!checkTimesUsed(user)) {
 			lore.addAll(ConfigPerks.getInstance().getLoreLimitReached(getPerk()));
-		} else if (!checkCoolDown(user)) {
+		} else if (!checkCoolDown(user) || !checkServerWideCoolDown(user)) {
 			lore.addAll(ConfigPerks.getInstance().getLoreInCoolDown(getPerk()));
 		} else {
 			lore.addAll(ConfigPerks.getInstance().getLoreAvailable(getPerk()));
@@ -449,7 +482,11 @@ public class Perk {
 		int min = (int) (left / (1000 * 64));
 		long sec = left / 1000 - min * 1000 * 64;
 
-		long cooldown = user.getPerkCoolDown(this) - Calendar.getInstance().getTime().getTime();
+		long coolDownTime = user.getPerkCoolDown(this);
+		if (coolDownTime < ServerData.getInstance().getData().getLong(getPerk() + ".CoolDown", 0)) {
+			coolDownTime = ServerData.getInstance().getData().getLong(getPerk() + ".CoolDown");
+		}
+		long cooldown = coolDownTime - Calendar.getInstance().getTime().getTime();
 		long coolDownMins = cooldown / (1000 * 64);
 		int coolDownHours = (int) (coolDownMins / 60);
 		int coolDownMin = (int) (coolDownHours * 60 - coolDownMins);
@@ -621,6 +658,11 @@ public class Perk {
 		}
 
 		if (!checkCoolDown(user)) {
+			user.sendMessage(ConfigPerks.getInstance().getPerkInCoolDown(perk));
+			return;
+		}
+
+		if (!checkServerWideCoolDown(user)) {
 			user.sendMessage(ConfigPerks.getInstance().getPerkInCoolDown(perk));
 			return;
 		}

@@ -166,8 +166,9 @@ public class Main extends JavaPlugin {
 		RewardHandler.getInstance().addInjectedReward(new RewardInjectInt("PerkActivations") {
 
 			@Override
-			public void onRewardRequest(Reward reward, User user, int value, HashMap<String, String> placeholders) {
+			public Integer onRewardRequest(Reward reward, User user, int value, HashMap<String, String> placeholders) {
 				UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(value);
+				return null;
 			}
 		}.addEditButton(new EditGUIButton(new EditGUIValueNumber("PerkActivations", null) {
 

@@ -439,4 +439,8 @@ public class ConfigPerks {
 		return getData(perk).getDouble("MoveSpeed", 1);
 	}
 
+	public int getPerkServerWideCoolDown(String perk) {
+		return getData(perk).getInt("GlobalCoolDown");
+	}
+
 }

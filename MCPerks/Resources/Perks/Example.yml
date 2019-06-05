@@ -11,6 +11,9 @@ Limit: 3
 # 86400 = 24 hours
 CoolDown: 86400
 
+# Server wide cooldown
+#GlobalCoolDown: 86400
+
 # Perk display name
 Name: 'Cure Hunger'
 
