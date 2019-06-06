@@ -23,8 +23,9 @@ public class VotingPluginHook {
 		VotingPluginHooks.getInstance().addCustomReward(new RewardInjectInt("Activations") {
 
 			@Override
-			public void onRewardRequest(Reward reward, User user, int value, HashMap<String, String> placeholders) {
+			public String onRewardRequest(Reward reward, User user, int value, HashMap<String, String> placeholders) {
 				UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(value);
+				return null;
 			}
 		}.addEditButton(new EditGUIButton(new EditGUIValueNumber("Activations", null) {
 
@@ -40,8 +41,10 @@ public class VotingPluginHook {
 			VotingPluginHooks.getInstance().addCustomReward(new RewardInjectInt("PerkActivations." + perk) {
 
 				@Override
-				public void onRewardRequest(Reward reward, User user, int value, HashMap<String, String> placeholders) {
+				public String onRewardRequest(Reward reward, User user, int value,
+						HashMap<String, String> placeholders) {
 					UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(perk, value);
+					return null;
 				}
 			}.addEditButton(new EditGUIButton(new EditGUIValueNumber("PerkActivations." + perk, null) {
 

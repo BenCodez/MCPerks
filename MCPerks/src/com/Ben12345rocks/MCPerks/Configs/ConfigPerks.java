@@ -321,7 +321,7 @@ public class ConfigPerks {
 
 	public ArrayList<EntityType> getPerkBlackListedMobs(String perk) {
 		@SuppressWarnings("unchecked")
-		ArrayList<String> list = (ArrayList<String>) getData(perk).getList("Blocks", new ArrayList<String>());
+		ArrayList<String> list = (ArrayList<String>) getData(perk).getList("BlackListedMobs", new ArrayList<String>());
 		ArrayList<EntityType> mobs = new ArrayList<EntityType>();
 		for (String str : list) {
 			mobs.add(EntityType.valueOf(str));

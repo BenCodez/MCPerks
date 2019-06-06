@@ -8,7 +8,6 @@ import java.util.Random;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
 
 import com.Ben12345rocks.MCPerks.Main;
 
@@ -16,7 +15,6 @@ import com.Ben12345rocks.MCPerks.Main;
 /**
  * The Class ProtectionEffect.
  */
-@SuppressWarnings("deprecation")
 public class ProtectionEffect {
 
 	private Player player;
@@ -41,8 +39,6 @@ public class ProtectionEffect {
 	public void debugAttack(EntityDamageByEntityEvent event, Main main) {
 		Player p = (Player) event.getEntity();
 		main.getLogger().info("Original Damage: " + event.getDamage());
-		main.getLogger().info("Armour Modifier: " + event.getDamage(DamageModifier.ARMOR));
-		main.getLogger().info("Armor Magic Modifier: " + event.getDamage(DamageModifier.MAGIC));
 		main.getLogger().info("Final Damage: " + event.getFinalDamage());
 		if (p.getInventory().getHelmet() != null) {
 			main.getLogger().info("Has a helmet on");

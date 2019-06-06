@@ -400,7 +400,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands().add(new CommandHandler(new String[] { "GetActivations", "(perk)", "(player)" },
+		plugin.getCommands().add(new CommandHandler(new String[] { "GetPerkActivations", "(perk)", "(player)" },
 				"MCPerks.GetActivations.Perk.Other", "Get amount of activations") {
 
 			@Override
@@ -411,7 +411,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands().add(new CommandHandler(new String[] { "GetActivations", "(perk)" },
+		plugin.getCommands().add(new CommandHandler(new String[] { "GetPerkActivations", "(perk)" },
 				"MCPerks.GetActivations.Perk", "Get amount of activations") {
 
 			@Override
@@ -436,7 +436,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands().add(new CommandHandler(new String[] { "SetActivations", "(player)", "(Perk)", "(number)" },
+		plugin.getCommands().add(new CommandHandler(new String[] { "SetPerkActivations", "(player)", "(Perk)", "(number)" },
 				"MCPerks.SetActivations.Perk", "Add amount of activations") {
 
 			@Override
@@ -447,7 +447,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands().add(new CommandHandler(new String[] { "AddActivations", "(player)", "(Perk)", "(number)" },
+		plugin.getCommands().add(new CommandHandler(new String[] { "AddPerkActivations", "(player)", "(Perk)", "(number)" },
 				"MCPerks.AddActivations.Perk", "Add amount of activations") {
 
 			@Override
@@ -467,7 +467,7 @@ public class CommandLoader {
 		});
 
 		plugin.getCommands()
-				.add(new CommandHandler(new String[] { "RemoveActivations", "(player)", "(Perk)", "(number)" },
+				.add(new CommandHandler(new String[] { "RemovePerkActivations", "(player)", "(Perk)", "(number)" },
 						"MCPerks.RemoveActivations.Perk", "Remove amount of activations") {
 
 					@Override

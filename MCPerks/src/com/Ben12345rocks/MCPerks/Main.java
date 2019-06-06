@@ -40,6 +40,7 @@ import com.Ben12345rocks.MCPerks.Perk.EffectHandler;
 import com.Ben12345rocks.MCPerks.Perk.PerkHandler;
 import com.Ben12345rocks.MCPerks.Perk.PerkSystemType;
 import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
+import com.Ben12345rocks.VotingPlugin.VotingPluginHooks;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -165,24 +166,44 @@ public class Main extends JavaPlugin {
 			VotingPluginHook.getInstance().loadRewards();
 		}
 
-		RewardHandler.getInstance().addInjectedReward(new RewardInjectInt("PerkActivations") {
+		RewardHandler.getInstance().addInjectedReward(new RewardInjectInt("Activations") {
 
 			@Override
-			public Integer onRewardRequest(Reward reward, User user, int value, HashMap<String, String> placeholders) {
+			public String onRewardRequest(Reward reward, User user, int value, HashMap<String, String> placeholders) {
 				UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(value);
 				return null;
 			}
-		}.addEditButton(new EditGUIButton(new EditGUIValueNumber("PerkActivations", null) {
+		}.addEditButton(new EditGUIButton(new EditGUIValueNumber("Activations", null) {
 
 			@Override
 			public void setValue(Player player, Number num) {
 				Reward reward = (Reward) getInv().getData("Reward");
 				reward.getConfig().set(getKey(), num.intValue());
-				reload();
+				VotingPluginHooks.getInstance().getMainClass().reload();
 			}
 		})));
+
+		for (final String perk : Main.plugin.getPerkHandler().getLoadedPerks().keySet()) {
+			RewardHandler.getInstance().addInjectedReward(new RewardInjectInt("PerkActivations." + perk) {
+
+				@Override
+				public String onRewardRequest(Reward reward, User user, int value,
+						HashMap<String, String> placeholders) {
+					UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(perk, value);
+					return null;
+				}
+			}.addEditButton(new EditGUIButton(new EditGUIValueNumber("PerkActivations." + perk, null) {
+
+				@Override
+				public void setValue(Player player, Number num) {
+					Reward reward = (Reward) getInv().getData("Reward");
+					reward.getConfig().set(getKey(), num.intValue());
+					VotingPluginHooks.getInstance().getMainClass().reload();
+				}
+			})));
+		}
 	}
-	
+
 	public String placeHolder(OfflinePlayer p, String identifier) {
 		identifier = StringUtils.getInstance().replaceJavascript(p, identifier);
 		com.Ben12345rocks.MCPerks.UserAPI.User user = UserManager.getInstance().getMCPerksUser(p);
