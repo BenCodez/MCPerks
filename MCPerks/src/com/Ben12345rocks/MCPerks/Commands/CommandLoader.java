@@ -400,7 +400,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands().add(new CommandHandler(new String[] { "GetPerkActivations", "(perk)", "(player)" },
+		plugin.getCommands().add(new CommandHandler(new String[] { "GetPerkActivations", "(player)", "(perk)" },
 				"MCPerks.GetActivations.Perk.Other", "Get amount of activations") {
 
 			@Override
@@ -436,35 +436,37 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands().add(new CommandHandler(new String[] { "SetPerkActivations", "(player)", "(Perk)", "(number)" },
-				"MCPerks.SetActivations.Perk", "Add amount of activations") {
+		plugin.getCommands()
+				.add(new CommandHandler(new String[] { "SetPerkActivations", "(player)", "(Perk)", "(number)" },
+						"MCPerks.SetActivations.Perk", "Add amount of activations") {
 
-			@Override
-			public void execute(CommandSender sender, String[] args) {
-				User user = UserManager.getInstance().getMCPerksUser(args[1]);
-				user.setActivations(args[2], Integer.parseInt(args[3]));
-				sendMessage(sender, "&cSet activations to " + args[3]);
-			}
-		});
-
-		plugin.getCommands().add(new CommandHandler(new String[] { "AddPerkActivations", "(player)", "(Perk)", "(number)" },
-				"MCPerks.AddActivations.Perk", "Add amount of activations") {
-
-			@Override
-			public void execute(CommandSender sender, String[] args) {
-				if (args[1].equals("*")) {
-					for (Player p : Bukkit.getOnlinePlayers()) {
-						User user = UserManager.getInstance().getMCPerksUser(p);
-						user.addActivation(args[2], Integer.parseInt(args[3]));
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						User user = UserManager.getInstance().getMCPerksUser(args[1]);
+						user.setActivations(args[2], Integer.parseInt(args[3]));
+						sendMessage(sender, "&cSet activations to " + args[3]);
 					}
-					sendMessage(sender, "&cAdded activations to " + args[3]);
-				} else {
-					User user = UserManager.getInstance().getMCPerksUser(args[1]);
-					user.addActivation(args[2], Integer.parseInt(args[3]));
-					sendMessage(sender, "&cSet activations to " + user.getActivations(args[2]));
-				}
-			}
-		});
+				});
+
+		plugin.getCommands()
+				.add(new CommandHandler(new String[] { "AddPerkActivations", "(player)", "(Perk)", "(number)" },
+						"MCPerks.AddActivations.Perk", "Add amount of activations") {
+
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						if (args[1].equals("*")) {
+							for (Player p : Bukkit.getOnlinePlayers()) {
+								User user = UserManager.getInstance().getMCPerksUser(p);
+								user.addActivation(args[2], Integer.parseInt(args[3]));
+							}
+							sendMessage(sender, "&cAdded activations to " + args[3]);
+						} else {
+							User user = UserManager.getInstance().getMCPerksUser(args[1]);
+							user.addActivation(args[2], Integer.parseInt(args[3]));
+							sendMessage(sender, "&cSet activations to " + user.getActivations(args[2]));
+						}
+					}
+				});
 
 		plugin.getCommands()
 				.add(new CommandHandler(new String[] { "RemovePerkActivations", "(player)", "(Perk)", "(number)" },

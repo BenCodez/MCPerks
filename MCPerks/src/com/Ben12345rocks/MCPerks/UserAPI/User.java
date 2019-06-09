@@ -153,7 +153,7 @@ public class User extends com.Ben12345rocks.AdvancedCore.UserManager.User {
 	}
 
 	public void addActivation(String perk, int add) {
-		setActivations(perk, getActivations() + add);
+		setActivations(perk, getActivations(perk) + add);
 	}
 
 	public void addActivation(String perk) {

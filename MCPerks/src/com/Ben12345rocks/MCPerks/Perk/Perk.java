@@ -685,11 +685,21 @@ public class Perk {
 		boolean globalActivation = true;
 
 		if (Config.getInstance().getLimitActivations()) {
-			if (user.getActivations(getPerk()) <= 0) {
+			boolean passed = false;
+
+			if (user.getActivations(getPerk()) > 0) {
 				globalActivation = false;
-				user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
-				return;
-			} else if (user.getActivations() <= 0) {
+				passed = true;
+				user.addActivation(getPerk(), -1);
+			}
+
+			if (user.getActivations() > 0) {
+				globalActivation = true;
+				passed = true;
+				user.addActivation(-1);
+			}
+
+			if (!passed) {
 				user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
 				return;
 			}
@@ -704,18 +714,6 @@ public class Perk {
 			user.sendMessage(ConfigPerks.getInstance().getPerkAddedToQue(perk));
 			Main.plugin.getPerkHandler().addQue(user, this);
 			return;
-		}
-
-		if (Config.getInstance().getLimitActivations()) {
-			if (globalActivation) {
-				if (user.getActivations() > 0) {
-					user.addActivation(-1);
-				}
-			} else {
-				if (user.getActivations(getPerk()) > 0) {
-					user.addActivation(getPerk(), -1);
-				}
-			}
 		}
 
 		execute(user, getTime());
