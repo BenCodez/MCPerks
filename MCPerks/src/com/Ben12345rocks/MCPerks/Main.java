@@ -5,6 +5,7 @@ package com.Ben12345rocks.MCPerks;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 
 import org.bukkit.Bukkit;
@@ -37,6 +38,7 @@ import com.Ben12345rocks.MCPerks.Data.ServerData;
 import com.Ben12345rocks.MCPerks.Listeners.EffectListeners;
 import com.Ben12345rocks.MCPerks.Listeners.Compatability.McMMOEvents;
 import com.Ben12345rocks.MCPerks.Perk.EffectHandler;
+import com.Ben12345rocks.MCPerks.Perk.Perk;
 import com.Ben12345rocks.MCPerks.Perk.PerkHandler;
 import com.Ben12345rocks.MCPerks.Perk.PerkSystemType;
 import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
@@ -209,11 +211,40 @@ public class Main extends JavaPlugin {
 		com.Ben12345rocks.MCPerks.UserAPI.User user = UserManager.getInstance().getMCPerksUser(p);
 		if (identifier.equalsIgnoreCase("activations")) {
 			return "" + user.getActivations();
+		} else if (identifier.equalsIgnoreCase("PerkLimit")) {
+			return "" + user.getPerkLimit();
+		} else if (identifier.equalsIgnoreCase("UseBossBar")) {
+			return "" + user.isUseBossBar();
 		}
 
 		for (String perk : Main.plugin.getPerkHandler().getLoadedPerks().keySet()) {
 			if (identifier.equalsIgnoreCase("activations_" + perk)) {
 				return "" + user.getActivations(perk);
+			} else if (identifier.equalsIgnoreCase("perkcooldown_" + perk)) {
+				int CooldownMin = plugin.getPerkHandler().getPerk(perk).getCoolDown() / 60;
+				int CooldownHour = CooldownMin / 60;
+				CooldownMin = CooldownHour * 60 - CooldownMin;
+				return CooldownHour + " Hours " + CooldownMin + " Minutes";
+			} else if (identifier.equalsIgnoreCase("cooldown_" + perk)) {
+				long coolDownTime = user.getPerkCoolDown(plugin.getPerkHandler().getPerk(perk));
+				if (coolDownTime < ServerData.getInstance().getData().getLong(perk + ".CoolDown", 0)) {
+					coolDownTime = ServerData.getInstance().getData().getLong(perk + ".CoolDown");
+				}
+				long cooldown = coolDownTime - Calendar.getInstance().getTime().getTime();
+				long coolDownMins = cooldown / (1000 * 64);
+				int coolDownHours = (int) (coolDownMins / 60);
+				int coolDownMin = (int) (coolDownHours * 60 - coolDownMins);
+				return "" + coolDownHours + " hours " + coolDownMin + " minutes";
+			} else if (identifier.equalsIgnoreCase("timeleft_" + perk)) {
+				Perk pe = plugin.getPerkHandler().getPerk(perk);
+				long left = pe.getExperation(user) - Calendar.getInstance().getTime().getTime();
+				int min = (int) (left / (1000 * 64));
+				long sec = left / 1000 - min * 1000 * 64;
+				if (!pe.isLastForever()) {
+					return "" + left / (1000 * 64) + " minutes " + sec + " seconds";
+				} else {
+					return "Forever";
+				}
 			}
 		}
 		return "";
