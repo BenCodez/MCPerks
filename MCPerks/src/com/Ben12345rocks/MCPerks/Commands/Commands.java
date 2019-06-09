@@ -133,4 +133,17 @@ public class Commands {
 		}
 		return texts;
 	}
+
+	public ArrayList<TextComponent> perksHelpText(CommandSender sender, int page) {
+		ArrayList<TextComponent> cmds = new ArrayList<TextComponent>();
+		ArrayList<TextComponent> help = perksHelpText(sender);
+		int pagesize = 10;
+		page = page - 1;
+		int maxPage = (int) (Math.ceil(help.size() / pagesize) + 1);
+		cmds.add(StringUtils.getInstance().stringToComp("&3&lPage " + (page+1) + "/" + maxPage));
+		for (int i = pagesize * page; (i < help.size()) && (i < ((page + 1) * pagesize)); i++) {
+			cmds.add(help.get(i));
+		}
+		return cmds;
+	}
 }

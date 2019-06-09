@@ -256,7 +256,7 @@ public class CommandLoader {
 			public void execute(CommandSender sender, String[] args) {
 				if (sender instanceof Player) {
 					Player player = (Player) sender;
-					for (TextComponent comp : Commands.getInstance().perksHelpText(sender)) {
+					for (TextComponent comp : Commands.getInstance().perksHelpText(sender, 1)) {
 						User user = UserManager.getInstance().getMCPerksUser(player);
 						user.sendJson(comp);
 					}
@@ -267,6 +267,26 @@ public class CommandLoader {
 				}
 			}
 		});
+
+		plugin.getCommands()
+				.add(new CommandHandler(new String[] { "Help", "(number)" }, "MCPerks.Help", "View This Page") {
+
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						if (sender instanceof Player) {
+							Player player = (Player) sender;
+							for (TextComponent comp : Commands.getInstance().perksHelpText(sender,
+									Integer.parseInt(args[1]))) {
+								User user = UserManager.getInstance().getMCPerksUser(player);
+								user.sendJson(comp);
+							}
+
+						} else {
+							sender.sendMessage(ArrayUtils.getInstance().convert(ArrayUtils.getInstance()
+									.comptoString(Commands.getInstance().perksHelpText(sender))));
+						}
+					}
+				});
 
 		plugin.getCommands()
 				.add(new CommandHandler(new String[] {}, "MCPerks.GUI" + "|MCPerks.AllPerks", "Open Perk GUI", false) {
