@@ -170,7 +170,9 @@ public class EffectListeners implements Listener {
 			if (plugin.getPerkHandler().getActivePerks().size() != 0) {
 				for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
 					if (UserManager.getInstance().getMCPerksUser(player).isUseBossBar()) {
-						perk.getBossBar().removePlayer(player);
+						if (perk.getBossBar() != null) {
+							perk.getBossBar().removePlayer(player);
+						}
 					}
 				}
 			}
