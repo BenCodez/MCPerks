@@ -20,6 +20,7 @@ import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventoryButton;
 import com.Ben12345rocks.AdvancedCore.Util.Item.ItemBuilder;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
+import com.Ben12345rocks.AdvancedCore.Util.Placeholder.PlaceHolder;
 import com.Ben12345rocks.AdvancedCore.Util.ValueRequest.InputMethod;
 import com.Ben12345rocks.AdvancedCore.Util.ValueRequest.ValueRequestBuilder;
 import com.Ben12345rocks.AdvancedCore.Util.ValueRequest.Listeners.BooleanListener;
@@ -265,6 +266,50 @@ public class CommandLoader {
 					sender.sendMessage(ArrayUtils.getInstance().convert(
 							ArrayUtils.getInstance().comptoString(Commands.getInstance().perksHelpText(sender))));
 				}
+			}
+		});
+
+		plugin.getCommands().add(new CommandHandler(new String[] { "Placeholders" }, "MCPerks.Placeholders",
+				"See possible placeholderapi placeholders") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				ArrayList<String> msg = new ArrayList<String>();
+				msg.add("&cPlaceholders:");
+				for (PlaceHolder<User> placeholder : plugin.getPlaceholders()) {
+					String identifier = placeholder.getIdentifier();
+					if (identifier.endsWith("_")) {
+						identifier += "#";
+					}
+					if (placeholder.hasDescription()) {
+						msg.add("%MCPerks_" + identifier + "% - " + placeholder.getDescription());
+					} else {
+						msg.add("%MCPerks_" + identifier + "%");
+					}
+				}
+
+				sendMessage(sender, msg);
+			}
+		});
+
+		plugin.getCommands().add(new CommandHandler(new String[] { "Placeholders", "(player)" },
+				"MCPerks.Placeholders.Player", "See possible placeholderapi placeholders with player values") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				ArrayList<String> msg = new ArrayList<String>();
+				msg.add("&cPlaceholders:");
+				User user = UserManager.getInstance().getMCPerksUser(args[1]);
+				for (PlaceHolder<User> placeholder : plugin.getPlaceholders()) {
+					String identifier = placeholder.getIdentifier();
+					if (identifier.endsWith("_")) {
+						identifier += "1";
+					}
+					msg.add("%MCPerks_" + identifier + "% = "
+							+ placeholder.placeholderRequest(user.getOfflinePlayer(), user, identifier));
+				}
+
+				sendMessage(sender, msg);
 			}
 		});
 

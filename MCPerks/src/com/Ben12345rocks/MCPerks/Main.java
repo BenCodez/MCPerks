@@ -28,6 +28,7 @@ import com.Ben12345rocks.AdvancedCore.Util.Metrics.BStatsMetrics;
 import com.Ben12345rocks.AdvancedCore.Util.Metrics.MCStatsMetrics;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
+import com.Ben12345rocks.AdvancedCore.Util.Placeholder.PlaceHolder;
 import com.Ben12345rocks.AdvancedCore.Util.Updater.Updater;
 import com.Ben12345rocks.MCPerks.Commands.CommandLoader;
 import com.Ben12345rocks.MCPerks.Commands.Executers.CommandMCPerks;
@@ -69,6 +70,13 @@ public class Main extends JavaPlugin {
 
 	@Getter
 	private HashMap<String, Boolean> flyingUUIDs;
+
+	@Getter
+	private ArrayList<PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>> placeholders = new ArrayList<PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>>();
+
+	public void addPlacehlder(PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User> placeholder) {
+		placeholders.add(placeholder);
+	}
 
 	@Getter
 	private PerkSystemType perkSystemType;
@@ -131,6 +139,8 @@ public class Main extends JavaPlugin {
 
 		getCommand("mcperks").setExecutor(new CommandMCPerks());
 		getCommand("mcperks").setTabCompleter(new MCPerksTabCompleter());
+		
+		loadPlaceholders();
 
 		try {
 			MCStatsMetrics metrics = new MCStatsMetrics(this);
@@ -206,48 +216,106 @@ public class Main extends JavaPlugin {
 		}
 	}
 
+	public void loadPlaceholders() {
+		addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>("activations") {
+
+			@Override
+			public String placeholderRequest(OfflinePlayer p, com.Ben12345rocks.MCPerks.UserAPI.User user,
+					String identifier) {
+				return "" + user.getActivations();
+			}
+		});
+
+		addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>("perklimit") {
+
+			@Override
+			public String placeholderRequest(OfflinePlayer p, com.Ben12345rocks.MCPerks.UserAPI.User user,
+					String identifier) {
+				return "" + user.getPerkLimit();
+			}
+		});
+
+		addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>("usebossbar") {
+
+			@Override
+			public String placeholderRequest(OfflinePlayer p, com.Ben12345rocks.MCPerks.UserAPI.User user,
+					String identifier) {
+				return "" + user.isUseBossBar();
+			}
+		});
+
+		for (String perk : Main.plugin.getPerkHandler().getLoadedPerks().keySet()) {
+			addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>("activations_" + perk) {
+
+				@Override
+				public String placeholderRequest(OfflinePlayer p, com.Ben12345rocks.MCPerks.UserAPI.User user,
+						String identifier) {
+					return "" + user.getActivations(perk);
+				}
+			});
+			addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>("cooldown_" + perk) {
+
+				@Override
+				public String placeholderRequest(OfflinePlayer p, com.Ben12345rocks.MCPerks.UserAPI.User user,
+						String identifier) {
+					long coolDownTime = user.getPerkCoolDown(plugin.getPerkHandler().getPerk(perk));
+					if (coolDownTime < ServerData.getInstance().getData().getLong(perk + ".CoolDown", 0)) {
+						coolDownTime = ServerData.getInstance().getData().getLong(perk + ".CoolDown");
+					}
+					long cooldown = coolDownTime - Calendar.getInstance().getTime().getTime();
+					long coolDownMins = cooldown / (1000 * 64);
+					int coolDownHours = (int) (coolDownMins / 60);
+					int coolDownMin = (int) (coolDownHours * 60 - coolDownMins);
+					if (coolDownHours <= 0 || coolDownMin <= 0) {
+						return "Cooldown ended";
+					}
+					return "" + coolDownHours + " hours " + coolDownMin + " minutes";
+				}
+			});
+
+			addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>("perkcooldown_" + perk) {
+
+				@Override
+				public String placeholderRequest(OfflinePlayer p, com.Ben12345rocks.MCPerks.UserAPI.User user,
+						String identifier) {
+					int CooldownMin = plugin.getPerkHandler().getPerk(perk).getCoolDown() / 60;
+					int CooldownHour = CooldownMin / 60;
+					CooldownMin = CooldownHour * 60 - CooldownMin;
+
+					return CooldownHour + " Hours " + CooldownMin + " Minutes";
+				}
+			});
+
+			addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>("timeleft_" + perk) {
+
+				@Override
+				public String placeholderRequest(OfflinePlayer p, com.Ben12345rocks.MCPerks.UserAPI.User user,
+						String identifier) {
+					Perk pe = plugin.getPerkHandler().getPerk(perk);
+					long left = pe.getExperation(user) - Calendar.getInstance().getTime().getTime();
+					int min = (int) (left / (1000 * 64));
+					long sec = left / 1000 - min * 1000 * 64;
+					if (!pe.isLastForever()) {
+						return "" + left / (1000 * 64) + " minutes " + sec + " seconds";
+					} else {
+						return "Forever";
+					}
+				}
+			});
+		}
+	}
+
 	public String placeHolder(OfflinePlayer p, String identifier) {
 		identifier = StringUtils.getInstance().replaceJavascript(p, identifier);
 		com.Ben12345rocks.MCPerks.UserAPI.User user = UserManager.getInstance().getMCPerksUser(p);
-		if (identifier.equalsIgnoreCase("activations")) {
-			return "" + user.getActivations();
-		} else if (identifier.equalsIgnoreCase("PerkLimit")) {
-			return "" + user.getPerkLimit();
-		} else if (identifier.equalsIgnoreCase("UseBossBar")) {
-			return "" + user.isUseBossBar();
-		}
 
-		for (String perk : Main.plugin.getPerkHandler().getLoadedPerks().keySet()) {
-			if (identifier.equalsIgnoreCase("activations_" + perk)) {
-				return "" + user.getActivations(perk);
-			} else if (identifier.equalsIgnoreCase("perkcooldown_" + perk)) {
-				int CooldownMin = plugin.getPerkHandler().getPerk(perk).getCoolDown() / 60;
-				int CooldownHour = CooldownMin / 60;
-				CooldownMin = CooldownHour * 60 - CooldownMin;
-				return CooldownHour + " Hours " + CooldownMin + " Minutes";
-			} else if (identifier.equalsIgnoreCase("cooldown_" + perk)) {
-				long coolDownTime = user.getPerkCoolDown(plugin.getPerkHandler().getPerk(perk));
-				if (coolDownTime < ServerData.getInstance().getData().getLong(perk + ".CoolDown", 0)) {
-					coolDownTime = ServerData.getInstance().getData().getLong(perk + ".CoolDown");
-				}
-				long cooldown = coolDownTime - Calendar.getInstance().getTime().getTime();
-				long coolDownMins = cooldown / (1000 * 64);
-				int coolDownHours = (int) (coolDownMins / 60);
-				int coolDownMin = (int) (coolDownHours * 60 - coolDownMins);
-				return "" + coolDownHours + " hours " + coolDownMin + " minutes";
-			} else if (identifier.equalsIgnoreCase("timeleft_" + perk)) {
-				Perk pe = plugin.getPerkHandler().getPerk(perk);
-				long left = pe.getExperation(user) - Calendar.getInstance().getTime().getTime();
-				int min = (int) (left / (1000 * 64));
-				long sec = left / 1000 - min * 1000 * 64;
-				if (!pe.isLastForever()) {
-					return "" + left / (1000 * 64) + " minutes " + sec + " seconds";
-				} else {
-					return "Forever";
-				}
+		for (PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User> placeholder : placeholders) {
+			if (placeholder.matches(identifier)) {
+				return placeholder.placeholderRequest(p, user, identifier);
 			}
 		}
-		return "";
+
+		return identifier;
 
 	}
 
