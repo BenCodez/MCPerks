@@ -4,6 +4,8 @@
 package com.Ben12345rocks.MCPerks;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -139,7 +141,7 @@ public class Main extends JavaPlugin {
 
 		getCommand("mcperks").setExecutor(new CommandMCPerks());
 		getCommand("mcperks").setTabCompleter(new MCPerksTabCompleter());
-		
+
 		loadPlaceholders();
 
 		try {
@@ -263,10 +265,10 @@ public class Main extends JavaPlugin {
 						coolDownTime = ServerData.getInstance().getData().getLong(perk + ".CoolDown");
 					}
 					long cooldown = coolDownTime - Calendar.getInstance().getTime().getTime();
-					long coolDownMins = cooldown / (1000 * 64);
-					int coolDownHours = (int) (coolDownMins / 60);
-					int coolDownMin = (int) (coolDownHours * 60 - coolDownMins);
-					if (coolDownHours <= 0 || coolDownMin <= 0) {
+					Duration dur = Duration.of(cooldown, ChronoUnit.MILLIS);
+					int coolDownHours = (int) dur.toHours();
+					int coolDownMin =  (int) dur.toMinutes()- coolDownHours*60;
+					if (cooldown < 0) {
 						return "Cooldown ended";
 					}
 					return "" + coolDownHours + " hours " + coolDownMin + " minutes";

@@ -3,6 +3,8 @@
  */
 package com.Ben12345rocks.MCPerks.Perk;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -494,9 +496,9 @@ public class Perk {
 			coolDownTime = ServerData.getInstance().getData().getLong(getPerk() + ".CoolDown");
 		}
 		long cooldown = coolDownTime - Calendar.getInstance().getTime().getTime();
-		long coolDownMins = cooldown / (1000 * 64);
-		int coolDownHours = (int) (coolDownMins / 60);
-		int coolDownMin = (int) (coolDownHours * 60 - coolDownMins);
+		Duration dur = Duration.of(cooldown, ChronoUnit.MILLIS);
+		int coolDownHours = (int) dur.toHours();
+		int coolDownMin =  (int) dur.toMinutes()- coolDownHours*60;
 
 		HashMap<String, String> placeholders = new HashMap<String, String>();
 		int timeLasts = getTime();
