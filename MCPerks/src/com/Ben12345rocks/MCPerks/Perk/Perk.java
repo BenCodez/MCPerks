@@ -341,8 +341,19 @@ public class Perk {
 		}
 
 		if (getBossBar() != null) {
-			getBossBar().hide();
-			setBossBar(null);
+			Bukkit.getScheduler().runTask(Main.plugin, new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						getBossBar().hide();
+						setBossBar(null);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			});
+
 		}
 
 		Main.plugin.getPerkHandler().remove(this, user);
@@ -498,7 +509,7 @@ public class Perk {
 		long cooldown = coolDownTime - Calendar.getInstance().getTime().getTime();
 		Duration dur = Duration.of(cooldown, ChronoUnit.MILLIS);
 		int coolDownHours = (int) dur.toHours();
-		int coolDownMin =  (int) dur.toMinutes()- coolDownHours*60;
+		int coolDownMin = (int) dur.toMinutes() - coolDownHours * 60;
 
 		HashMap<String, String> placeholders = new HashMap<String, String>();
 		int timeLasts = getTime();
