@@ -15,9 +15,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.java.JavaPlugin;
 
-import com.Ben12345rocks.AdvancedCore.AdvancedCoreHook;
+import com.Ben12345rocks.AdvancedCore.AdvancedCorePlugin;
 import com.Ben12345rocks.AdvancedCore.CommandAPI.CommandHandler;
 import com.Ben12345rocks.AdvancedCore.Rewards.Reward;
 import com.Ben12345rocks.AdvancedCore.Rewards.RewardHandler;
@@ -46,6 +45,7 @@ import com.Ben12345rocks.MCPerks.Perk.PerkHandler;
 import com.Ben12345rocks.MCPerks.Perk.PerkSystemType;
 import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 import com.Ben12345rocks.VotingPlugin.VotingPluginHooks;
+import com.Ben12345rocks.VotingPlugin.AdvancedCore.AdvancedCoreHook;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -54,7 +54,7 @@ import lombok.Setter;
 /**
  * The Class Main.
  */
-public class Main extends JavaPlugin {
+public class Main extends AdvancedCorePlugin {
 
 	/** The plugin. */
 	public static Main plugin;
@@ -117,23 +117,13 @@ public class Main extends JavaPlugin {
 	 * @see org.bukkit.plugin.java.JavaPlugin#onDisable()
 	 */
 	@Override
-	public void onDisable() {
+	public void onUnLoad() {
 		HandlerList.unregisterAll(plugin);
 		plugin = null;
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.bukkit.plugin.java.JavaPlugin#onEnable()
-	 */
+	
 	@Override
-	public void onEnable() {
-		plugin = this;
-		flyingUUIDs = new HashMap<String, Boolean>();
-		loadEvents();
-		setupFiles();
-		updateHook();
-		AdvancedCoreHook.getInstance().loadHook(this);
+	public void onPostLoad() {
 		perkHandler = new PerkHandler();
 		effectHandler = new EffectHandler();
 
@@ -172,7 +162,19 @@ public class Main extends JavaPlugin {
 				});
 			}
 		}, 10l);
+	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.bukkit.plugin.java.JavaPlugin#onEnable()
+	 */
+	@Override
+	public void onLoad() {
+		plugin = this;
+		flyingUUIDs = new HashMap<String, Boolean>();
+		loadEvents();
+		setupFiles();
+		updateHook();
 	}
 
 	public void loadInjectedRewards() {
