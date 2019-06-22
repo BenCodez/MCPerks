@@ -316,6 +316,7 @@ public class Main extends AdvancedCorePlugin {
 
 	}
 
+	@Override
 	public void reload() {
 		Config.getInstance().reloadData();
 		perkSystemType = PerkSystemType.valueOf(Config.getInstance().getPerkSystemType());
