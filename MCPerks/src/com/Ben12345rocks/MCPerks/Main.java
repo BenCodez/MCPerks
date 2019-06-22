@@ -45,7 +45,6 @@ import com.Ben12345rocks.MCPerks.Perk.PerkHandler;
 import com.Ben12345rocks.MCPerks.Perk.PerkSystemType;
 import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 import com.Ben12345rocks.VotingPlugin.VotingPluginHooks;
-import com.Ben12345rocks.VotingPlugin.AdvancedCore.AdvancedCoreHook;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -87,12 +86,6 @@ public class Main extends AdvancedCorePlugin {
 		MiscUtils.getInstance().broadcast(msg);
 	}
 
-	public void debug(String msg) {
-		if (Config.getInstance().getDebugEnabled()) {
-			plugin.getLogger().info("Debug: " + msg);
-		}
-	}
-
 	/**
 	 * Gets the main.
 	 *
@@ -126,6 +119,8 @@ public class Main extends AdvancedCorePlugin {
 	public void onPostLoad() {
 		perkHandler = new PerkHandler();
 		effectHandler = new EffectHandler();
+		
+		loadEvents();
 
 		CommandLoader.getInstance().loadCommands();
 
@@ -169,10 +164,9 @@ public class Main extends AdvancedCorePlugin {
 	 * @see org.bukkit.plugin.java.JavaPlugin#onEnable()
 	 */
 	@Override
-	public void onLoad() {
+	public void onPreLoad() {
 		plugin = this;
 		flyingUUIDs = new HashMap<String, Boolean>();
-		loadEvents();
 		setupFiles();
 		updateHook();
 	}
@@ -330,7 +324,7 @@ public class Main extends AdvancedCorePlugin {
 		ServerData.getInstance().reloadData();
 		getPerkHandler().reload();
 		CommandLoader.getInstance().loadTabComplete();
-		AdvancedCoreHook.getInstance().reload();
+		super.reload();
 		updateHook();
 	}
 
@@ -344,7 +338,7 @@ public class Main extends AdvancedCorePlugin {
 	}
 
 	public void updateHook() {
-		AdvancedCoreHook.getInstance().setConfigData(Config.getInstance().getData());
-		AdvancedCoreHook.getInstance().getOptions().setPreloadSkulls(false);
+		setConfigData(Config.getInstance().getData());
+		getOptions().setPreloadSkulls(false);
 	}
 }
