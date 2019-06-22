@@ -95,7 +95,7 @@ public class Main extends AdvancedCorePlugin {
 		return this;
 	}
 
-	public void loadEvents() {
+	public void loadListeners() {
 		PluginManager pm = getServer().getPluginManager();
 
 		pm.registerEvents(new EffectListeners(this), this);
@@ -114,13 +114,12 @@ public class Main extends AdvancedCorePlugin {
 		HandlerList.unregisterAll(plugin);
 		plugin = null;
 	}
-	
+
 	@Override
 	public void onPostLoad() {
+		loadListeners();
 		perkHandler = new PerkHandler();
 		effectHandler = new EffectHandler();
-		
-		loadEvents();
 
 		CommandLoader.getInstance().loadCommands();
 
@@ -263,7 +262,7 @@ public class Main extends AdvancedCorePlugin {
 					long cooldown = coolDownTime - Calendar.getInstance().getTime().getTime();
 					Duration dur = Duration.of(cooldown, ChronoUnit.MILLIS);
 					int coolDownHours = (int) dur.toHours();
-					int coolDownMin =  (int) dur.toMinutes()- coolDownHours*60;
+					int coolDownMin = (int) dur.toMinutes() - coolDownHours * 60;
 					if (cooldown < 0) {
 						return "Cooldown ended";
 					}

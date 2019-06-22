@@ -235,30 +235,30 @@ public class PerkHandler {
 					@Override
 					public void run() {
 						try {
-						// set bossbar text
-						HashMap<String, String> placeholders = new HashMap<String, String>();
-						placeholders.put("perk", clone.getName());
-						placeholders.put("seconds", "" + (length - time));
-						int minutes = (length - time) / 60;
-						placeholders.put("minutes", "" + minutes);
-						int hours = minutes / 24;
-						placeholders.put("hours", "" + hours);
-						bossBar.setTitle(StringUtils.getInstance()
-								.replacePlaceHolder(Config.getInstance().getBossBarMessage(), placeholders));
+							// set bossbar text
+							HashMap<String, String> placeholders = new HashMap<String, String>();
+							placeholders.put("perk", clone.getName());
+							placeholders.put("seconds", "" + (length - time));
+							int minutes = (length - time) / 60;
+							placeholders.put("minutes", "" + minutes);
+							int hours = minutes / 24;
+							placeholders.put("hours", "" + hours);
+							bossBar.setTitle(StringUtils.getInstance()
+									.replacePlaceHolder(Config.getInstance().getBossBarMessage(), placeholders));
 
-						// process time for progress bar
-						double time1 = time;
-						double perkTime = length;
-						double prog = 1.0 - time1 / perkTime;
-						if (prog < 0) {
-							prog = 0;
-						}
-						if (prog > 1) {
-							prog = 1;
-						}
-						bossBar.setProgress(prog);
+							// process time for progress bar
+							double time1 = time;
+							double perkTime = length;
+							double prog = 1.0 - time1 / perkTime;
+							if (prog < 0) {
+								prog = 0;
+							}
+							if (prog > 1) {
+								prog = 1;
+							}
+							bossBar.setProgress(prog);
 
-						bossBar.setVisible(true);
+							bossBar.setVisible(true);
 						} catch (NullPointerException e) {
 							AdvancedCorePlugin.getInstance().debug(e);
 							plugin.debug("Failed to update bossbar, turn debug on to see stacktrace");

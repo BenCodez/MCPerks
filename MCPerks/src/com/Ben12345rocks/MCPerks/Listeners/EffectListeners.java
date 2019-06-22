@@ -166,13 +166,8 @@ public class EffectListeners implements Listener {
 			if (plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString())) {
 				new FlyEffect().disableFly(player);
 			}
-
-			if (plugin.getPerkHandler().getActivePerks().size() != 0) {
-				for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
-					if (perk.getBossBar() != null) {
-						perk.getBossBar().removePlayer(player);
-					}
-				}
+			for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
+				perk.getBossBar().removePlayer(player);
 			}
 		}
 
@@ -219,47 +214,33 @@ public class EffectListeners implements Listener {
 	}
 
 	@EventHandler(ignoreCancelled = true)
-	public void onJoin(AdvancedCoreLoginEvent event) {
-		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+	public void onPlayerJoin(AdvancedCoreLoginEvent event) {
+		Player player = event.getPlayer();
+		if (player != null) {
+			if (plugin.getPerkHandler().getActivePerks().size() != 0) {
+				for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
+					boolean giveEffect = false;
+					if (perk.getPerkType().equals(PerkSystemType.ALL)) {
+						perk.addEffectedPlayer(player.getUniqueId().toString());
+						giveEffect = true;
+					}
+					if (perk.getEffectedPlayers().contains(player.getUniqueId().toString())) {
+						giveEffect = true;
+					}
 
-			@Override
-			public void run() {
-				Player player = event.getPlayer();
-				if (player != null) {
-					/*
-					 * if (plugin.getPerkHandler().effectActive(Effect.Fly,
-					 * player.getUniqueId().toString())) { if
-					 * (plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString())
-					 * .contains(player.getWorld().getName())) { new FlyEffect().enableFly(player);
-					 * } else { new FlyEffect().disableFly(player); }
-					 * }
-					 */
-					if (plugin.getPerkHandler().getActivePerks().size() != 0) {
-						for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
-							boolean giveEffect = false;
-							if (perk.getPerkType().equals(PerkSystemType.ALL)) {
-								perk.addEffectedPlayer(player.getUniqueId().toString());
-								giveEffect = true;
-							}
-							if (perk.getEffectedPlayers().contains(player.getUniqueId().toString())) {
-								giveEffect = true;
-							}
-
-							if (giveEffect) {
-								perk.giveEffect(player);
-								BossBar bar = perk.getBossBar();
-								if (bar != null) {
-									if (UserManager.getInstance().getMCPerksUser(player).isUseBossBar()) {
-										bar.addPlayer(player, Config.getInstance().getBossBarHideInDelay());
-									}
-								}
+					if (giveEffect) {
+						perk.giveEffect(player);
+						BossBar bar = perk.getBossBar();
+						if (bar != null) {
+							if (UserManager.getInstance().getMCPerksUser(player).isUseBossBar()) {
+								bar.addPlayer(player, Config.getInstance().getBossBarHideInDelay());
+								plugin.debug("adding player to bossbar");
 							}
 						}
 					}
 				}
-
 			}
-		}, 60);
+		}
 
 	}
 
