@@ -324,8 +324,9 @@ public class Main extends AdvancedCorePlugin {
 		ServerData.getInstance().reloadData();
 		getPerkHandler().reload();
 		CommandLoader.getInstance().loadTabComplete();
-		super.reload();
 		updateHook();
+		reloadAdvancedCore();
+		
 	}
 
 	/**
