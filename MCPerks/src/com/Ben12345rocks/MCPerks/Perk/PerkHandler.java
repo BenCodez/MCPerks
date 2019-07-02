@@ -150,7 +150,11 @@ public class PerkHandler {
 
 		// countdown effects
 		if (perk.getTime() > 0) {
-			for (Integer time : times) {
+			for (Integer time1 : times) {
+				if (time1 < 0) {
+					time1 = time1 * -1;
+				}
+				final Integer time = time1;
 				timer.schedule(new TimerTask() {
 
 					@Override
