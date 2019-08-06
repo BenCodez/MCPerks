@@ -5,6 +5,10 @@ package com.Ben12345rocks.MCPerks.Effects;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Bisected;
+import org.bukkit.block.data.Bisected.Half;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
@@ -88,18 +92,40 @@ public class FloristEffect {
 				loc.getBlock().setType(Material.OXEYE_DAISY);
 			} else if (randomNum < 0.73D) {
 				// double tall
-				loc.getBlock().setType(Material.PEONY, false);
+				// loc.getBlock().setType(Material.PEONY, false);
+				setFlower(loc, Material.PEONY);
 			} else if (randomNum < 0.78D) {
 				// double tall
-				loc.getBlock().setType(Material.SUNFLOWER, false);
+				// loc.getBlock().setType(Material.SUNFLOWER, false);
+				setFlower(loc, Material.SUNFLOWER);
 			} else if (randomNum < 0.83D) {
 				// double tall
-				loc.getBlock().setType(Material.LILAC, false);
+				// loc.getBlock().setType(Material.LILAC, false);
+				setFlower(loc, Material.LILAC);
 			} else if (randomNum < 0.88D) {
 				// double tall
-				loc.getBlock().setType(Material.ROSE_BUSH, false);
+				// loc.getBlock().setType(Material.ROSE_BUSH, false);
+
+				setFlower(loc, Material.ROSE_BUSH);
 			}
 		}
 
 	}
+
+	public void setFlower(Location loc, Material material) {
+		Block flowerBlockLower = loc.getBlock();
+		Block flowerBlockUpper = flowerBlockLower.getRelative(BlockFace.UP);
+		flowerBlockLower.setType(material, false);
+		flowerBlockUpper.setType(material, false);
+		setFlower(flowerBlockLower, material, Half.BOTTOM);
+		setFlower(flowerBlockLower.getRelative(BlockFace.UP), material, Half.TOP);
+	}
+
+	private void setFlower(Block block, Material type, Half half) {
+		block.setType(type, false);
+		Bisected data = (Bisected) block.getBlockData();
+		data.setHalf(half);
+		block.setBlockData(data, false); // Again, may need to pass "false"
+	}
+
 }

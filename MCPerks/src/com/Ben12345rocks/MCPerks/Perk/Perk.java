@@ -210,6 +210,8 @@ public class Perk {
 
 	/**
 	 * Activate perk.
+	 * @param user user
+	 * @param length length
 	 */
 	public void activatePerk(User user, int length) {
 		activater = user;
@@ -230,6 +232,8 @@ public class Perk {
 
 	/**
 	 * Announce perk.
+	 * @param playerName playername
+	 * @param length length
 	 */
 	public void announcePerk(String playerName, int length) {
 		if (playerName != null) {
@@ -460,6 +464,7 @@ public class Perk {
 
 	/**
 	 * Gets the increase percent.
+	 * @param effect effect
 	 *
 	 * @return the increase percent
 	 */
