@@ -563,14 +563,14 @@ public class CommandLoader {
 			loadAlias(cmdHandle, perk);
 
 			plugin.getCommands().add(new CommandHandler(new String[] { perk.getPerk(), "(player)" },
-					"MCPerks.ActivatePerk", "Activate Perk") {
+					"MCPerks.ActivatePerk.Other", "Activate Perk for another player") {
 
 				@Override
 				public void execute(CommandSender sender, String[] args) {
 
 					Perk perk = plugin.getPerkHandler().getPerk(args[0]);
-					PerkCommandExecutor.getInstance().issuePerkCommand(sender, args[1],
-							plugin.getPerkHandler().getPerk(args[1]).isTimed());
+					PerkCommandExecutor.getInstance().issuePerkCommand(Bukkit.getPlayer(args[1]), args[0],
+							perk.isTimed());
 					sender.sendMessage("Activated perk " + perk.getPerk() + " for " + args[1]);
 				}
 			});

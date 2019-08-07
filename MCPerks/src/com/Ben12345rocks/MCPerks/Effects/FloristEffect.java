@@ -115,17 +115,15 @@ public class FloristEffect {
 	public void setFlower(Location loc, Material material) {
 		Block flowerBlockLower = loc.getBlock();
 		Block flowerBlockUpper = flowerBlockLower.getRelative(BlockFace.UP);
-		flowerBlockLower.setType(material, false);
-		flowerBlockUpper.setType(material, false);
 		setFlower(flowerBlockLower, material, Half.BOTTOM);
-		setFlower(flowerBlockLower.getRelative(BlockFace.UP), material, Half.TOP);
+		setFlower(flowerBlockUpper, material, Half.TOP);
 	}
 
 	private void setFlower(Block block, Material type, Half half) {
 		block.setType(type, false);
 		Bisected data = (Bisected) block.getBlockData();
 		data.setHalf(half);
-		block.setBlockData(data, false); // Again, may need to pass "false"
+		block.setBlockData(data, false); 
 	}
 
 }
