@@ -673,7 +673,7 @@ public class Perk {
 
 	public void runPerk(User user) {
 
-		if (isPerkActive(user)) {
+		if (isPerkActive(user) && !Config.getInstance().getAllowDuplicatePerksActive()) {
 			user.sendMessage(ConfigPerks.getInstance().getPerkAlreayActive(perk));
 			return;
 		}

@@ -283,4 +283,8 @@ public class Config extends YMLFile {
 		plugin.saveResource("Config.yml", true);
 	}
 
+	public boolean getAllowDuplicatePerksActive() {
+		return getData().getBoolean("DuplicatePerksActive", false);
+	}
+
 }
