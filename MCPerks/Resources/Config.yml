@@ -147,6 +147,9 @@ LimitPermission: false
 # If true, players need to be given an activation 
 LimitActivations: false
 
+# Allow same perks to be active 
+DuplicatePerksActive: false
+
 # Default Item lore
 # Can also put this in each perk file
 # to define specific messages for each perk in gui
