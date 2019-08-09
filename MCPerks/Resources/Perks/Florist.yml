@@ -3,7 +3,8 @@ TimeLasts: 60
 CoolDown: 86400
 Name: 'Florist'
 Description: 'Give bonemeal a more flowery touch.'
+# 2 - radius of effect
 Effects:
-- Florist
+- Florist:2
 Item:
   Material: 'BONE_MEAL'

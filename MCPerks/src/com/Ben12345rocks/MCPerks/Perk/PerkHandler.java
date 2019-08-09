@@ -367,6 +367,25 @@ public class PerkHandler {
 		return false;
 	}
 
+	public int effectActiveModifier(Effect effect, String uuid, int defaultValue) {
+		ListIterator<Perk> it = activePerks.listIterator();
+		while (it.hasNext()) {
+			Perk perk = it.next();
+			if (perk.getEffects().contains(effect)) {
+				if (uuid == null || perk.getEffectedPlayers().contains(uuid)) {
+					plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
+
+					for (Effect e : perk.getEffects()) {
+						if (e.equals(effect)) {
+							return e.getModifier();
+						}
+					}
+				}
+			}
+		}
+		return defaultValue;
+	}
+
 	/**
 	 * @return the activePerks
 	 */

@@ -265,10 +265,10 @@ public class EffectListeners implements Listener {
 		if (plugin.getPerkHandler().effectActive(Effect.Florist, player.getUniqueId().toString())) {
 			if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
 				if (event.getItem().getType().equals(Material.BONE_MEAL)) {
-
 					event.setCancelled(true);
 					FloristEffect fe = new FloristEffect();
-					fe.generateFlowers(event.getClickedBlock().getLocation());
+					fe.generateFlowers(event.getClickedBlock().getLocation(), plugin.getPerkHandler()
+							.effectActiveModifier(Effect.Florist, player.getUniqueId().toString(), 2));
 					fe.deductBoneMeal(event);
 				}
 			}

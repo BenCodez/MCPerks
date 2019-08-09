@@ -13,6 +13,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
+import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
+
 // TODO: Auto-generated Javadoc
 /**
  * The Class FloristEffect.
@@ -42,14 +44,15 @@ public class FloristEffect {
 	 *
 	 * @param loc
 	 *            the loc
+	 * @param radius Radius
 	 */
-	public void generateFlowers(Location loc) {
+	public void generateFlowers(Location loc, int radius) {
 		int y = loc.getBlockY();
 		int x = loc.getBlockX();
 		int z = loc.getBlockZ();
 
-		for (int i = x - 2; i <= x + 2; ++i) {
-			for (int j = z - 2; j <= z + 2; ++j) {
+		for (int i = x - radius; i <= x + radius; ++i) {
+			for (int j = z - radius; j <= z + radius; ++j) {
 				if (loc.getWorld().getBlockAt(i, y, j).getType().equals(Material.GRASS_BLOCK)
 						&& loc.getWorld().getBlockAt(i, y + 1, j).getType().equals(Material.AIR)
 						&& loc.getWorld().getBlockAt(i, y + 1, j).getType().equals(Material.AIR)) {
@@ -69,44 +72,41 @@ public class FloristEffect {
 	 */
 	public void pickFlower(Location loc) {
 		if (loc.getBlock().getType().equals(Material.AIR)) {
-			double randomNum = Math.random();
-			if (randomNum < 0.11D) {
+			if (MiscUtils.getInstance().checkChance(11, 100)) {
 				loc.getBlock().setType(Material.DANDELION);
-			} else if (randomNum < 0.22D) {
+			} else if (MiscUtils.getInstance().checkChance(11, 100)) {
 				loc.getBlock().setType(Material.POPPY);
-			} else if (randomNum < 0.25D) {
+			} else if (MiscUtils.getInstance().checkChance(5, 100)) {
 				loc.getBlock().setType(Material.BLUE_ORCHID);
-			} else if (randomNum < 0.28D) {
+			} else if (MiscUtils.getInstance().checkChance(7, 100)) {
 				loc.getBlock().setType(Material.ALLIUM);
-			} else if (randomNum < 0.35D) {
+			} else if (MiscUtils.getInstance().checkChance(7, 100)) {
 				loc.getBlock().setType(Material.AZURE_BLUET);
-			} else if (randomNum < 0.42D) {
+			} else if (MiscUtils.getInstance().checkChance(7, 100)) {
 				loc.getBlock().setType(Material.RED_TULIP);
-			} else if (randomNum < 0.49D) {
+			} else if (MiscUtils.getInstance().checkChance(7, 100)) {
 				loc.getBlock().setType(Material.ORANGE_TULIP);
-			} else if (randomNum < 0.56D) {
+			} else if (MiscUtils.getInstance().checkChance(7, 100)) {
 				loc.getBlock().setType(Material.WHITE_TULIP);
-			} else if (randomNum < 0.63D) {
+			} else if (MiscUtils.getInstance().checkChance(7, 100)) {
 				loc.getBlock().setType(Material.PINK_TULIP);
-			} else if (randomNum < 0.7D) {
+			} else if (MiscUtils.getInstance().checkChance(7, 100)) {
 				loc.getBlock().setType(Material.OXEYE_DAISY);
-			} else if (randomNum < 0.73D) {
+			} else if (MiscUtils.getInstance().checkChance(5, 100)) {
 				// double tall
-				// loc.getBlock().setType(Material.PEONY, false);
 				setFlower(loc, Material.PEONY);
-			} else if (randomNum < 0.78D) {
+			} else if (MiscUtils.getInstance().checkChance(5, 100)) {
 				// double tall
-				// loc.getBlock().setType(Material.SUNFLOWER, false);
 				setFlower(loc, Material.SUNFLOWER);
-			} else if (randomNum < 0.83D) {
+			} else if (MiscUtils.getInstance().checkChance(5, 100)) {
 				// double tall
-				// loc.getBlock().setType(Material.LILAC, false);
 				setFlower(loc, Material.LILAC);
-			} else if (randomNum < 0.88D) {
+			} else if (MiscUtils.getInstance().checkChance(5, 100)) {
 				// double tall
-				// loc.getBlock().setType(Material.ROSE_BUSH, false);
-
 				setFlower(loc, Material.ROSE_BUSH);
+			} else if (MiscUtils.getInstance().checkChance(5, 100)) {
+				// double tall
+				setFlower(loc, Material.LARGE_FERN);
 			}
 		}
 
@@ -123,7 +123,7 @@ public class FloristEffect {
 		block.setType(type, false);
 		Bisected data = (Bisected) block.getBlockData();
 		data.setHalf(half);
-		block.setBlockData(data, false); 
+		block.setBlockData(data, false);
 	}
 
 }

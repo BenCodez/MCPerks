@@ -284,9 +284,14 @@ public enum Effect {
 		}
 	}
 
-	public boolean usesModifier() {
+	public boolean usesIncreasePercentage() {
 		return isEffect(Effect.IncreaseMobDrops, Effect.DoubleExperience, Effect.Farmer, Effect.Fortune, Effect.McmmoXP,
 				Effect.HeadDropper, Effect.IncreaseStrength);
+	}
+
+	public boolean usesModifier() {
+		return isEffect(Effect.IncreaseMobDrops, Effect.DoubleExperience, Effect.Farmer, Effect.Fortune, Effect.McmmoXP,
+				Effect.HeadDropper, Effect.IncreaseStrength, Effect.Florist);
 	}
 
 	public boolean isEffect(Effect... effects) {

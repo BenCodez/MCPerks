@@ -191,7 +191,7 @@ public class Perk {
 			if (data.length > 1) {
 				if (StringUtils.getInstance().isInt(data[1])) {
 					effect.setModifier(Integer.parseInt(data[1]));
-					if (effect.usesModifier()) {
+					if (effect.usesModifier() && effect.usesIncreasePercentage()) {
 						if (increasePercent == -1) {
 							increasePercent = effect.getModifier();
 						}
@@ -199,7 +199,7 @@ public class Perk {
 				}
 
 			} else {
-				if (effect.usesModifier()) {
+				if (effect.usesModifier() && effect.usesIncreasePercentage()) {
 					effect.setModifier(increasePercent);
 				}
 			}
@@ -210,8 +210,11 @@ public class Perk {
 
 	/**
 	 * Activate perk.
-	 * @param user user
-	 * @param length length
+	 * 
+	 * @param user
+	 *            user
+	 * @param length
+	 *            length
 	 */
 	public void activatePerk(User user, int length) {
 		activater = user;
@@ -232,8 +235,11 @@ public class Perk {
 
 	/**
 	 * Announce perk.
-	 * @param playerName playername
-	 * @param length length
+	 * 
+	 * @param playerName
+	 *            playername
+	 * @param length
+	 *            length
 	 */
 	public void announcePerk(String playerName, int length) {
 		if (playerName != null) {
@@ -464,7 +470,9 @@ public class Perk {
 
 	/**
 	 * Gets the increase percent.
-	 * @param effect effect
+	 * 
+	 * @param effect
+	 *            effect
 	 *
 	 * @return the increase percent
 	 */
