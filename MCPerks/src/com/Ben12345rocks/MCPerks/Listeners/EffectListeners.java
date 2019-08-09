@@ -167,7 +167,9 @@ public class EffectListeners implements Listener {
 				new FlyEffect().disableFly(player);
 			}
 			for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
-				perk.getBossBar().removePlayer(player);
+				if (perk.getBossBar() != null) {
+					perk.getBossBar().removePlayer(player);
+				}
 			}
 		}
 
