@@ -3,8 +3,15 @@
  */
 package com.Ben12345rocks.MCPerks.Effects;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Bisected;
+import org.bukkit.block.data.Bisected.Half;
+import org.bukkit.block.data.type.SeaPickle;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
@@ -53,7 +60,9 @@ public class UnderWaterFloristEffect {
 				if (loc.getWorld().getBlockAt(i, y, j).getType().isSolid()
 						&& loc.getWorld().getBlockAt(i, y + 1, j).getType().equals(Material.WATER)
 						&& loc.getWorld().getBlockAt(i, y + 2, j).getType().equals(Material.WATER)) {
-					pickFlower(new Location(loc.getWorld(), i, y + 1, j));
+					if (loc.getBlock().getBiome().toString().contains("OCEAN")) {
+						pickFlower(new Location(loc.getWorld(), i, y + 1, j));
+					}
 
 				}
 			}
@@ -68,14 +77,34 @@ public class UnderWaterFloristEffect {
 	 *            the loc
 	 */
 	public void pickFlower(Location loc) {
-		if (loc.getBlock().getType().equals(Material.AIR)) {
-			if (MiscUtils.getInstance().checkChance(10, 100)) {
+		if (loc.getBlock().getType().equals(Material.WATER)) {
+			if (MiscUtils.getInstance().checkChance(20, 100)) {
 				loc.getBlock().setType(Material.SEA_PICKLE);
-			} else if (MiscUtils.getInstance().checkChance(10, 100)) {
+				SeaPickle data = (SeaPickle) loc.getBlock().getBlockData();
+				data.setPickles(ThreadLocalRandom.current().nextInt(1, 4));
+				loc.getBlock().setBlockData(data);
+			} else if (MiscUtils.getInstance().checkChance(30, 100)) {
 				loc.getBlock().setType(Material.KELP);
+			} else if (MiscUtils.getInstance().checkChance(50, 100)) {
+				loc.getBlock().setType(Material.SEAGRASS);
+			} else if (MiscUtils.getInstance().checkChance(50, 100)) {
+				setFlower(loc, Material.TALL_SEAGRASS);
 			}
-
 		}
+	}
+
+	public void setFlower(Location loc, Material material) {
+		Block flowerBlockLower = loc.getBlock();
+		Block flowerBlockUpper = flowerBlockLower.getRelative(BlockFace.UP);
+		setFlower(flowerBlockLower, material, Half.BOTTOM);
+		setFlower(flowerBlockUpper, material, Half.TOP);
+	}
+
+	private void setFlower(Block block, Material type, Half half) {
+		block.setType(type, false);
+		Bisected data = (Bisected) block.getBlockData();
+		data.setHalf(half);
+		block.setBlockData(data, false);
 	}
 
 }
