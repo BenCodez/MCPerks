@@ -29,6 +29,8 @@ public enum Effect {
 
 	Florist,
 
+	UnderWaterFlorist,
+
 	CureSpells,
 
 	DoubleExperience,
@@ -291,7 +293,7 @@ public enum Effect {
 
 	public boolean usesModifier() {
 		return isEffect(Effect.IncreaseMobDrops, Effect.DoubleExperience, Effect.Farmer, Effect.Fortune, Effect.McmmoXP,
-				Effect.HeadDropper, Effect.IncreaseStrength, Effect.Florist);
+				Effect.HeadDropper, Effect.IncreaseStrength, Effect.Florist, Effect.UnderWaterFlorist);
 	}
 
 	public boolean isEffect(Effect... effects) {

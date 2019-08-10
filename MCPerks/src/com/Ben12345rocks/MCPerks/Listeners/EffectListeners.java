@@ -37,6 +37,7 @@ import com.Ben12345rocks.MCPerks.Effects.FortuneEffect;
 import com.Ben12345rocks.MCPerks.Effects.HeadDropperEffect;
 import com.Ben12345rocks.MCPerks.Effects.MobDropEffect;
 import com.Ben12345rocks.MCPerks.Effects.ProtectionEffect;
+import com.Ben12345rocks.MCPerks.Effects.UnderWaterFloristEffect;
 import com.Ben12345rocks.MCPerks.Perk.Effect;
 import com.Ben12345rocks.MCPerks.Perk.Perk;
 import com.Ben12345rocks.MCPerks.Perk.PerkSystemType;
@@ -269,6 +270,19 @@ public class EffectListeners implements Listener {
 					FloristEffect fe = new FloristEffect();
 					fe.generateFlowers(event.getClickedBlock().getLocation(), plugin.getPerkHandler()
 							.effectActiveModifier(Effect.Florist, player.getUniqueId().toString(), 2));
+					fe.deductBoneMeal(event);
+				}
+			}
+
+		}
+
+		if (plugin.getPerkHandler().effectActive(Effect.UnderWaterFlorist, player.getUniqueId().toString())) {
+			if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
+				if (event.getItem().getType().equals(Material.BONE_MEAL)) {
+					event.setCancelled(true);
+					UnderWaterFloristEffect fe = new UnderWaterFloristEffect();
+					fe.generateFlowers(event.getClickedBlock().getLocation(), plugin.getPerkHandler()
+							.effectActiveModifier(Effect.UnderWaterFlorist, player.getUniqueId().toString(), 2));
 					fe.deductBoneMeal(event);
 				}
 			}

@@ -55,7 +55,7 @@ public class FloristEffect {
 			for (int j = z - radius; j <= z + radius; ++j) {
 				if (loc.getWorld().getBlockAt(i, y, j).getType().equals(Material.GRASS_BLOCK)
 						&& loc.getWorld().getBlockAt(i, y + 1, j).getType().equals(Material.AIR)
-						&& loc.getWorld().getBlockAt(i, y + 1, j).getType().equals(Material.AIR)) {
+						&& loc.getWorld().getBlockAt(i, y + 2, j).getType().equals(Material.AIR)) {
 					pickFlower(new Location(loc.getWorld(), i, y + 1, j));
 
 				}
