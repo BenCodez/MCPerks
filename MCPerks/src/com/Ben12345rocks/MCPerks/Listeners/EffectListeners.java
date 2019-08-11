@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -266,11 +267,13 @@ public class EffectListeners implements Listener {
 		if (plugin.getPerkHandler().effectActive(Effect.Florist, player.getUniqueId().toString())) {
 			if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
 				if (event.getItem().getType().equals(Material.BONE_MEAL)) {
-					event.setCancelled(true);
-					FloristEffect fe = new FloristEffect();
-					fe.generateFlowers(event.getClickedBlock().getLocation(), plugin.getPerkHandler()
-							.effectActiveModifier(Effect.Florist, player.getUniqueId().toString(), 2));
-					fe.deductBoneMeal(event);
+					if (event.getClickedBlock().getType().equals(Material.GRASS_BLOCK)) {
+						event.setCancelled(true);
+						FloristEffect fe = new FloristEffect();
+						fe.generateFlowers(event.getClickedBlock().getLocation(), plugin.getPerkHandler()
+								.effectActiveModifier(Effect.Florist, player.getUniqueId().toString(), 2));
+						fe.deductBoneMeal(event);
+					}
 				}
 			}
 
@@ -279,7 +282,7 @@ public class EffectListeners implements Listener {
 		if (plugin.getPerkHandler().effectActive(Effect.UnderWaterFlorist, player.getUniqueId().toString())) {
 			if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
 				if (event.getItem().getType().equals(Material.BONE_MEAL)) {
-					if (event.getClickedBlock().getBiome().toString().contains("OCEAN")) {
+					if (event.getClickedBlock().getRelative(BlockFace.UP).getType().equals(Material.WATER)) {
 						event.setCancelled(true);
 						UnderWaterFloristEffect fe = new UnderWaterFloristEffect();
 						fe.generateFlowers(event.getClickedBlock().getLocation(), plugin.getPerkHandler()

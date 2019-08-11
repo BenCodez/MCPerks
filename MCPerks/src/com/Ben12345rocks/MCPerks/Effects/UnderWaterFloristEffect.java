@@ -65,10 +65,7 @@ public class UnderWaterFloristEffect {
 				if (loc.getWorld().getBlockAt(i, y, j).getType().isSolid()
 						&& loc.getWorld().getBlockAt(i, y + 1, j).getType().equals(Material.WATER)
 						&& loc.getWorld().getBlockAt(i, y + 2, j).getType().equals(Material.WATER)) {
-					if (loc.getBlock().getBiome().toString().contains("OCEAN")) {
-						pickFlower(new Location(loc.getWorld(), i, y + 1, j));
-					}
-
+					pickFlower(new Location(loc.getWorld(), i, y + 1, j));
 				}
 			}
 		}
