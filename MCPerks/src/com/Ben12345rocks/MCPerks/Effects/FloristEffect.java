@@ -3,6 +3,7 @@
  */
 package com.Ben12345rocks.MCPerks.Effects;
 
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -24,6 +25,9 @@ public class FloristEffect {
 	@SuppressWarnings("deprecation")
 	public void deductBoneMeal(PlayerInteractEvent event) {
 		// Main.plugin.debug("Amount: " + event.getItem().getAmount());
+		if (event.getPlayer().getGameMode().equals(GameMode.CREATIVE)) {
+			return;
+		}
 		if (event.getItem().getAmount() == 1) {
 			Player player = event.getPlayer();
 			if (player.getItemInHand().getType().equals(Material.BONE_MEAL)) {
@@ -44,7 +48,8 @@ public class FloristEffect {
 	 *
 	 * @param loc
 	 *            the loc
-	 * @param radius Radius
+	 * @param radius
+	 *            Radius
 	 */
 	public void generateFlowers(Location loc, int radius) {
 		int y = loc.getBlockY();

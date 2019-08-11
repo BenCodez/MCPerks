@@ -4,6 +4,6 @@ CoolDown: 86400
 Name: 'UnderWaterFlorist'
 Description: 'Give bonemeal a little upgrade'
 Effects:
-- UnderWaterFlorist
+- UnderWaterFlorist:2
 Item:
   Material: 'BONE_MEAL'

@@ -279,11 +279,13 @@ public class EffectListeners implements Listener {
 		if (plugin.getPerkHandler().effectActive(Effect.UnderWaterFlorist, player.getUniqueId().toString())) {
 			if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
 				if (event.getItem().getType().equals(Material.BONE_MEAL)) {
-					event.setCancelled(true);
-					UnderWaterFloristEffect fe = new UnderWaterFloristEffect();
-					fe.generateFlowers(event.getClickedBlock().getLocation(), plugin.getPerkHandler()
-							.effectActiveModifier(Effect.UnderWaterFlorist, player.getUniqueId().toString(), 2));
-					fe.deductBoneMeal(event);
+					if (event.getClickedBlock().getBiome().toString().contains("OCEAN")) {
+						event.setCancelled(true);
+						UnderWaterFloristEffect fe = new UnderWaterFloristEffect();
+						fe.generateFlowers(event.getClickedBlock().getLocation(), plugin.getPerkHandler()
+								.effectActiveModifier(Effect.UnderWaterFlorist, player.getUniqueId().toString(), 2));
+						fe.deductBoneMeal(event);
+					}
 				}
 			}
 
