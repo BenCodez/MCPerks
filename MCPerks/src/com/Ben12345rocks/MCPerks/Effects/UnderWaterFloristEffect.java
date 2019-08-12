@@ -89,7 +89,7 @@ public class UnderWaterFloristEffect {
 					data.setPickles(ThreadLocalRandom.current().nextInt(1, 4));
 				}
 				loc.getBlock().setBlockData(data);
-			} else if (MiscUtils.getInstance().checkChance(40, 100)) {
+			} else if (MiscUtils.getInstance().checkChance(30, 100)) {
 				// coral blocks
 				switch (ThreadLocalRandom.current().nextInt(1, 5)) {
 					case 1:
@@ -110,7 +110,7 @@ public class UnderWaterFloristEffect {
 					default:
 						break;
 				}
-			} else if (MiscUtils.getInstance().checkChance(40, 100)) {
+			} else if (MiscUtils.getInstance().checkChance(30, 100)) {
 				// wall fans
 				BlockFace face = BlockFace.DOWN;
 				if (isValidBlock(loc.getBlock().getRelative(BlockFace.NORTH))) {
@@ -173,9 +173,9 @@ public class UnderWaterFloristEffect {
 
 			} else if (MiscUtils.getInstance().checkChance(30, 100)) {
 				loc.getBlock().setType(Material.KELP);
-			} else if (MiscUtils.getInstance().checkChance(40, 100)) {
+			} else if (MiscUtils.getInstance().checkChance(25, 100)) {
 				loc.getBlock().setType(Material.SEAGRASS);
-			} else if (MiscUtils.getInstance().checkChance(40, 100)) {
+			} else if (MiscUtils.getInstance().checkChance(25, 100)) {
 				setFlower(loc, Material.TALL_SEAGRASS);
 			}
 		}
