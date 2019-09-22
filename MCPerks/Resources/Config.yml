@@ -3,12 +3,11 @@
 # Perks are located in Perks folder
 # Permissions are mcperks.(filename) - filename without extenstion
 
-# Enable debug mode
-Debug: false
-
-# Show extra debug info
-# Only needed in extreme cases
-ExtraDebug: false
+# Debug levels:
+# NONE
+# INFO
+# EXTRA
+DebugLevel: NONE
 
 # Valid Options:
 # - FLAT
