@@ -27,8 +27,8 @@ import com.Ben12345rocks.AdvancedCore.Rewards.RewardBuilder;
 import com.Ben12345rocks.AdvancedCore.Rewards.RewardHandler;
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
 import com.Ben12345rocks.AdvancedCore.Util.Item.ItemBuilder;
+import com.Ben12345rocks.AdvancedCore.Util.Messages.StringParser;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
-import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
@@ -189,7 +189,7 @@ public class Perk {
 			String[] data = effectLine.split(":");
 			Effect effect = Effect.valueOf(data[0]);
 			if (data.length > 1) {
-				if (StringUtils.getInstance().isInt(data[1])) {
+				if (StringParser.getInstance().isInt(data[1])) {
 					effect.setModifier(Integer.parseInt(data[1]));
 					if (effect.usesModifier() && effect.usesIncreasePercentage()) {
 						if (increasePercent == -1) {
@@ -255,7 +255,7 @@ public class Perk {
 			}
 
 			for (Player p : players) {
-				p.sendMessage(StringUtils.getInstance().colorize(msg));
+				p.sendMessage(StringParser.getInstance().colorize(msg));
 			}
 
 			if (isTimed() && !isLastForever()) {
@@ -263,10 +263,10 @@ public class Perk {
 				placeholders.put("TimeLasts", "" + length);
 				placeholders.put("TimeLastsMin", "" + length / 60);
 				placeholders.put("TimeLastsHour", "" + length / 60 / 60);
-				msg = StringUtils.getInstance()
+				msg = StringParser.getInstance()
 						.replacePlaceHolder(ConfigPerks.getInstance().getPerkActivatedTimed(getPerk()), placeholders);
 				for (Player p : players) {
-					p.sendMessage(StringUtils.getInstance().colorize(msg));
+					p.sendMessage(StringParser.getInstance().colorize(msg));
 				}
 			}
 		}

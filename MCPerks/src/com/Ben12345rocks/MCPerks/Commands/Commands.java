@@ -13,7 +13,7 @@ import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventory;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventory.ClickEvent;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventoryButton;
 import com.Ben12345rocks.AdvancedCore.Util.Item.ItemBuilder;
-import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
+import com.Ben12345rocks.AdvancedCore.Util.Messages.StringParser;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.Lang;
@@ -63,7 +63,7 @@ public class Commands {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
 			User user = UserManager.getInstance().getMCPerksUser(player);
-			String title = StringUtils.getInstance().replacePlaceHolder(Lang.getInstance().getGUIName(), "Activations",
+			String title = StringParser.getInstance().replacePlaceHolder(Lang.getInstance().getGUIName(), "Activations",
 					"" + user.getActivations());
 			BInventory inv = new BInventory(title);
 			int slot = 0;
@@ -99,7 +99,7 @@ public class Commands {
 			}
 			inv.openInventory(player);
 		} else {
-			sender.sendMessage(StringUtils.getInstance().colorize("Must be a player to do this"));
+			sender.sendMessage(StringParser.getInstance().colorize("Must be a player to do this"));
 		}
 	}
 
@@ -113,7 +113,7 @@ public class Commands {
 	public ArrayList<TextComponent> perksHelpText(CommandSender sender) {
 		ArrayList<TextComponent> texts = new ArrayList<TextComponent>();
 		HashMap<String, TextComponent> unsorted = new HashMap<String, TextComponent>();
-		texts.add(StringUtils.getInstance().stringToComp(Lang.getInstance().getHelpTitle()));
+		texts.add(StringParser.getInstance().stringToComp(Lang.getInstance().getHelpTitle()));
 
 		boolean requirePerms = true;
 
@@ -140,7 +140,7 @@ public class Commands {
 		int pagesize = 10;
 		page = page - 1;
 		int maxPage = (int) (Math.ceil(help.size() / pagesize) + 1);
-		cmds.add(StringUtils.getInstance().stringToComp("&3&lPage " + (page+1) + "/" + maxPage));
+		cmds.add(StringParser.getInstance().stringToComp("&3&lPage " + (page + 1) + "/" + maxPage));
 		for (int i = pagesize * page; (i < help.size()) && (i < ((page + 1) * pagesize)); i++) {
 			cmds.add(help.get(i));
 		}

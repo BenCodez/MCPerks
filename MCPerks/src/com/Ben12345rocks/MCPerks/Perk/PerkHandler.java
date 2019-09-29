@@ -35,8 +35,8 @@ import com.Ben12345rocks.AdvancedCore.UserManager.UUID;
 import com.Ben12345rocks.AdvancedCore.UserManager.UserManager;
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
 import com.Ben12345rocks.AdvancedCore.Util.Logger.Logger;
+import com.Ben12345rocks.AdvancedCore.Util.Messages.StringParser;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
-import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Configs.ConfigPerks;
@@ -90,7 +90,7 @@ public class PerkHandler {
 		ArrayList<Integer> times = new ArrayList<Integer>();
 		if (perk.getTime() > 0) {
 			for (String str : ConfigPerks.getInstance().getCountDownTimes(perk.getPerk())) {
-				if (StringUtils.getInstance().isInt(str)) {
+				if (StringParser.getInstance().isInt(str)) {
 					int num = Integer.parseInt(str);
 					if (num > 0) {
 						times.add(length - num);
@@ -214,9 +214,9 @@ public class PerkHandler {
 
 		if (Config.getInstance().getBossBarEnabled() && clone.isTimed() && !clone.isLastForever()) {
 			final BossBar bossBar = new BossBar(
-					StringUtils.getInstance()
+					StringParser.getInstance()
 							.replacePlaceHolder(
-									StringUtils.getInstance().replacePlaceHolder(
+									StringParser.getInstance().replacePlaceHolder(
 											Config.getInstance().getBossBarMessage(), "perk", clone.getName()),
 									"seconds", "" + (length)),
 					Config.getInstance().getBossBarColor(), Config.getInstance().getBossBarStyle(), 1);
@@ -247,7 +247,7 @@ public class PerkHandler {
 							placeholders.put("minutes", "" + minutes);
 							int hours = minutes / 24;
 							placeholders.put("hours", "" + hours);
-							bossBar.setTitle(StringUtils.getInstance()
+							bossBar.setTitle(StringParser.getInstance()
 									.replacePlaceHolder(Config.getInstance().getBossBarMessage(), placeholders));
 
 							// process time for progress bar

@@ -12,8 +12,8 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import com.Ben12345rocks.AdvancedCore.CommandAPI.CommandHandler;
+import com.Ben12345rocks.AdvancedCore.Util.Messages.StringParser;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
-import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
 import com.Ben12345rocks.MCPerks.Main;
 
 /**
@@ -143,7 +143,7 @@ public class AliasesTabCompleter implements TabCompleter {
 		}
 
 		for (int i = 0; i < cmds.size(); i++) {
-			if (StringUtils.getInstance().startsWithIgnoreCase(cmds.get(i), args[argsIn.length])) {
+			if (StringParser.getInstance().startsWithIgnoreCase(cmds.get(i), args[argsIn.length])) {
 				tab.add(cmds.get(i));
 			}
 		}

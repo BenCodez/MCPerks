@@ -18,8 +18,8 @@ import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventory;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventory.ClickEvent;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventoryButton;
 import com.Ben12345rocks.AdvancedCore.Util.Item.ItemBuilder;
+import com.Ben12345rocks.AdvancedCore.Util.Messages.StringParser;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
-import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
 import com.Ben12345rocks.AdvancedCore.Util.Placeholder.PlaceHolder;
 import com.Ben12345rocks.AdvancedCore.Util.ValueRequest.InputMethod;
 import com.Ben12345rocks.AdvancedCore.Util.ValueRequest.ValueRequestBuilder;
@@ -155,7 +155,7 @@ public class CommandLoader {
 			@Override
 			public void execute(CommandSender sender, String[] args) {
 				plugin.reload();
-				sender.sendMessage(StringUtils.getInstance().colorize(
+				sender.sendMessage(StringParser.getInstance().colorize(
 						"&c" + plugin.getName() + " v" + plugin.getDescription().getVersion() + " reloaded!"));
 			}
 		});
@@ -357,7 +357,7 @@ public class CommandLoader {
 					@Override
 					public void execute(CommandSender sender, String[] args) {
 						plugin.getPerkHandler().clearQueue();
-						sender.sendMessage(StringUtils.getInstance().colorize("&cPerk Queue Cleared"));
+						sender.sendMessage(StringParser.getInstance().colorize("&cPerk Queue Cleared"));
 					}
 				});
 

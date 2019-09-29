@@ -25,10 +25,10 @@ import com.Ben12345rocks.AdvancedCore.Thread.Thread;
 import com.Ben12345rocks.AdvancedCore.UserManager.User;
 import com.Ben12345rocks.AdvancedCore.Util.EditGUI.EditGUIButton;
 import com.Ben12345rocks.AdvancedCore.Util.EditGUI.ValueTypes.EditGUIValueNumber;
+import com.Ben12345rocks.AdvancedCore.Util.Messages.StringParser;
 import com.Ben12345rocks.AdvancedCore.Util.Metrics.BStatsMetrics;
 import com.Ben12345rocks.AdvancedCore.Util.Metrics.MCStatsMetrics;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
-import com.Ben12345rocks.AdvancedCore.Util.Misc.StringUtils;
 import com.Ben12345rocks.AdvancedCore.Util.Placeholder.PlaceHolder;
 import com.Ben12345rocks.AdvancedCore.Util.Updater.Updater;
 import com.Ben12345rocks.MCPerks.Commands.CommandLoader;
@@ -303,7 +303,7 @@ public class Main extends AdvancedCorePlugin {
 	}
 
 	public String placeHolder(OfflinePlayer p, String identifier) {
-		identifier = StringUtils.getInstance().replaceJavascript(p, identifier);
+		identifier = StringParser.getInstance().replaceJavascript(p, identifier);
 		com.Ben12345rocks.MCPerks.UserAPI.User user = UserManager.getInstance().getMCPerksUser(p);
 
 		for (PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User> placeholder : placeholders) {
@@ -326,7 +326,7 @@ public class Main extends AdvancedCorePlugin {
 		CommandLoader.getInstance().loadTabComplete();
 		updateHook();
 		reloadAdvancedCore();
-		
+
 	}
 
 	/**
