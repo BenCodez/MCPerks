@@ -4,6 +4,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import com.Ben12345rocks.MCPerks.Main;
+import com.Ben12345rocks.MCPerks.Configs.Config;
+import com.Ben12345rocks.MCPerks.Perk.Perk;
+import com.Ben12345rocks.MCPerks.UserAPI.User;
 import com.Ben12345rocks.MCPerks.UserAPI.UserManager;
 
 // TODO: Auto-generated Javadoc
@@ -57,7 +60,15 @@ public class PerkCommandExecutor {
 
 			plugin.debug("Issuing perk " + perk + ", Timed: " + Boolean.toString(timed));
 
-			plugin.getPerkHandler().getPerk(perk).runPerk(UserManager.getInstance().getMCPerksUser((Player) sender));
+			Perk p = plugin.getPerkHandler().getPerk(perk);
+			User user = UserManager.getInstance().getMCPerksUser((Player) sender);
+			if (Config.getInstance().getDisableOnClick()) {
+				if (p.isPerkActive(user)) {
+					p.deactivatePerk(user);
+				}
+			} else {
+				p.runPerk(user);
+			}
 
 		} else {
 			sender.sendMessage("Must be a player to use this command");

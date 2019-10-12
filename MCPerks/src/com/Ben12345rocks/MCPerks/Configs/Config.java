@@ -96,17 +96,8 @@ public class Config extends YMLFile {
 		return "DeactivationEffect";
 	}
 
-	/**
-	 * Gets the debug enabled.
-	 *
-	 * @return the debug enabled
-	 */
-	public boolean getDebugEnabled() {
-		return getData().getBoolean("Debug");
-	}
-
-	public boolean getExtraDebug() {
-		return getData().getBoolean("ExtraDebug");
+	public boolean getDisableOnClick() {
+		return getData().getBoolean("DisableOnClick");
 	}
 
 	public boolean getLoadCommandAliases() {

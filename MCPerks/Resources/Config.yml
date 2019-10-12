@@ -59,6 +59,9 @@ RequirePermToView: true
 # - FACTIONS
 PerkSystemType: 'ALL'
 
+# If true, reactivating a perk will deactivate
+DisableOnClick: false
+
 # Global perk options
 # Add the following in any perk fine to override these
 
