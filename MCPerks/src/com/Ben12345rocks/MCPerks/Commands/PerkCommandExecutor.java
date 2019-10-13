@@ -62,10 +62,8 @@ public class PerkCommandExecutor {
 
 			Perk p = plugin.getPerkHandler().getPerk(perk);
 			User user = UserManager.getInstance().getMCPerksUser((Player) sender);
-			if (Config.getInstance().getDisableOnClick()) {
-				if (p.isPerkActive(user)) {
-					p.deactivatePerk(user);
-				}
+			if (Config.getInstance().getDisableOnClick() && p.isPerkActive(user)) {
+				p.deactivatePerk(user);
 			} else {
 				p.runPerk(user);
 			}
