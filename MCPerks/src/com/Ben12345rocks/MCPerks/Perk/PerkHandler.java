@@ -417,6 +417,21 @@ public class PerkHandler {
 		}
 	}
 
+	public Perk getActivePerk(User user, Perk p) {
+		for (Perk perk : Main.plugin.getPerkHandler().getActivePerks()) {
+			if (perk.getPerk().equals(p.getPerk())) {
+				if (perk.getActivater().getPlayerName().equals(user.getPlayerName())) {
+					return perk;
+				}
+				if (perk.getPerkType().equals(PerkSystemType.ALL)) {
+					return perk;
+				}
+			}
+
+		}
+		return p;
+	}
+
 	public void loadActivePerks() {
 		Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
 
