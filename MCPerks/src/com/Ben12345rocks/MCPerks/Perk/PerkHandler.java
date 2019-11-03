@@ -159,6 +159,10 @@ public class PerkHandler {
 
 					@Override
 					public void run() {
+						if (!clone.isActive()) {
+							cancel();
+							return;
+						}
 						placeholders.put("countdown", "" + (length - time.intValue()));
 						HashMap<String, String> phs = new HashMap<String, String>();
 						phs.putAll(placeholders);
@@ -238,6 +242,10 @@ public class PerkHandler {
 
 					@Override
 					public void run() {
+						if (!clone.isActive()) {
+							cancel();
+							return;
+						}
 						try {
 							// set bossbar text
 							HashMap<String, String> placeholders = new HashMap<String, String>();

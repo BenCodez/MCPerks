@@ -751,7 +751,9 @@ public class Perk {
 
 				@Override
 				public void run() {
-					deactivatePerk(user);
+					if (isActive()) {
+						deactivatePerk(user);
+					}
 				}
 			};
 			long timemill = getExperation(user);
