@@ -407,7 +407,8 @@ public class CommandLoader {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
-				Perk perk = plugin.getPerkHandler().getPerk(args[2]);
+				Perk perk = plugin.getPerkHandler().getActivePerk(UserManager.getInstance().getMCPerksUser(args[1]),
+						plugin.getPerkHandler().getPerk(args[2]));
 				perk.deactivatePerk(UserManager.getInstance().getMCPerksUser(args[1]));
 				sender.sendMessage("Forcefly deactivated perk " + perk.getPerk() + " for " + args[1]);
 			}
