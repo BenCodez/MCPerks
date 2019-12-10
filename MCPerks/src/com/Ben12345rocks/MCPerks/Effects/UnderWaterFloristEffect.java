@@ -91,7 +91,7 @@ public class UnderWaterFloristEffect {
 				loc.getBlock().setBlockData(data);
 			} else if (MiscUtils.getInstance().checkChance(30, 100)) {
 				// coral blocks
-				switch (ThreadLocalRandom.current().nextInt(1, 5)) {
+				switch (ThreadLocalRandom.current().nextInt(1, 6)) {
 					case 1:
 						loc.getBlock().setType(Material.BRAIN_CORAL);
 						break;
