@@ -7,6 +7,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -411,6 +413,37 @@ public class CommandLoader {
 						plugin.getPerkHandler().getPerk(args[2]));
 				perk.deactivatePerk(UserManager.getInstance().getMCPerksUser(args[1]));
 				sender.sendMessage("Forcefly deactivated perk " + perk.getPerk() + " for " + args[1]);
+			}
+		});
+
+		plugin.getCommands().add(new CommandHandler(new String[] { "RemoveModifiers", "(player)" },
+				"MCPerks.RemoveModifiers", "Forcefly remove modiifers") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+
+				Player p = Bukkit.getPlayer(args[1]);
+
+				if (p != null) {
+					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers()) {
+						p.getAttribute(Attribute.GENERIC_MAX_HEALTH).removeModifier(m);
+					}
+
+					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getModifiers()) {
+						p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).removeModifier(m);
+					}
+
+					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_LUCK).getModifiers()) {
+						p.getAttribute(Attribute.GENERIC_LUCK).removeModifier(m);
+					}
+
+					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getModifiers()) {
+						p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).removeModifier(m);
+					}
+
+					sendMessage(sender, "&cAttributes cleared");
+				}
+
 			}
 		});
 
