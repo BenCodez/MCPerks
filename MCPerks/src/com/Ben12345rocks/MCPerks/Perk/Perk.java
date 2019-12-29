@@ -365,13 +365,12 @@ public class Perk {
 			});
 
 		}
-
-		Main.plugin.getPerkHandler().remove(this, user);
-
+		
 		for (Effect effect : getEffects()) {
 			effect.removeEffect(getEffectedPlayers());
 		}
 
+		Main.plugin.getPerkHandler().remove(this, user);
 	}
 
 	public void execute(User user, int length) {
