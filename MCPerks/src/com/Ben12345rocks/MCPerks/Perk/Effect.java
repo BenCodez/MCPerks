@@ -85,14 +85,8 @@ public enum Effect {
 	}
 
 	public void removeEffect(ArrayList<String> players1) {
-		ArrayList<String> uuids = new ArrayList<String>();
-		for (String uuid : players1) {
-			if (!Main.plugin.getPerkHandler().effectActive(this, uuid)) {
-				uuids.add(uuid);
-			}
-		}
 		ArrayList<Player> players = new ArrayList<Player>();
-		for (String uuid : uuids) {
+		for (String uuid : players1) {
 			Player player = Bukkit.getPlayer(UUID.fromString(uuid));
 			if (player != null) {
 				players.add(player);
@@ -105,8 +99,9 @@ public enum Effect {
 			case IncreaseMaxHealth:
 				for (Player p : players) {
 					for (AttributeModifier modifier : p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers()) {
-						if (modifier.getName().equalsIgnoreCase("Increase health")) {
+						if (Main.plugin.getEffectHandler().isActive(modifier.getUniqueId())) {
 							p.getAttribute(Attribute.GENERIC_MAX_HEALTH).removeModifier(modifier);
+							Main.plugin.getEffectHandler().remove(modifier.getUniqueId());
 						}
 					}
 				}
@@ -114,8 +109,9 @@ public enum Effect {
 			case IncreaseStrength:
 				for (Player p : players) {
 					for (AttributeModifier modifier : p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getModifiers()) {
-						if (modifier.getName().equalsIgnoreCase("Increase strength")) {
+						if (Main.plugin.getEffectHandler().isActive(modifier.getUniqueId())) {
 							p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).removeModifier(modifier);
+							Main.plugin.getEffectHandler().remove(modifier.getUniqueId());
 						}
 					}
 				}
@@ -123,8 +119,9 @@ public enum Effect {
 			case IncreaseLuck:
 				for (Player p : players) {
 					for (AttributeModifier modifier : p.getAttribute(Attribute.GENERIC_LUCK).getModifiers()) {
-						if (modifier.getName().equalsIgnoreCase("Increase luck")) {
+						if (Main.plugin.getEffectHandler().isActive(modifier.getUniqueId())) {
 							p.getAttribute(Attribute.GENERIC_LUCK).removeModifier(modifier);
+							Main.plugin.getEffectHandler().remove(modifier.getUniqueId());
 						}
 					}
 				}
@@ -132,8 +129,9 @@ public enum Effect {
 			case MoveSpeed:
 				for (Player p : players) {
 					for (AttributeModifier modifier : p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getModifiers()) {
-						if (modifier.getName().equalsIgnoreCase("Increase speed")) {
+						if (Main.plugin.getEffectHandler().isActive(modifier.getUniqueId())) {
 							p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).removeModifier(modifier);
+							Main.plugin.getEffectHandler().remove(modifier.getUniqueId());
 						}
 					}
 				}
@@ -258,26 +256,32 @@ public enum Effect {
 				break;
 			case IncreaseMaxHealth:
 				for (Player p : players) {
-					p.getAttribute(Attribute.GENERIC_MAX_HEALTH)
-							.addModifier(new AttributeModifier("Increase health", getModifier(), Operation.ADD_NUMBER));
+					AttributeModifier m = new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER);
+					Main.plugin.getEffectHandler().add(m.getUniqueId());
+					p.getAttribute(Attribute.GENERIC_MAX_HEALTH).addModifier(m);
 				}
 				break;
 			case IncreaseStrength:
 				for (Player p : players) {
-					p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).addModifier(
-							new AttributeModifier("Increase strength", getModifier(), Operation.ADD_NUMBER));
+					AttributeModifier m = new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER);
+					Main.plugin.getEffectHandler().add(m.getUniqueId());
+					p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE)
+							.addModifier(new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER));
 				}
 				break;
 			case IncreaseLuck:
 				for (Player p : players) {
+					AttributeModifier m = new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER);
+					Main.plugin.getEffectHandler().getActiveAttributes().add(m.getUniqueId());
 					p.getAttribute(Attribute.GENERIC_LUCK)
-							.addModifier(new AttributeModifier("Increase luck", getModifier(), Operation.ADD_NUMBER));
+							.addModifier(new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER));
 				}
 				break;
 			case MoveSpeed:
 				for (Player p : players) {
-					p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).addModifier(
-							new AttributeModifier("Increase speed", getModifier(), Operation.MULTIPLY_SCALAR_1));
+					AttributeModifier m = new AttributeModifier("MCPERKS", getModifier(), Operation.MULTIPLY_SCALAR_1);
+					Main.plugin.getEffectHandler().add(m.getUniqueId());
+					p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).addModifier(m);
 				}
 				break;
 			default:

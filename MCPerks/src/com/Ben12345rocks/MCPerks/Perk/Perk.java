@@ -332,6 +332,10 @@ public class Perk {
 		// Main.plugin.getEffectHandler().deactivate(this);
 		Main.plugin.debug("Perk '" + getPerk() + "' deactivated for "
 				+ ArrayUtils.getInstance().makeStringList(getEffectedPlayers()));
+		for (Effect effect : getEffects()) {
+			effect.removeEffect(getEffectedPlayers());
+		}
+
 		String msg = ConfigPerks.getInstance().getPerkDeactivated(perk).replace("%Perk%", getName());
 		// ArrayList<User> users = new ArrayList<User>();
 		boolean perkRewards = RewardHandler.getInstance().hasRewards(ConfigPerks.getInstance().getData(perk),
@@ -365,12 +369,16 @@ public class Perk {
 			});
 
 		}
-		
-		for (Effect effect : getEffects()) {
-			effect.removeEffect(getEffectedPlayers());
-		}
+		Perk p = this;
 
-		Main.plugin.getPerkHandler().remove(this, user);
+		Bukkit.getScheduler().runTaskLaterAsynchronously(Main.plugin, new Runnable() {
+
+			@Override
+			public void run() {
+				Main.plugin.getPerkHandler().remove(p, user);
+			}
+		}, 20l);
+
 	}
 
 	public void execute(User user, int length) {
