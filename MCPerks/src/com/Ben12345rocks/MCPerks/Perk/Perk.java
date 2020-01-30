@@ -333,7 +333,7 @@ public class Perk {
 		Main.plugin.debug("Perk '" + getPerk() + "' deactivated for "
 				+ ArrayUtils.getInstance().makeStringList(getEffectedPlayers()));
 		for (Effect effect : getEffects()) {
-			effect.removeEffect(getEffectedPlayers());
+			effect.removeEffect(this, getEffectedPlayers());
 		}
 
 		String msg = ConfigPerks.getInstance().getPerkDeactivated(perk).replace("%Perk%", getName());

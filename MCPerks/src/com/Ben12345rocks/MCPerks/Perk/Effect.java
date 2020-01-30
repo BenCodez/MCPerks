@@ -84,7 +84,7 @@ public enum Effect {
 		return null;
 	}
 
-	public void removeEffect(ArrayList<String> players1) {
+	public void removeEffect(Perk perk, ArrayList<String> players1) {
 		ArrayList<Player> players = new ArrayList<Player>();
 		for (String uuid : players1) {
 			Player player = Bukkit.getPlayer(UUID.fromString(uuid));
@@ -94,7 +94,7 @@ public enum Effect {
 		}
 		switch (this) {
 			case Fly:
-				new FlyEffect().disableFly(players);
+				new FlyEffect().disableFly(perk.getFlyWorlds(),players);
 				break;
 			case IncreaseMaxHealth:
 				for (Player p : players) {
