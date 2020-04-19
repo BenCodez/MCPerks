@@ -141,7 +141,14 @@ public enum Effect {
 					for (String potion : perk.getPotions()) {
 						try {
 							if (p.hasPotionEffect(PotionEffectType.getByName(potion))) {
-								p.removePotionEffect(PotionEffectType.getByName(potion));
+								Bukkit.getScheduler().runTask(Main.plugin, new Runnable() {
+
+									@Override
+									public void run() {
+										p.removePotionEffect(PotionEffectType.getByName(potion));
+									}
+								});
+
 							}
 						} catch (Exception e) {
 							e.printStackTrace();
