@@ -140,11 +140,14 @@ public enum Effect {
 				for (Player p : players) {
 					for (String potion : perk.getPotions()) {
 						try {
-							p.removePotionEffect(PotionEffectType.getByName(potion));
+							if (p.hasPotionEffect(PotionEffectType.getByName(potion))) {
+								p.removePotionEffect(PotionEffectType.getByName(potion));
+							}
 						} catch (Exception e) {
-
+							e.printStackTrace();
 						}
 					}
+
 				}
 				break;
 			default:
