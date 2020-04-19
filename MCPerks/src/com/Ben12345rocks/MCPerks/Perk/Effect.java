@@ -94,7 +94,7 @@ public enum Effect {
 		}
 		switch (this) {
 			case Fly:
-				new FlyEffect().disableFly(perk.getFlyWorlds(),players);
+				new FlyEffect().disableFly(perk.getFlyWorlds(), players);
 				break;
 			case IncreaseMaxHealth:
 				for (Player p : players) {
@@ -132,6 +132,17 @@ public enum Effect {
 						if (Main.plugin.getEffectHandler().isActive(modifier.getUniqueId())) {
 							p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).removeModifier(modifier);
 							Main.plugin.getEffectHandler().remove(modifier.getUniqueId());
+						}
+					}
+				}
+				break;
+			case Potions:
+				for (Player p : players) {
+					for (String potion : perk.getPotions()) {
+						try {
+							p.removePotionEffect(PotionEffectType.getByName(potion));
+						} catch (Exception e) {
+
 						}
 					}
 				}
