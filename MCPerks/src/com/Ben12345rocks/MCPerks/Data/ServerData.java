@@ -80,7 +80,7 @@ public class ServerData {
 	}
 
 	public void setPerkExperation(Perk perk, long time) {
-		getData().set("Experation." + perk.getName(), time);
+		getData().set("Experation." + perk.getPerk(), time);
 		saveData();
 	}
 
