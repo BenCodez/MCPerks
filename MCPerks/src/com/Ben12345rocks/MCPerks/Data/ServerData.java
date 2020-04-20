@@ -62,7 +62,7 @@ public class ServerData {
 	}
 
 	public long getPerkExperation(Perk perk) {
-		return getData().getLong("Experation." + perk.getName());
+		return getData().getLong("Experation." + perk.getPerk());
 	}
 
 	/**
