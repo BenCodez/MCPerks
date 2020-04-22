@@ -44,7 +44,7 @@ import com.Ben12345rocks.MCPerks.Perk.Perk;
 public class HeadDropperEffect {
 
 	/** The percent increase. */
-	private int percentIncrease;
+	private double percentIncrease;
 
 	/** The entity. */
 	private LivingEntity entity;

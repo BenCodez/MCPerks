@@ -62,6 +62,9 @@ PerkSystemType: 'ALL'
 # If true, reactivating a perk will deactivate
 DisableOnClick: false
 
+# Deactivate perk on logout
+DeactivateOnLogout: false
+
 # Global perk options
 # Add the following in any perk fine to override these
 

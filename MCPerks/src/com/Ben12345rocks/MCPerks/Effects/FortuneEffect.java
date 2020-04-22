@@ -27,7 +27,7 @@ public class FortuneEffect {
 	 */
 	public FortuneEffect(Perk perk) {
 		this.perk = perk;
-		percentIncrease = perk.getIncreasePercent(Effect.Fortune);
+		percentIncrease = (int) perk.getIncreasePercent(Effect.Fortune);
 	}
 
 	/**

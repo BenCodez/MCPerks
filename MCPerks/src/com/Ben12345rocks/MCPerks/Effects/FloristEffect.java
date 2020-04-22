@@ -48,16 +48,16 @@ public class FloristEffect {
 	 *
 	 * @param loc
 	 *            the loc
-	 * @param radius
+	 * @param d
 	 *            Radius
 	 */
-	public void generateFlowers(Location loc, int radius) {
+	public void generateFlowers(Location loc, double d) {
 		int y = loc.getBlockY();
 		int x = loc.getBlockX();
 		int z = loc.getBlockZ();
 
-		for (int i = x - radius; i <= x + radius; ++i) {
-			for (int j = z - radius; j <= z + radius; ++j) {
+		for (int i = (int) (x - d); i <= x + d; ++i) {
+			for (int j = (int) (z - d); j <= z + d; ++j) {
 				if (loc.getWorld().getBlockAt(i, y, j).getType().equals(Material.GRASS_BLOCK)
 						&& loc.getWorld().getBlockAt(i, y + 1, j).getType().equals(Material.AIR)
 						&& loc.getWorld().getBlockAt(i, y + 2, j).getType().equals(Material.AIR)) {

@@ -27,7 +27,7 @@ public class MobDropEffect {
 	private List<ItemStack> customItems;
 
 	/** The percent increase. */
-	private int percentIncrease;
+	private double percentIncrease;
 
 	private Perk perk;
 

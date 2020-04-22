@@ -1,6 +1,7 @@
 package com.Ben12345rocks.MCPerks.Listeners;
 
 import java.util.Collection;
+import java.util.Map.Entry;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -28,6 +29,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 
 import com.Ben12345rocks.AdvancedCore.Listeners.AdvancedCoreLoginEvent;
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
+import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Effects.DoubleExperienceEffect;
@@ -165,6 +167,7 @@ public class EffectListeners implements Listener {
 	public void onDisconnect(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		if (player != null) {
+
 			if (plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString())) {
 				new FlyEffect().disableFly(plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString()),
 						player);
@@ -172,6 +175,12 @@ public class EffectListeners implements Listener {
 			for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
 				if (perk.getBossBar() != null) {
 					perk.getBossBar().removePlayer(player);
+				}
+				if (Config.getInstance().getDeactivateOnLogout()) {
+					if (perk.getActivater().getUUID().equals(player.getUniqueId().toString())) {
+						perk.deactivatePerk(perk.getActivater());
+					}
+
 				}
 			}
 		}
@@ -243,6 +252,14 @@ public class EffectListeners implements Listener {
 							}
 						}
 					}
+				}
+			}
+
+			if (plugin.getEffectHandler().getOfflineEffects().containsKey(player.getUniqueId().toString())) {
+				for (Entry<Effect, Perk> entry : plugin.getEffectHandler().getOfflineEffects()
+						.get(player.getUniqueId().toString()).entrySet()) {
+					entry.getKey().removeEffect(entry.getValue(),
+							ArrayUtils.getInstance().convert(new String[] { player.getUniqueId().toString() }));
 				}
 			}
 		}

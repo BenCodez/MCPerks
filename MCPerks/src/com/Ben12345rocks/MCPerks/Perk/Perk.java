@@ -64,7 +64,7 @@ public class Perk {
 	private int serverWideCoolDown;
 
 	/** The increase percent. */
-	private int increasePercent;
+	private double increasePercent;
 
 	/** The limit. */
 	private int limit;
@@ -189,8 +189,8 @@ public class Perk {
 			String[] data = effectLine.split(":");
 			Effect effect = Effect.valueOf(data[0]);
 			if (data.length > 1) {
-				if (StringParser.getInstance().isInt(data[1])) {
-					effect.setModifier(Integer.parseInt(data[1]));
+				if (StringParser.getInstance().isDouble(data[1])) {
+					effect.setModifier(Double.valueOf(data[1]));
 					if (effect.usesModifier() && effect.usesIncreasePercentage()) {
 						if (increasePercent == -1) {
 							increasePercent = effect.getModifier();
@@ -483,7 +483,7 @@ public class Perk {
 	 *
 	 * @return the increase percent
 	 */
-	public int getIncreasePercent(Effect effect) {
+	public double getIncreasePercent(Effect effect) {
 		for (Effect eff : effects) {
 			if (eff.isEffect(effect)) {
 				return eff.getModifier();

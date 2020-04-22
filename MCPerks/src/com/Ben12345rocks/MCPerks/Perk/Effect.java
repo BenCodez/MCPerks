@@ -90,8 +90,11 @@ public enum Effect {
 			Player player = Bukkit.getPlayer(UUID.fromString(uuid));
 			if (player != null) {
 				players.add(player);
+			} else {
+				Main.plugin.getEffectHandler().addOfflineCheck(perk, uuid, this);
 			}
 		}
+
 		switch (this) {
 			case Fly:
 				new FlyEffect().disableFly(perk.getFlyWorlds(), players);
@@ -163,12 +166,12 @@ public enum Effect {
 		}
 	}
 
-	private int modifier = 1;
+	private double modifier = 1;
 
 	/**
 	 * @return the modifier
 	 */
-	public int getModifier() {
+	public double getModifier() {
 		return modifier;
 	}
 
@@ -176,7 +179,7 @@ public enum Effect {
 	 * @param modifier
 	 *            the modifier to set
 	 */
-	public void setModifier(int modifier) {
+	public void setModifier(double modifier) {
 		this.modifier = modifier;
 	}
 

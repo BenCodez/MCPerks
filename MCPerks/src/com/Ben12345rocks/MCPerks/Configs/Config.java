@@ -100,6 +100,10 @@ public class Config extends YMLFile {
 		return getData().getBoolean("DisableOnClick");
 	}
 
+	public boolean getDeactivateOnLogout() {
+		return getData().getBoolean("DeactivateOnLogout", false);
+	}
+
 	public boolean getLoadCommandAliases() {
 		return getData().getBoolean("LoadCommandAliases", true);
 	}

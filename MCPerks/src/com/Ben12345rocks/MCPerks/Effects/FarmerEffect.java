@@ -25,7 +25,7 @@ public class FarmerEffect {
 	 *            the perk
 	 */
 	public FarmerEffect(Perk perk) {
-		percentIncrease = perk.getIncreasePercent(Effect.Farmer);
+		percentIncrease = (int) perk.getIncreasePercent(Effect.Farmer);
 	}
 
 	/**

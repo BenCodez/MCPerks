@@ -2,6 +2,7 @@ package com.Ben12345rocks.MCPerks.Perk;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -74,6 +75,21 @@ public class EffectHandler implements Listener {
 				activeAttributes.remove(i);
 				return;
 			}
+		}
+	}
+
+	@Getter
+	private HashMap<String, HashMap<Effect, Perk>> offlineEffects = new HashMap<String, HashMap<Effect, Perk>>();
+
+	public void addOfflineCheck(Perk p, String uuid, Effect effect) {
+		if (offlineEffects.containsKey(uuid)) {
+			HashMap<Effect, Perk> effects = offlineEffects.get(uuid);
+			effects.put(effect, p);
+			offlineEffects.put(uuid, effects);
+		} else {
+			HashMap<Effect, Perk> effects = new HashMap<Effect, Perk>();
+			effects.put(effect, p);
+			offlineEffects.put(uuid, effects);
 		}
 	}
 

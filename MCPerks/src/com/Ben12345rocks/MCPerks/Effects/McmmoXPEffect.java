@@ -13,7 +13,7 @@ import com.Ben12345rocks.MCPerks.Perk.Perk;
 public class McmmoXPEffect {
 
 	/** The percent increase. */
-	private int percentIncrease;
+	private double percentIncrease;
 
 	/**
 	 * Instantiates a new mcmmo XP effect.
@@ -33,6 +33,6 @@ public class McmmoXPEffect {
 	 * @return the float
 	 */
 	public float increaseXP(float ammount) {
-		return ammount + ammount * percentIncrease / 100.0F;
+		return (float) (ammount + ammount * percentIncrease / 100.0F);
 	}
 }

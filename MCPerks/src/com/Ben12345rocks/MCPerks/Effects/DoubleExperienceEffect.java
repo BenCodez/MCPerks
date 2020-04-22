@@ -22,7 +22,7 @@ public class DoubleExperienceEffect {
 	 *            the timed perk
 	 */
 	public DoubleExperienceEffect(Perk timedPerk) {
-		percentIncrease = timedPerk.getIncreasePercent(Effect.DoubleExperience);
+		percentIncrease = (int) timedPerk.getIncreasePercent(Effect.DoubleExperience);
 	}
 
 	/**

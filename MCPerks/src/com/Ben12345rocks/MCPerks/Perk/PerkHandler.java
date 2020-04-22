@@ -375,7 +375,7 @@ public class PerkHandler {
 		return false;
 	}
 
-	public int effectActiveModifier(Effect effect, String uuid, int defaultValue) {
+	public double effectActiveModifier(Effect effect, String uuid, int defaultValue) {
 		ListIterator<Perk> it = activePerks.listIterator();
 		while (it.hasNext()) {
 			Perk perk = it.next();
