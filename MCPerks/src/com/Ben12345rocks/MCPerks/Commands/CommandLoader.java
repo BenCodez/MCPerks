@@ -404,6 +404,24 @@ public class CommandLoader {
 					}
 				});
 
+		plugin.getCommands().add(new CommandHandler(new String[] { "ActivePerks", "(player)" }, "MCPerks.ActivePerks",
+				"See Active Perks per player") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				ArrayList<String> msg = new ArrayList<String>();
+				msg.add("&cPerk : Effected players : Experation");
+				for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
+					if (perk.getActivater().getPlayerName().equalsIgnoreCase(args[1])) {
+						msg.add("&c" + perk.getPerk() + " : "
+								+ ArrayUtils.getInstance().makeStringList(perk.getEffectedPlayers()) + " : "
+								+ perk.getExperation(perk.getActivater()));
+					}
+				}
+				sender.sendMessage(ArrayUtils.getInstance().convert(ArrayUtils.getInstance().colorize(msg)));
+			}
+		});
+
 		plugin.getCommands().add(new CommandHandler(new String[] { "DeactivatePerk", "(player)", "(perk)" },
 				"MCPerks.DeactivatePerk", "Forcefly deactivate Perk") {
 
