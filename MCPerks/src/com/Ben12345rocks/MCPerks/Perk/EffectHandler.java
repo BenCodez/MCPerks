@@ -32,7 +32,7 @@ public class EffectHandler implements Listener {
 	}
 
 	@Getter
-	private List<UUID> activeAttributes = Collections.synchronizedList(new ArrayList<UUID>());
+	private List<String> activeAttributes = Collections.synchronizedList(new ArrayList<String>());
 
 	public void activate(Perk perk, User user) {
 		for (Effect effect : perk.getEffects()) {
@@ -58,15 +58,15 @@ public class EffectHandler implements Listener {
 	}
 
 	public void add(UUID u) {
-		activeAttributes.add(u);
+		activeAttributes.add(u.toString());
 	}
 
 	public boolean isActive(UUID string) {
 		if (Config.getInstance().getForceClearModifiers()) {
 			return true;
 		}
-		for (UUID u : activeAttributes) {
-			if (u.equals(string)) {
+		for (String u : activeAttributes) {
+			if (u.equals(string.toString())) {
 				return true;
 			}
 		}
@@ -75,7 +75,7 @@ public class EffectHandler implements Listener {
 
 	public void remove(UUID string) {
 		for (int i = 0; i < activeAttributes.size(); i++) {
-			if (activeAttributes.get(i).equals(string)) {
+			if (activeAttributes.get(i).equals(string.toString())) {
 				activeAttributes.remove(i);
 				return;
 			}

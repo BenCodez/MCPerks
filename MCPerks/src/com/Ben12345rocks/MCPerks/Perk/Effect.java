@@ -295,7 +295,7 @@ public enum Effect {
 			case IncreaseLuck:
 				for (Player p : players) {
 					AttributeModifier m = new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER);
-					Main.plugin.getEffectHandler().getActiveAttributes().add(m.getUniqueId());
+					Main.plugin.getEffectHandler().add(m.getUniqueId());
 					p.getAttribute(Attribute.GENERIC_LUCK).addModifier(m);
 				}
 				break;
