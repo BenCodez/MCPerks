@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.bukkit.event.Listener;
 
 import com.Ben12345rocks.MCPerks.Main;
+import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.UserAPI.User;
 
 import lombok.Getter;
@@ -61,8 +62,11 @@ public class EffectHandler implements Listener {
 	}
 
 	public boolean isActive(UUID string) {
+		if (Config.getInstance().getForceClearModifiers()) {
+			return true;
+		}
 		for (UUID u : activeAttributes) {
-			if (u.compareTo(string) == 0) {
+			if (u.equals(string)) {
 				return true;
 			}
 		}
@@ -71,7 +75,7 @@ public class EffectHandler implements Listener {
 
 	public void remove(UUID string) {
 		for (int i = 0; i < activeAttributes.size(); i++) {
-			if (activeAttributes.get(i).compareTo(string) == 0) {
+			if (activeAttributes.get(i).equals(string)) {
 				activeAttributes.remove(i);
 				return;
 			}

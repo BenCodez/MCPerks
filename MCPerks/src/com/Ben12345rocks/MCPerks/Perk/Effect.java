@@ -289,16 +289,14 @@ public enum Effect {
 				for (Player p : players) {
 					AttributeModifier m = new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER);
 					Main.plugin.getEffectHandler().add(m.getUniqueId());
-					p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE)
-							.addModifier(new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER));
+					p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).addModifier(m);
 				}
 				break;
 			case IncreaseLuck:
 				for (Player p : players) {
 					AttributeModifier m = new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER);
 					Main.plugin.getEffectHandler().getActiveAttributes().add(m.getUniqueId());
-					p.getAttribute(Attribute.GENERIC_LUCK)
-							.addModifier(new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER));
+					p.getAttribute(Attribute.GENERIC_LUCK).addModifier(m);
 				}
 				break;
 			case MoveSpeed:

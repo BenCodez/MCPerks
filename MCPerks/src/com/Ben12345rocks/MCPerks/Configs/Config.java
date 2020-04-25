@@ -100,6 +100,10 @@ public class Config extends YMLFile {
 		return getData().getBoolean("DisableOnClick");
 	}
 
+	public boolean getForceClearModifiers() {
+		return getData().getBoolean("ForceClearModifiers");
+	}
+
 	public boolean getDeactivateOnLogout() {
 		return getData().getBoolean("DeactivateOnLogout", false);
 	}
