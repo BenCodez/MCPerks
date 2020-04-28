@@ -28,6 +28,7 @@ import com.Ben12345rocks.AdvancedCore.Util.EditGUI.ValueTypes.EditGUIValueNumber
 import com.Ben12345rocks.AdvancedCore.Util.Messages.StringParser;
 import com.Ben12345rocks.AdvancedCore.Util.Metrics.BStatsMetrics;
 import com.Ben12345rocks.AdvancedCore.Util.Metrics.MCStatsMetrics;
+import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
 import com.Ben12345rocks.AdvancedCore.Util.Placeholder.PlaceHolder;
 import com.Ben12345rocks.AdvancedCore.Util.Updater.Updater;
@@ -214,6 +215,25 @@ public class Main extends AdvancedCorePlugin {
 	}
 
 	public void loadPlaceholders() {
+
+		addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>("ActivePerks") {
+
+			@Override
+			public String placeholderRequest(OfflinePlayer player, com.Ben12345rocks.MCPerks.UserAPI.User user,
+					String identifier) {
+				ArrayList<String> list = new ArrayList<String>();
+				for (Perk p : plugin.getPerkHandler().getActivePerks()) {
+					if (p.getActivater().getUUID().equalsIgnoreCase(player.getUniqueId().toString())) {
+						list.add(p.getName());
+					} else if (p.getEffectedPlayers().contains(player.getUniqueId().toString())) {
+						list.add(p.getName());
+					}
+
+				}
+				return ArrayUtils.getInstance().makeStringList(list);
+			}
+		});
+
 		addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>("activations") {
 
 			@Override
@@ -300,6 +320,11 @@ public class Main extends AdvancedCorePlugin {
 				}
 			});
 		}
+	}
+
+	public String placeHolder(Player p, String identifier) {
+		return placeHolder(p, identifier);
+
 	}
 
 	public String placeHolder(OfflinePlayer p, String identifier) {

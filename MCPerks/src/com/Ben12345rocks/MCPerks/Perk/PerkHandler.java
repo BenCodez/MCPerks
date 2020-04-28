@@ -63,7 +63,7 @@ public class PerkHandler {
 
 	public HashMap<User, Perk> que = new HashMap<User, Perk>();
 
-	private ArrayList<Perk> activePerks = new ArrayList<Perk>();
+	private List<Perk> activePerks = Collections.synchronizedList(new ArrayList<Perk>());
 
 	private Timer timer = new Timer();
 
@@ -366,7 +366,7 @@ public class PerkHandler {
 			Perk perk = it.next();
 			if (perk.getEffects().contains(effect)) {
 				if (uuid == null || perk.getEffectedPlayers().contains(uuid)) {
-					plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
+					//plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
 
 					return true;
 				}
@@ -381,7 +381,7 @@ public class PerkHandler {
 			Perk perk = it.next();
 			if (perk.getEffects().contains(effect)) {
 				if (uuid == null || perk.getEffectedPlayers().contains(uuid)) {
-					plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
+					//plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
 
 					for (Effect e : perk.getEffects()) {
 						if (e.equals(effect)) {
@@ -397,7 +397,7 @@ public class PerkHandler {
 	/**
 	 * @return the activePerks
 	 */
-	public ArrayList<Perk> getActivePerks() {
+	public List<Perk> getActivePerks() {
 		return activePerks;
 	}
 
@@ -537,7 +537,7 @@ public class PerkHandler {
 			Perk p = getActivePerks().get(i);
 			if (p.getPerk().equals(perk.getPerk())
 					&& p.getActivater().getPlayerName().equals(perk.getActivater().getPlayerName())) {
-				getActivePerks().remove(p);
+				getActivePerks().remove(i);
 			}
 		}
 		checkQue();
