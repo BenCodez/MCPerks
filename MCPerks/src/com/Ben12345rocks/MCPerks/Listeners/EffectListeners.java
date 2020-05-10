@@ -322,7 +322,7 @@ public class EffectListeners implements Listener {
 		if (!plugin.getFlyingUUIDs().containsKey(player.getUniqueId().toString())) {
 			plugin.getFlyingUUIDs().put(player.getUniqueId().toString(), false);
 		}
-		if ((player.getGameMode() != GameMode.CREATIVE)
+		if ((player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR)
 				&& (player.getLocation().subtract(0, 1, 0).getBlock().getType() != Material.AIR)
 				&& (!player.isFlying())) {
 			if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, player.getUniqueId().toString())) {
@@ -344,7 +344,7 @@ public class EffectListeners implements Listener {
 		if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, event.getPlayer().getUniqueId().toString())
 				&& !plugin.getPerkHandler().effectActive(Effect.Fly, event.getPlayer().getUniqueId().toString())) {
 			Player player = event.getPlayer();
-			if (player.getGameMode() == GameMode.CREATIVE) {
+			if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
 				return;
 			}
 			event.setCancelled(true);

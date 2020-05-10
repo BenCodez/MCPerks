@@ -709,9 +709,11 @@ public class Perk {
 		}
 
 		if (Config.getInstance().getLimitPermission()) {
-			if (user.getActivePerks() + 1 > user.getPerkLimit()) {
-				user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
-				return;
+			if (user.getPerkLimit() != -1) {
+				if (user.getActivePerks() + 1 > user.getPerkLimit()) {
+					user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
+					return;
+				}
 			}
 		}
 
