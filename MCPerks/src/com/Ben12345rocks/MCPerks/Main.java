@@ -319,6 +319,24 @@ public class Main extends AdvancedCorePlugin {
 					}
 				}
 			});
+
+			addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>(perk + "_status") {
+
+				@Override
+				public String placeholderRequest(OfflinePlayer p, com.Ben12345rocks.MCPerks.UserAPI.User user,
+						String identifier) {
+					for (Perk perk : getPerkHandler().getActivePerks()) {
+						if (perk.getActivater().getPlayerName().equalsIgnoreCase(p.getName())) {
+							return "Active";
+						}
+						if (perk.getEffectedPlayers().contains(p.getUniqueId().toString())) {
+							return "Active";
+						}
+					}
+
+					return "Inactive";
+				}
+			});
 		}
 	}
 
