@@ -326,15 +326,13 @@ public class Main extends AdvancedCorePlugin {
 				public String placeholderRequest(OfflinePlayer p, com.Ben12345rocks.MCPerks.UserAPI.User user,
 						String identifier) {
 					for (Perk perk : getPerkHandler().getActivePerks()) {
-						if (perk.getActivater().getPlayerName().equalsIgnoreCase(p.getName())) {
-							return "Active";
-						}
-						if (perk.getEffectedPlayers().contains(p.getUniqueId().toString())) {
-							return "Active";
+						if (perk.getActivater().getPlayerName().equalsIgnoreCase(p.getName())
+								|| perk.getEffectedPlayers().contains(p.getUniqueId().toString())) {
+							return Lang.getInstance().getPerkActivePlaceholder();
 						}
 					}
 
-					return "Inactive";
+					return Lang.getInstance().getPerkInactivePlaceholder();
 				}
 			});
 		}

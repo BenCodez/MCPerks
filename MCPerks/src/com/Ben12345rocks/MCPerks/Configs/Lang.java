@@ -86,6 +86,14 @@ public class Lang {
 		return getData().getString("HelpTitle", "&3&lMCPerks Help");
 	}
 
+	public String getPerkActivePlaceholder() {
+		return getData().getString("PerkActivePlaceholder", "Active");
+	}
+
+	public String getPerkInactivePlaceholder() {
+		return getData().getString("PerkInactivePlaceholder", "Inactive");
+	}
+
 	/**
 	 * Gets the incorrect command reply.
 	 *
