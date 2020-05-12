@@ -320,7 +320,7 @@ public class Main extends AdvancedCorePlugin {
 				}
 			});
 
-			addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>(perk + "_status") {
+			addPlacehlder(new PlaceHolder<com.Ben12345rocks.MCPerks.UserAPI.User>("status_" + perk) {
 
 				@Override
 				public String placeholderRequest(OfflinePlayer p, com.Ben12345rocks.MCPerks.UserAPI.User user,
