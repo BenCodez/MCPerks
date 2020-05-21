@@ -76,7 +76,7 @@ public class PerkHandler {
 			plugin.getLogger().info("Failed to copy default perks");
 			e.printStackTrace();
 		}
-		loadEnabledPerks();
+		loadEnabledPerks(true);
 
 		if (Config.getInstance().getLogActivation()) {
 			activationLog = new Logger(plugin, new File(plugin.getDataFolder(), "ActivationLog.txt"));
@@ -366,7 +366,7 @@ public class PerkHandler {
 			Perk perk = it.next();
 			if (perk.getEffects().contains(effect)) {
 				if (uuid == null || perk.getEffectedPlayers().contains(uuid)) {
-					//plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
+					// plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
 
 					return true;
 				}
@@ -381,7 +381,7 @@ public class PerkHandler {
 			Perk perk = it.next();
 			if (perk.getEffects().contains(effect)) {
 				if (uuid == null || perk.getEffectedPlayers().contains(uuid)) {
-					//plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
+					// plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
 
 					for (Effect e : perk.getEffects()) {
 						if (e.equals(effect)) {
@@ -466,15 +466,18 @@ public class PerkHandler {
 
 	/**
 	 * Load enabled perks.
+	 * @param loadperks loadperks
 	 */
-	public void loadEnabledPerks() {
+	public void loadEnabledPerks(boolean loadperks) {
 		for (String name : ConfigPerks.getInstance().getPerksNames()) {
 			loadPerk(name);
 		}
 
 		loadInvPerks();
 
-		loadActivePerks();
+		if (loadperks) {
+			loadActivePerks();
+		}
 
 	}
 
@@ -525,7 +528,7 @@ public class PerkHandler {
 			plugin.getLogger().info("Failed to copy default perks");
 			e.printStackTrace();
 		}
-		loadEnabledPerks();
+		loadEnabledPerks(false);
 
 	}
 
