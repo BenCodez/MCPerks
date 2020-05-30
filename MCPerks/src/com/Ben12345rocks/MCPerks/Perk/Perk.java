@@ -492,8 +492,8 @@ public class Perk {
 		return increasePercent;
 	}
 
-	public ItemStack getItem(User user) {
-		return new ItemBuilder(item).setName(getItemName()).setLore(getItemLore(user)).toItemStack(user.getPlayer());
+	public ItemBuilder getItem(User user) {
+		return new ItemBuilder(item).setName(getItemName()).setLore(getItemLore(user));
 	}
 
 	public String[] getItemLore(User user) {

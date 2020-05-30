@@ -12,7 +12,6 @@ import com.Ben12345rocks.AdvancedCore.CommandAPI.CommandHandler;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventory;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventory.ClickEvent;
 import com.Ben12345rocks.AdvancedCore.Util.Inventory.BInventoryButton;
-import com.Ben12345rocks.AdvancedCore.Util.Item.ItemBuilder;
 import com.Ben12345rocks.AdvancedCore.Util.Messages.StringParser;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
@@ -72,27 +71,25 @@ public class Commands {
 				Perk perk = plugin.getPerkHandler().invPerks.get(num);
 				if ((player.hasPermission(plugin.getPerkHandler().invPerks.get(num).getPermission())
 						|| player.hasPermission("MCPerks.AllPerks")) || !Config.getInstance().getRequirePermToView()) {
-					inv.addButton(slot,
-							new BInventoryButton(
-									new ItemBuilder(perk.getItem(UserManager.getInstance().getMCPerksUser(player)))
-											.setAmountNone(1)) {
+					inv.addButton(slot, new BInventoryButton(
+							perk.getItem(UserManager.getInstance().getMCPerksUser(player)).setAmountNone(1)) {
+
+						@Override
+						public void onClick(ClickEvent event) {
+
+							Player player = event.getWhoClicked();
+							Perk perk = plugin.getPerkHandler().invPerks.get(num);
+							Bukkit.getScheduler().runTask(plugin, new Runnable() {
 
 								@Override
-								public void onClick(ClickEvent event) {
-
-									Player player = event.getWhoClicked();
-									Perk perk = plugin.getPerkHandler().invPerks.get(num);
-									Bukkit.getScheduler().runTask(plugin, new Runnable() {
-
-										@Override
-										public void run() {
-											player.performCommand("mcperks " + perk.getPerk());
-											player.closeInventory();
-										}
-									});
-
+								public void run() {
+									player.performCommand("mcperks " + perk.getPerk());
+									player.closeInventory();
 								}
 							});
+
+						}
+					});
 					slot++;
 				}
 
