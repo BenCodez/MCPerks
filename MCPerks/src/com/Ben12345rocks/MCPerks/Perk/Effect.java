@@ -64,6 +64,8 @@ public enum Effect {
 	God,
 
 	DoubleJump,
+	
+	DoubleJumpUp,
 
 	Commands,
 

@@ -325,7 +325,7 @@ public class EffectListeners implements Listener {
 		if ((player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR)
 				&& (player.getLocation().subtract(0, 1, 0).getBlock().getType() != Material.AIR)
 				&& (!player.isFlying())) {
-			if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, player.getUniqueId().toString())) {
+			if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, player.getUniqueId().toString()) || plugin.getPerkHandler().effectActive(Effect.DoubleJumpUp, player.getUniqueId().toString())) {
 				player.setAllowFlight(true);
 				plugin.getFlyingUUIDs().put(player.getUniqueId().toString(), true);
 			}
@@ -351,6 +351,19 @@ public class EffectListeners implements Listener {
 			player.setAllowFlight(false);
 			player.setFlying(false);
 			player.setVelocity(player.getLocation().getDirection().multiply(1.5).setY(1));
+			plugin.debug(player.getName() + " double jumped!");
+		}
+		
+		if (plugin.getPerkHandler().effectActive(Effect.DoubleJumpUp, event.getPlayer().getUniqueId().toString())
+				&& !plugin.getPerkHandler().effectActive(Effect.Fly, event.getPlayer().getUniqueId().toString())) {
+			Player player = event.getPlayer();
+			if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
+				return;
+			}
+			event.setCancelled(true);
+			player.setAllowFlight(false);
+			player.setFlying(false);
+			player.setVelocity(player.getLocation().getDirection().setY(1));
 			plugin.debug(player.getName() + " double jumped!");
 		}
 	}
