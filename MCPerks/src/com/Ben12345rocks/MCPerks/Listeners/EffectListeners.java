@@ -352,9 +352,7 @@ public class EffectListeners implements Listener {
 			player.setFlying(false);
 			player.setVelocity(player.getLocation().getDirection().multiply(1.5).setY(1));
 			plugin.debug(player.getName() + " double jumped!");
-		}
-		
-		if (plugin.getPerkHandler().effectActive(Effect.DoubleJumpUp, event.getPlayer().getUniqueId().toString())
+		} else if (plugin.getPerkHandler().effectActive(Effect.DoubleJumpUp, event.getPlayer().getUniqueId().toString())
 				&& !plugin.getPerkHandler().effectActive(Effect.Fly, event.getPlayer().getUniqueId().toString())) {
 			Player player = event.getPlayer();
 			if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
@@ -363,8 +361,8 @@ public class EffectListeners implements Listener {
 			event.setCancelled(true);
 			player.setAllowFlight(false);
 			player.setFlying(false);
-			player.setVelocity(player.getLocation().getDirection().setY(1));
-			plugin.debug(player.getName() + " double jumped!");
+			player.setVelocity(player.getVelocity().setY(1));
+			plugin.debug(player.getName() + " double jumpedup! " + player.getVelocity().toString());
 		}
 	}
 
