@@ -14,7 +14,7 @@ public class PotionEffect {
 		try {
 			PotionEffectType potionEffect = PotionEffectType.getByName(potion);
 			final org.bukkit.potion.PotionEffect effect = new org.bukkit.potion.PotionEffect(potionEffect,
-					(duration * 20), amplifier);
+					(duration * 20), amplifier, true, false);
 			Bukkit.getScheduler().runTask(Main.plugin, new Runnable() {
 
 				@Override
