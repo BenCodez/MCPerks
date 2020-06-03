@@ -76,7 +76,7 @@ public class Commands {
 
 						@Override
 						public void onClick(ClickEvent event) {
-
+							
 							Player player = event.getWhoClicked();
 							Perk perk = plugin.getPerkHandler().invPerks.get(num);
 							Bukkit.getScheduler().runTask(plugin, new Runnable() {
@@ -84,7 +84,7 @@ public class Commands {
 								@Override
 								public void run() {
 									player.performCommand("mcperks " + perk.getPerk());
-									player.closeInventory();
+									openGUI(sender);
 								}
 							});
 
