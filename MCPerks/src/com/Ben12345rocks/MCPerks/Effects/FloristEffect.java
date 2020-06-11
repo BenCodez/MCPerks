@@ -98,6 +98,8 @@ public class FloristEffect {
 			} else if (MiscUtils.getInstance().checkChance(7, 100)) {
 				loc.getBlock().setType(Material.OXEYE_DAISY);
 			} else if (MiscUtils.getInstance().checkChance(5, 100)) {
+				loc.getBlock().setType(Material.CORNFLOWER);
+			} else if (MiscUtils.getInstance().checkChance(5, 100)) {
 				// double tall
 				setFlower(loc, Material.PEONY);
 			} else if (MiscUtils.getInstance().checkChance(5, 100)) {
