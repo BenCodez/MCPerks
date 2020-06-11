@@ -65,16 +65,14 @@ public class EffectHandler implements Listener {
 		if (Config.getInstance().getForceClearModifiers()) {
 			return true;
 		}
-		for (String u : activeAttributes) {
-			if (u.equals(string.toString())) {
-				return true;
-			}
+		if (activeAttributes.contains(string.toString())) {
+			return true;
 		}
 		return false;
 	}
 
 	public void remove(UUID string) {
-		for (int i = 0; i < activeAttributes.size(); i++) {
+		for (int i = activeAttributes.size() - 1; i >= 0; i--) {
 			if (activeAttributes.get(i).equals(string.toString())) {
 				activeAttributes.remove(i);
 				return;
