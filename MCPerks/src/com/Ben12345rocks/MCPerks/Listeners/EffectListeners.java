@@ -33,6 +33,7 @@ import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.PlayerUtils;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
+import com.Ben12345rocks.MCPerks.Effects.BoneMealAura;
 import com.Ben12345rocks.MCPerks.Effects.DoubleExperienceEffect;
 import com.Ben12345rocks.MCPerks.Effects.FarmerEffect;
 import com.Ben12345rocks.MCPerks.Effects.FloristEffect;
@@ -355,6 +356,22 @@ public class EffectListeners implements Listener {
 			if (plugin.getFlyingUUIDs().get(player.getUniqueId().toString())) {
 				player.setAllowFlight(false);
 				plugin.getFlyingUUIDs().put(player.getUniqueId().toString(), false);
+			}
+		}
+
+		if (plugin.getPerkHandler().effectActive(Effect.BoneMealAura, player.getUniqueId().toString())) {
+			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
+				Effect e = null;
+				for (Effect effect : active.getEffects()) {
+					if (effect.isEffect(Effect.BoneMealAura)) {
+						e = effect;
+					}
+				}
+
+				if (e != null) {
+					new BoneMealAura().checkPlants(event.getTo(), (int) e.getModifier());
+
+				}
 			}
 		}
 

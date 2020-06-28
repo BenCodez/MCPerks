@@ -77,7 +77,9 @@ public enum Effect {
 
 	IncreaseLuck,
 
-	IncreaseMiningArea;
+	IncreaseMiningArea,
+	
+	BoneMealAura;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {

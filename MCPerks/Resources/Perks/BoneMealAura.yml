@@ -1,0 +1,10 @@
+Enabled: true
+TimeLasts: 60
+CoolDown: 86400
+Name: 'Bonemeal Aura'
+Description: 'Cast a bonemeal aura effect around you'
+Effects:
+- 'BoneMealAura:5'
+Item:
+  Material: 'BONE_MEAL'
+  Data: 0
