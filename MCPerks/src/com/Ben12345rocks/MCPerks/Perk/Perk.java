@@ -82,6 +82,9 @@ public class Perk {
 	private long experation;
 
 	private ArrayList<ItemStack> specialDrops;
+	
+	@Getter
+	private ArrayList<Material> whitelistedTools;
 
 	@Getter
 	private ArrayList<EntityType> blackedListedMobs;
@@ -142,6 +145,7 @@ public class Perk {
 		perkType = perk.perkType;
 		serverWideCoolDown = perk.serverWideCoolDown;
 		blackedListedMobs = perk.blackedListedMobs;
+		whitelistedTools = perk.whitelistedTools;
 	}
 
 	/**
@@ -161,6 +165,7 @@ public class Perk {
 		serverWideCoolDown = ConfigPerks.getInstance().getPerkServerWideCoolDown(perk);
 		limit = ConfigPerks.getInstance().getPerkLimit(perk);
 		specialDrops = ConfigPerks.getInstance().getPerkSpecialDrops(perk);
+		whitelistedTools = ConfigPerks.getInstance().getPerkWhiteListedTools(perk);
 		blocks = ConfigPerks.getInstance().getPerkSpecialBlocks(perk);
 		aliases = ConfigPerks.getInstance().getPerkAliases(perk);
 		item = ConfigPerks.getInstance().getPerkItem(perk);

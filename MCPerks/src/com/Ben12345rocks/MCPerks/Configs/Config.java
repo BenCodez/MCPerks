@@ -82,6 +82,10 @@ public class Config extends YMLFile {
 	public boolean getLimitActivations() {
 		return getData().getBoolean("LimitActivations", false);
 	}
+	
+	public boolean getKeepGUIOpen() {
+		return getData().getBoolean("KeepGUIOpen",false);
+	}
 
 	@SuppressWarnings("unchecked")
 	public ArrayList<String> getCountDownTimes() {

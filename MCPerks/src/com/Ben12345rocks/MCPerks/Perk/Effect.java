@@ -64,7 +64,7 @@ public enum Effect {
 	God,
 
 	DoubleJump,
-	
+
 	DoubleJumpUp,
 
 	Commands,
@@ -75,7 +75,9 @@ public enum Effect {
 
 	IncreaseStrength,
 
-	IncreaseLuck;
+	IncreaseLuck,
+
+	IncreaseMiningArea;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {
@@ -316,12 +318,13 @@ public enum Effect {
 
 	public boolean usesIncreasePercentage() {
 		return isEffect(Effect.IncreaseMobDrops, Effect.DoubleExperience, Effect.Farmer, Effect.Fortune, Effect.McmmoXP,
-				Effect.HeadDropper, Effect.IncreaseStrength);
+				Effect.HeadDropper, Effect.IncreaseStrength, Effect.IncreaseMiningArea);
 	}
 
 	public boolean usesModifier() {
 		return isEffect(Effect.IncreaseMobDrops, Effect.DoubleExperience, Effect.Farmer, Effect.Fortune, Effect.McmmoXP,
-				Effect.HeadDropper, Effect.IncreaseStrength, Effect.Florist, Effect.UnderWaterFlorist);
+				Effect.HeadDropper, Effect.IncreaseStrength, Effect.Florist, Effect.UnderWaterFlorist,
+				Effect.IncreaseMiningArea);
 	}
 
 	public boolean isEffect(Effect... effects) {

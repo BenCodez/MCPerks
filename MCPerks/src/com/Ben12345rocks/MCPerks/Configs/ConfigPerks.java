@@ -342,6 +342,19 @@ public class ConfigPerks {
 		return items;
 	}
 
+	public ArrayList<Material> getPerkWhiteListedTools(String perk) {
+		@SuppressWarnings("unchecked")
+		ArrayList<String> list = (ArrayList<String>) getData(perk).getList("WhitelistedTools");
+		if (list == null) {
+			list = new ArrayList<String>();
+		}
+		ArrayList<Material> items = new ArrayList<Material>();
+		for (String str : list) {
+			items.add(Material.valueOf(str));
+		}
+		return items;
+	}
+
 	public int getPerkTimeLasts(String perk) {
 		return getData(perk).getInt("TimeLasts");
 	}
@@ -366,8 +379,11 @@ public class ConfigPerks {
 
 	/**
 	 * Save data.
-	 * @param dFile dFile
-	 * @param data data
+	 * 
+	 * @param dFile
+	 *            dFile
+	 * @param data
+	 *            data
 	 */
 	public void saveData(File dFile, FileConfiguration data) {
 		try {

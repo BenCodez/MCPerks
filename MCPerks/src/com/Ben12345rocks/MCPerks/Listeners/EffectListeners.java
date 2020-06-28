@@ -30,6 +30,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 import com.Ben12345rocks.AdvancedCore.Listeners.AdvancedCoreLoginEvent;
 import com.Ben12345rocks.AdvancedCore.Util.Effects.BossBar;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.ArrayUtils;
+import com.Ben12345rocks.AdvancedCore.Util.Misc.PlayerUtils;
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
 import com.Ben12345rocks.MCPerks.Effects.DoubleExperienceEffect;
@@ -38,6 +39,7 @@ import com.Ben12345rocks.MCPerks.Effects.FloristEffect;
 import com.Ben12345rocks.MCPerks.Effects.FlyEffect;
 import com.Ben12345rocks.MCPerks.Effects.FortuneEffect;
 import com.Ben12345rocks.MCPerks.Effects.HeadDropperEffect;
+import com.Ben12345rocks.MCPerks.Effects.IncreaseMiningArea;
 import com.Ben12345rocks.MCPerks.Effects.MobDropEffect;
 import com.Ben12345rocks.MCPerks.Effects.ProtectionEffect;
 import com.Ben12345rocks.MCPerks.Effects.UnderWaterFloristEffect;
@@ -144,6 +146,24 @@ public class EffectListeners implements Listener {
 								event.getPlayer().getWorld().dropItemNaturally(event.getBlock().getLocation(), item);
 							}
 						}
+					}
+				}
+			}
+
+			if (plugin.getPerkHandler().effectActive(Effect.IncreaseMiningArea, player.getUniqueId().toString())) {
+				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
+					Effect e = null;
+					for (Effect effect : active.getEffects()) {
+						if (effect.isEffect(Effect.IncreaseMiningArea)) {
+							e = effect;
+						}
+					}
+
+					if (e != null) {
+						blockBroken = event.getBlock();
+						BlockFace f = PlayerUtils.getInstance().yawToFace(player.getLocation().getYaw(), false);
+						new IncreaseMiningArea(event, active, player, e.getModifier(), f);
+
 					}
 				}
 			}
@@ -325,7 +345,8 @@ public class EffectListeners implements Listener {
 		if ((player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR)
 				&& (player.getLocation().subtract(0, 1, 0).getBlock().getType() != Material.AIR)
 				&& (!player.isFlying())) {
-			if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, player.getUniqueId().toString()) || plugin.getPerkHandler().effectActive(Effect.DoubleJumpUp, player.getUniqueId().toString())) {
+			if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, player.getUniqueId().toString())
+					|| plugin.getPerkHandler().effectActive(Effect.DoubleJumpUp, player.getUniqueId().toString())) {
 				player.setAllowFlight(true);
 				plugin.getFlyingUUIDs().put(player.getUniqueId().toString(), true);
 			}
