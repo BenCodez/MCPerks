@@ -82,9 +82,13 @@ public class Config extends YMLFile {
 	public boolean getLimitActivations() {
 		return getData().getBoolean("LimitActivations", false);
 	}
-	
+
 	public boolean getKeepGUIOpen() {
-		return getData().getBoolean("KeepGUIOpen",false);
+		return getData().getBoolean("KeepGUIOpen", false);
+	}
+
+	public boolean getLoadDefaultPerks() {
+		return getData().getBoolean("LoadDefaultPerks", true);
 	}
 
 	@SuppressWarnings("unchecked")

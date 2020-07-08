@@ -70,11 +70,13 @@ public class PerkHandler {
 	private Logger activationLog;
 
 	public PerkHandler() {
-		try {
-			copyPerks();
-		} catch (IOException e) {
-			plugin.getLogger().info("Failed to copy default perks");
-			e.printStackTrace();
+		if (Config.getInstance().getLoadDefaultPerks()) {
+			try {
+				copyPerks();
+			} catch (IOException e) {
+				plugin.getLogger().info("Failed to copy default perks");
+				e.printStackTrace();
+			}
 		}
 		loadEnabledPerks(true);
 
@@ -290,6 +292,7 @@ public class PerkHandler {
 		printActivePerks();
 
 		if (Config.getInstance().getLogActivation() && activationLog != null) {
+
 			String str = new SimpleDateFormat("EEE, d MMM yyyy HH:mm").format(Calendar.getInstance().getTime());
 			activationLog
 					.logToFile(str + " Activated perk " + perk.getName() + " by " + clone.getActivater().getPlayerName()
@@ -330,7 +333,6 @@ public class PerkHandler {
 	}
 
 	public void copyPerks() throws IOException {
-
 		CodeSource src = this.getClass().getProtectionDomain().getCodeSource();
 		if (src != null) {
 			URL jar = src.getLocation();
@@ -466,7 +468,9 @@ public class PerkHandler {
 
 	/**
 	 * Load enabled perks.
-	 * @param loadperks loadperks
+	 * 
+	 * @param loadperks
+	 *            loadperks
 	 */
 	public void loadEnabledPerks(boolean loadperks) {
 		for (String name : ConfigPerks.getInstance().getPerksNames()) {

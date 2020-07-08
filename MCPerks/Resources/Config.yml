@@ -51,6 +51,9 @@ RequirePermToView: true
 # If true, GUI will stay open after activating a perk
 KeepGUIOpen: false
 
+# Load default perks
+LoadDefaultPerks: true
+
 # Give Perks for the player that activated it only
 # Old config option, may not work, use the one below
 #PerPlayerPerks: false
