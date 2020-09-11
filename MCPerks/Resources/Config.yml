@@ -74,6 +74,10 @@ DeactivateOnLogout: false
 # Enable if certain modifiers don't get removed
 ForceClearModifiers: false
 
+# List of disabled worlds on a global level
+# Per perk options available
+DisabledWorlds: []
+
 # Global perk options
 # Add the following in any perk fine to override these
 

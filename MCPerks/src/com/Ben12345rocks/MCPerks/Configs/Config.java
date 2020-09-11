@@ -90,6 +90,11 @@ public class Config extends YMLFile {
 	public boolean getLoadDefaultPerks() {
 		return getData().getBoolean("LoadDefaultPerks", true);
 	}
+	
+	@SuppressWarnings("unchecked")
+	public ArrayList<String> getDisabledWorlds() {
+		return (ArrayList<String>) getData().getList("DisabledWorlds", new ArrayList<String>());
+	}
 
 	@SuppressWarnings("unchecked")
 	public ArrayList<String> getCountDownTimes() {

@@ -24,21 +24,23 @@ public class McMMOEvents implements Listener {
 		for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 			if (active.getEffects().contains(Effect.McmmoXP)
 					&& active.getEffectedPlayers().contains(event.getPlayer().getUniqueId().toString())) {
-				ArrayList<String> skills = active.getMcmmoSkills();
-				boolean boost = false;
-				if (skills.isEmpty()) {
-					boost = true;
-				} else {
-					for (String skill : skills) {
-						if (event.getSkill().toString().equalsIgnoreCase(skill)) {
-							boost = true;
+				if (active.isNotInDisabledWorld(event.getPlayer().getWorld().getName())) {
+					ArrayList<String> skills = active.getMcmmoSkills();
+					boolean boost = false;
+					if (skills.isEmpty()) {
+						boost = true;
+					} else {
+						for (String skill : skills) {
+							if (event.getSkill().toString().equalsIgnoreCase(skill)) {
+								boost = true;
+							}
 						}
 					}
-				}
 
-				if (boost) {
-					McmmoXPEffect me = new McmmoXPEffect(active);
-					event.setRawXpGained(me.increaseXP(event.getRawXpGained()));
+					if (boost) {
+						McmmoXPEffect me = new McmmoXPEffect(active);
+						event.setRawXpGained(me.increaseXP(event.getRawXpGained()));
+					}
 				}
 			}
 		}

@@ -63,24 +63,28 @@ public class EffectListeners implements Listener {
 		if (event.getEntity() instanceof Player) {
 			Player player = (Player) event.getEntity();
 			if (event.getCause().equals(DamageCause.FALL)) {
-				if (plugin.getPerkHandler().effectActive(Effect.NoFallDamage, player.getUniqueId().toString())) {
+				if (plugin.getPerkHandler().effectActive(Effect.NoFallDamage, player.getUniqueId().toString(),
+						player.getWorld().getName())) {
 					event.setDamage(0.0D);
 				}
 			}
 
 			if (event.getCause().equals(DamageCause.DROWNING)) {
-				if (plugin.getPerkHandler().effectActive(Effect.WaterBreathing, player.getUniqueId().toString())) {
+				if (plugin.getPerkHandler().effectActive(Effect.WaterBreathing, player.getUniqueId().toString(),
+						player.getWorld().getName())) {
 					event.setCancelled(true);
 				}
 			}
 
 			if (event.getCause().equals(DamageCause.LAVA) || event.getCause().equals(DamageCause.FIRE)
 					|| event.getCause().equals(DamageCause.FIRE_TICK)) {
-				if (plugin.getPerkHandler().effectActive(Effect.FireWalker, player.getUniqueId().toString())) {
+				if (plugin.getPerkHandler().effectActive(Effect.FireWalker, player.getUniqueId().toString(),
+						player.getWorld().getName())) {
 					event.setCancelled(true);
 				}
 			}
-			if (plugin.getPerkHandler().effectActive(Effect.Protection, player.getUniqueId().toString())) {
+			if (plugin.getPerkHandler().effectActive(Effect.Protection, player.getUniqueId().toString(),
+					player.getWorld().getName())) {
 				ProtectionEffect pe = new ProtectionEffect(event);
 				event.setDamage(pe.getReduction());
 			}
@@ -99,7 +103,8 @@ public class EffectListeners implements Listener {
 	public void entityDamagedByEntity(EntityDamageByEntityEvent event) {
 		if (event.getEntity() instanceof Player) {
 			Player player = (Player) event.getEntity();
-			if (plugin.getPerkHandler().effectActive(Effect.DisablePVP, player.getUniqueId().toString())) {
+			if (plugin.getPerkHandler().effectActive(Effect.DisablePVP, player.getUniqueId().toString(),
+					player.getWorld().getName())) {
 				event.setCancelled(true);
 			}
 		}
@@ -114,7 +119,8 @@ public class EffectListeners implements Listener {
 			Block blockBroken;
 			Collection<ItemStack> var5;
 
-			if (plugin.getPerkHandler().effectActive(Effect.Fortune, player.getUniqueId().toString())) {
+			if (plugin.getPerkHandler().effectActive(Effect.Fortune, player.getUniqueId().toString(),
+					player.getWorld().getName())) {
 				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 					if (active.getEffects().contains(Effect.Fortune)) {
 
@@ -134,7 +140,8 @@ public class EffectListeners implements Listener {
 				}
 			}
 
-			if (plugin.getPerkHandler().effectActive(Effect.Farmer, player.getUniqueId().toString())) {
+			if (plugin.getPerkHandler().effectActive(Effect.Farmer, player.getUniqueId().toString(),
+					player.getWorld().getName())) {
 				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 					if (active.getEffects().contains(Effect.Farmer)) {
 						FarmerEffect fe1 = new FarmerEffect(active);
@@ -151,7 +158,8 @@ public class EffectListeners implements Listener {
 				}
 			}
 
-			if (plugin.getPerkHandler().effectActive(Effect.IncreaseMiningArea, player.getUniqueId().toString())) {
+			if (plugin.getPerkHandler().effectActive(Effect.IncreaseMiningArea, player.getUniqueId().toString(),
+					player.getWorld().getName())) {
 				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 					Effect e = null;
 					for (Effect effect : active.getEffects()) {
@@ -189,7 +197,8 @@ public class EffectListeners implements Listener {
 		Player player = event.getPlayer();
 		if (player != null) {
 
-			if (plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString())) {
+			if (plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString(),
+					player.getWorld().getName())) {
 				new FlyEffect().disableFly(plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString()),
 						player);
 			}
@@ -291,7 +300,8 @@ public class EffectListeners implements Listener {
 	public void onPlayerDamage(EntityDamageEvent event) {
 		if (event.getEntity() instanceof Player) {
 			Player player = (Player) event.getEntity();
-			if (plugin.getPerkHandler().effectActive(Effect.God, player.getUniqueId().toString())) {
+			if (plugin.getPerkHandler().effectActive(Effect.God, player.getUniqueId().toString(),
+					player.getWorld().getName())) {
 				event.setCancelled(true);
 			}
 		}
@@ -303,14 +313,16 @@ public class EffectListeners implements Listener {
 			return;
 		}
 		Player player = event.getPlayer();
-		if (plugin.getPerkHandler().effectActive(Effect.Florist, player.getUniqueId().toString())) {
+		if (plugin.getPerkHandler().effectActive(Effect.Florist, player.getUniqueId().toString(),
+				player.getWorld().getName())) {
 			if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
 				if (event.getItem().getType().equals(Material.BONE_MEAL)) {
 					if (event.getClickedBlock().getType().equals(Material.GRASS_BLOCK)) {
 						event.setCancelled(true);
 						FloristEffect fe = new FloristEffect();
-						fe.generateFlowers(event.getClickedBlock().getLocation(), plugin.getPerkHandler()
-								.effectActiveModifier(Effect.Florist, player.getUniqueId().toString(), 2));
+						fe.generateFlowers(event.getClickedBlock().getLocation(),
+								plugin.getPerkHandler().effectActiveModifier(Effect.Florist,
+										player.getUniqueId().toString(), 2, player.getWorld().getName()));
 						fe.deductBoneMeal(event);
 					}
 				}
@@ -318,14 +330,16 @@ public class EffectListeners implements Listener {
 
 		}
 
-		if (plugin.getPerkHandler().effectActive(Effect.UnderWaterFlorist, player.getUniqueId().toString())) {
+		if (plugin.getPerkHandler().effectActive(Effect.UnderWaterFlorist, player.getUniqueId().toString(),
+				player.getWorld().getName())) {
 			if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
 				if (event.getItem().getType().equals(Material.BONE_MEAL)) {
 					if (event.getClickedBlock().getRelative(BlockFace.UP).getType().equals(Material.WATER)) {
 						event.setCancelled(true);
 						UnderWaterFloristEffect fe = new UnderWaterFloristEffect();
-						fe.generateFlowers(event.getClickedBlock().getLocation(), plugin.getPerkHandler()
-								.effectActiveModifier(Effect.UnderWaterFlorist, player.getUniqueId().toString(), 2));
+						fe.generateFlowers(event.getClickedBlock().getLocation(),
+								plugin.getPerkHandler().effectActiveModifier(Effect.UnderWaterFlorist,
+										player.getUniqueId().toString(), 2, player.getWorld().getName()));
 						fe.deductBoneMeal(event);
 					}
 				}
@@ -346,20 +360,23 @@ public class EffectListeners implements Listener {
 		if ((player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR)
 				&& (player.getLocation().subtract(0, 1, 0).getBlock().getType() != Material.AIR)
 				&& (!player.isFlying())) {
-			if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, player.getUniqueId().toString())
-					|| plugin.getPerkHandler().effectActive(Effect.DoubleJumpUp, player.getUniqueId().toString())) {
+			if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, player.getUniqueId().toString(),
+					player.getWorld().getName())
+					|| plugin.getPerkHandler().effectActive(Effect.DoubleJumpUp, player.getUniqueId().toString(),
+							player.getWorld().getName())) {
 				player.setAllowFlight(true);
 				plugin.getFlyingUUIDs().put(player.getUniqueId().toString(), true);
 			}
-		} else if (!plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString())
-				&& !player.hasPermission("MCPerks.ServerFly.Bypass")) {
+		} else if (!plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString(),
+				player.getWorld().getName()) && !player.hasPermission("MCPerks.ServerFly.Bypass")) {
 			if (plugin.getFlyingUUIDs().get(player.getUniqueId().toString())) {
 				player.setAllowFlight(false);
 				plugin.getFlyingUUIDs().put(player.getUniqueId().toString(), false);
 			}
 		}
 
-		if (plugin.getPerkHandler().effectActive(Effect.BoneMealAura, player.getUniqueId().toString())) {
+		if (plugin.getPerkHandler().effectActive(Effect.BoneMealAura, player.getUniqueId().toString(),
+				player.getWorld().getName())) {
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 				Effect e = null;
 				for (Effect effect : active.getEffects()) {
@@ -379,9 +396,11 @@ public class EffectListeners implements Listener {
 
 	@EventHandler(ignoreCancelled = true)
 	public void onPlayerToggleFlight(PlayerToggleFlightEvent event) {
-		if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, event.getPlayer().getUniqueId().toString())
-				&& !plugin.getPerkHandler().effectActive(Effect.Fly, event.getPlayer().getUniqueId().toString())) {
-			Player player = event.getPlayer();
+		Player player = event.getPlayer();
+		if (plugin.getPerkHandler().effectActive(Effect.DoubleJump, event.getPlayer().getUniqueId().toString(),
+				player.getWorld().getName())
+				&& !plugin.getPerkHandler().effectActive(Effect.Fly, event.getPlayer().getUniqueId().toString(),
+						player.getWorld().getName())) {
 			if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
 				return;
 			}
@@ -390,9 +409,10 @@ public class EffectListeners implements Listener {
 			player.setFlying(false);
 			player.setVelocity(player.getLocation().getDirection().multiply(1.5).setY(1));
 			plugin.debug(player.getName() + " double jumped!");
-		} else if (plugin.getPerkHandler().effectActive(Effect.DoubleJumpUp, event.getPlayer().getUniqueId().toString())
-				&& !plugin.getPerkHandler().effectActive(Effect.Fly, event.getPlayer().getUniqueId().toString())) {
-			Player player = event.getPlayer();
+		} else if (plugin.getPerkHandler().effectActive(Effect.DoubleJumpUp, event.getPlayer().getUniqueId().toString(),
+				player.getWorld().getName())
+				&& !plugin.getPerkHandler().effectActive(Effect.Fly, event.getPlayer().getUniqueId().toString(),
+						player.getWorld().getName())) {
 			if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
 				return;
 			}
@@ -412,7 +432,8 @@ public class EffectListeners implements Listener {
 			public void run() {
 				Player player = event.getPlayer();
 				if (player != null) {
-					if (plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString())) {
+					if (plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString(),
+							player.getWorld().getName())) {
 						if (plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString())
 								.contains(player.getWorld().getName())) {
 							new FlyEffect().enableFly(

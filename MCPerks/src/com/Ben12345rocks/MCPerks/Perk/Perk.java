@@ -82,7 +82,7 @@ public class Perk {
 	private long experation;
 
 	private ArrayList<ItemStack> specialDrops;
-	
+
 	@Getter
 	private ArrayList<Material> whitelistedTools;
 
@@ -117,6 +117,8 @@ public class Perk {
 
 	private User activater;
 
+	private ArrayList<String> disabledWorlds;
+
 	public Perk(Perk perk) {
 		this.perk = perk.perk;
 		name = perk.name;
@@ -146,6 +148,7 @@ public class Perk {
 		serverWideCoolDown = perk.serverWideCoolDown;
 		blackedListedMobs = perk.blackedListedMobs;
 		whitelistedTools = perk.whitelistedTools;
+		disabledWorlds = perk.disabledWorlds;
 	}
 
 	/**
@@ -210,6 +213,8 @@ public class Perk {
 			}
 			effects.add(effect);
 		}
+
+		disabledWorlds = ConfigPerks.getInstance().getPerkDisabledWorlds(perk);
 
 	}
 
@@ -691,7 +696,23 @@ public class Perk {
 		return true;
 	}
 
+	public boolean isNotInDisabledWorld(String world) {
+		if (world != null && world.isEmpty()) {
+			for (String str : disabledWorlds) {
+				if (str.equalsIgnoreCase(world)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	public void runPerk(User user) {
+
+		if (user.isInWorld(disabledWorlds)) {
+			user.sendMessage(Lang.getInstance().getDisabledWorlds());
+			return;
+		}
 
 		if (isPerkActive(user) && !Config.getInstance().getAllowDuplicatePerksActive()) {
 			user.sendMessage(ConfigPerks.getInstance().getPerkAlreayActive(perk));

@@ -227,6 +227,11 @@ public class ConfigPerks {
 		return (ArrayList<String>) getData(perk).getList("MCMMOSkills", new ArrayList<String>());
 	}
 
+	@SuppressWarnings("unchecked")
+	public ArrayList<String> getPerkDisabledWorlds(String perk) {
+		return (ArrayList<String>) getData(perk).getList("DisabledWorlds", Config.getInstance().getDisabledWorlds());
+	}
+
 	public String getPerkName(String perk) {
 		String str = getData(perk).getString("Name");
 		if (str != null) {

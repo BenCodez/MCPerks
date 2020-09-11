@@ -36,6 +36,9 @@ Effects:
 Commands:
 - 'say test'
 
+# List of disabled worlds per perk level
+DisabledWorlds: []
+
 # Requires Potions to be listed in effects
 Potions:
   # Potion type

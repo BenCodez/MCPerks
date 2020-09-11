@@ -93,6 +93,10 @@ public class Lang {
 	public String getPerkInactivePlaceholder() {
 		return getData().getString("PerkInactivePlaceholder", "Inactive");
 	}
+	
+	public String getDisabledWorlds() {
+		return getData().getString("DisabledWorlds", "Perk is disabled");
+	}
 
 	/**
 	 * Gets the incorrect command reply.

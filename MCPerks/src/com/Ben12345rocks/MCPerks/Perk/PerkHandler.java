@@ -362,22 +362,23 @@ public class PerkHandler {
 		}
 	}
 
-	public boolean effectActive(Effect effect, String uuid) {
+	public boolean effectActive(Effect effect, String uuid, String world) {
 		ListIterator<Perk> it = activePerks.listIterator();
 		while (it.hasNext()) {
 			Perk perk = it.next();
 			if (perk.getEffects().contains(effect)) {
 				if (uuid == null || perk.getEffectedPlayers().contains(uuid)) {
 					// plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
-
-					return true;
+					if (perk.isNotInDisabledWorld(world)) {
+						return true;
+					}
 				}
 			}
 		}
 		return false;
 	}
 
-	public double effectActiveModifier(Effect effect, String uuid, int defaultValue) {
+	public double effectActiveModifier(Effect effect, String uuid, int defaultValue, String world) {
 		ListIterator<Perk> it = activePerks.listIterator();
 		while (it.hasNext()) {
 			Perk perk = it.next();
@@ -387,7 +388,9 @@ public class PerkHandler {
 
 					for (Effect e : perk.getEffects()) {
 						if (e.equals(effect)) {
-							return e.getModifier();
+							if (perk.isNotInDisabledWorld(world)) {
+								return e.getModifier();
+							}
 						}
 					}
 				}
