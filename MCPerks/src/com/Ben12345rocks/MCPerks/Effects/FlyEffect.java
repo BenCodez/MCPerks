@@ -9,16 +9,15 @@ import com.Ben12345rocks.MCPerks.Main;
 
 public class FlyEffect {
 
-	public void disableFly(final ArrayList<String> flyWorlds, ArrayList<Player> players) {
+	public void disableFly(ArrayList<Player> players) {
 		for (Player player : players) {
-			disableFly(flyWorlds, player);
+			disableFly(player);
 		}
 
 	}
 
-	public void disableFly(final ArrayList<String> flyWorlds, Player player) {
-		if (player != null && !player.hasPermission("MCPerks.ServerFly.Bypass")
-				&& flyWorlds.contains(player.getWorld().getName())) {
+	public void disableFly(Player player) {
+		if (player != null && !player.hasPermission("MCPerks.ServerFly.Bypass")) {
 			Bukkit.getScheduler().runTask(Main.plugin, new Runnable() {
 
 				@Override

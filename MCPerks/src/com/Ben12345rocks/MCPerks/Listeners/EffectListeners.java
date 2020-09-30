@@ -199,8 +199,7 @@ public class EffectListeners implements Listener {
 
 			if (plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString(),
 					player.getWorld().getName())) {
-				new FlyEffect().disableFly(plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString()),
-						player);
+				new FlyEffect().disableFly(player);
 			}
 			for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
 				if (perk.getBossBar() != null) {
@@ -439,8 +438,7 @@ public class EffectListeners implements Listener {
 							new FlyEffect().enableFly(
 									plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString()), player);
 						} else {
-							new FlyEffect().disableFly(
-									plugin.getEffectHandler().getFlyWorlds(player.getUniqueId().toString()), player);
+							new FlyEffect().disableFly(player);
 						}
 
 					}

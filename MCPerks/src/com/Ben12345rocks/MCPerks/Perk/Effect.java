@@ -78,7 +78,7 @@ public enum Effect {
 	IncreaseLuck,
 
 	IncreaseMiningArea,
-	
+
 	BoneMealAura;
 
 	public static Effect fromString(String str) {
@@ -103,7 +103,7 @@ public enum Effect {
 
 		switch (this) {
 			case Fly:
-				new FlyEffect().disableFly(perk.getFlyWorlds(), players);
+				new FlyEffect().disableFly(players);
 				break;
 			case IncreaseMaxHealth:
 				for (Player p : players) {
