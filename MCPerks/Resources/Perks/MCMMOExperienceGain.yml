@@ -5,7 +5,7 @@ Name: 'MCMMO XP Increase'
 Description: 'Give yourself increase MCMMO XP for %TimeLasts% seconds.'
 Effects:
 - 'McmmoXP:100'
-# Skills this get experaince gain
+# Skills that get experaince gain
 #MCMMOSkills:
 #- MINING
 Item:
