@@ -2,6 +2,7 @@ package com.Ben12345rocks.MCPerks.Listeners.Compatability;
 
 import java.util.ArrayList;
 
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
@@ -21,25 +22,29 @@ public class McMMOEvents implements Listener {
 
 	@EventHandler
 	public void onMcMMOPlayerXpGainEvent(McMMOPlayerXpGainEvent event) {
-		for (Perk active : plugin.getPerkHandler().getActivePerks()) {
-			if (active.getEffects().contains(Effect.McmmoXP)
-					&& active.getEffectedPlayers().contains(event.getPlayer().getUniqueId().toString())) {
-				if (active.isNotInDisabledWorld(event.getPlayer().getWorld().getName())) {
-					ArrayList<String> skills = active.getMcmmoSkills();
-					boolean boost = false;
-					if (skills.isEmpty()) {
-						boost = true;
-					} else {
-						for (String skill : skills) {
-							if (event.getSkill().toString().equalsIgnoreCase(skill)) {
-								boost = true;
+		Player player = event.getPlayer();
+		if (plugin.getPerkHandler().effectActive(Effect.McmmoXP, player.getUniqueId().toString(),
+				player.getWorld().getName())) {
+			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
+				if (active.getEffects().contains(Effect.McmmoXP)
+						&& active.getEffectedPlayers().contains(player.getUniqueId().toString())) {
+					if (active.isNotInDisabledWorld(player.getWorld().getName())) {
+						ArrayList<String> skills = active.getMcmmoSkills();
+						boolean boost = false;
+						if (skills.isEmpty()) {
+							boost = true;
+						} else {
+							for (String skill : skills) {
+								if (event.getSkill().toString().equalsIgnoreCase(skill)) {
+									boost = true;
+								}
 							}
 						}
-					}
 
-					if (boost) {
-						McmmoXPEffect me = new McmmoXPEffect(active);
-						event.setRawXpGained(me.increaseXP(event.getRawXpGained()));
+						if (boost) {
+							McmmoXPEffect me = new McmmoXPEffect(active);
+							event.setRawXpGained(me.increaseXP(event.getRawXpGained()));
+						}
 					}
 				}
 			}
