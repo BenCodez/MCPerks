@@ -116,6 +116,13 @@ public class EffectListeners implements Listener {
 	public void onBlockBreak(BlockBreakEvent event) {
 		Player player = event.getPlayer();
 		if (!event.isCancelled()) {
+			for (BlockBreakEvent e : plugin.getEffectHandler().getBlockBreakEvents()) {
+				if (e.equals(event)) {
+					plugin.getEffectHandler().getBlockBreakEvents().remove(event);
+					return;
+				}
+			}
+
 			Block blockBroken;
 			Collection<ItemStack> var5;
 

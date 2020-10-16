@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 
 import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Configs.Config;
@@ -33,6 +34,9 @@ public class EffectHandler implements Listener {
 
 	@Getter
 	private List<String> activeAttributes = Collections.synchronizedList(new ArrayList<String>());
+
+	@Getter
+	private List<BlockBreakEvent> blockBreakEvents = Collections.synchronizedList(new ArrayList<BlockBreakEvent>());
 
 	public void activate(Perk perk, User user) {
 		for (Effect effect : perk.getEffects()) {

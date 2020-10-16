@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
+import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Perk.Perk;
 
 // TODO: Auto-generated Javadoc
@@ -48,7 +49,6 @@ public class IncreaseMiningArea {
 			for (int x = (int) (event.getBlock().getX() - range); x <= event.getBlock().getX() + range; x++) {
 				for (int y = (int) (event.getBlock().getY() - range); y <= event.getBlock().getY() + range; y++) {
 					Block b = event.getBlock().getWorld().getBlockAt(x, y, event.getBlock().getZ());
-
 					if (!b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
 						b.breakNaturally(itemInHand);
 					}
@@ -69,6 +69,7 @@ public class IncreaseMiningArea {
 
 	public boolean canBreakBlock(Player p, Block b) {
 		BlockBreakEvent block = new BlockBreakEvent(b, p);
+		Main.plugin.getEffectHandler().getBlockBreakEvents().add(block);
 		Bukkit.getPluginManager().callEvent(block);
 		if (!block.isCancelled()) {
 			return true;
