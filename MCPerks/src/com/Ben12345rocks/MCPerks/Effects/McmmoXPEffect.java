@@ -33,8 +33,8 @@ public class McmmoXPEffect {
 	 *            the ammount
 	 * @return the float
 	 */
-	public float increaseXP(float ammount) {
-		Main.plugin.debug("MCMMO " + ammount + " " + percentIncrease);
-		return (float) (ammount * percentIncrease);
+	public double increaseXP(float ammount) {
+		Main.plugin.debug("MCMMO " + ammount + " * " + percentIncrease);
+		return (ammount * percentIncrease);
 	}
 }

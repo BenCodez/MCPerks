@@ -20,6 +20,7 @@ public class McMMOEvents implements Listener {
 		this.plugin = plugin;
 	}
 
+	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void onMcMMOPlayerXpGainEvent(McMMOPlayerXpGainEvent event) {
 		Player player = event.getPlayer();
@@ -43,7 +44,8 @@ public class McMMOEvents implements Listener {
 
 						if (boost) {
 							McmmoXPEffect me = new McmmoXPEffect(active);
-							event.setRawXpGained(me.increaseXP(event.getRawXpGained()));
+							event.setXpGained((int) me.increaseXP(event.getXpGained()));
+
 						}
 					}
 				}
