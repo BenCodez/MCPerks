@@ -33,6 +33,6 @@ public class McmmoXPEffect {
 	 * @return the float
 	 */
 	public float increaseXP(float ammount) {
-		return (float) (ammount + ammount * (percentIncrease/100));
+		return (float) (ammount * percentIncrease);
 	}
 }
