@@ -73,7 +73,7 @@ public class User extends com.Ben12345rocks.AdvancedCore.UserManager.User {
 
 	public long getPerkExperation(Perk perk) {
 		try {
-			return Long.parseLong(getData().getString("Experation." + perk.getName()));
+			return Long.parseLong(getData().getString("Experation." + perk.getPerk()));
 		} catch (NumberFormatException e) {
 			return 0;
 		}
@@ -96,7 +96,7 @@ public class User extends com.Ben12345rocks.AdvancedCore.UserManager.User {
 	}
 
 	public void setPerkExperation(Perk perk, long time) {
-		getData().setString("Experation." + perk.getName(), "" + time);
+		getData().setString("Experation." + perk.getPerk(), "" + time);
 	}
 
 	public void setPerkTimesUsed(Perk perk, int value) {
