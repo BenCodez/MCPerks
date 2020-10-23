@@ -3,6 +3,7 @@
  */
 package com.Ben12345rocks.MCPerks.Effects;
 
+import com.Ben12345rocks.MCPerks.Main;
 import com.Ben12345rocks.MCPerks.Perk.Effect;
 import com.Ben12345rocks.MCPerks.Perk.Perk;
 
@@ -33,6 +34,7 @@ public class McmmoXPEffect {
 	 * @return the float
 	 */
 	public float increaseXP(float ammount) {
+		Main.plugin.debug("MCMMO " + ammount + " " + percentIncrease);
 		return (float) (ammount * percentIncrease);
 	}
 }
