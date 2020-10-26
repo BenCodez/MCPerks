@@ -27,6 +27,14 @@ public class IncreaseMiningArea {
 				return;
 			}
 		}
+		if (!perk.getWhitelistedBlocks().isEmpty()) {
+			if (!perk.getWhitelistedBlocks().contains(event.getBlock().getType())) {
+				return;
+			}
+		}
+		if (perk.getBlacklistedBlocks().contains(event.getBlock().getType())) {
+			return;
+		}
 		boolean xdirection = false;
 		switch (face) {
 			case EAST:

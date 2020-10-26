@@ -85,6 +85,11 @@ public class Perk {
 
 	@Getter
 	private ArrayList<Material> whitelistedTools;
+	
+	@Getter
+	private ArrayList<Material> whitelistedBlocks;
+	@Getter
+	private ArrayList<Material> blacklistedBlocks;
 
 	@Getter
 	private ArrayList<EntityType> blackedListedMobs;
@@ -149,6 +154,8 @@ public class Perk {
 		blackedListedMobs = perk.blackedListedMobs;
 		whitelistedTools = perk.whitelistedTools;
 		disabledWorlds = perk.disabledWorlds;
+		blacklistedBlocks = perk.blacklistedBlocks;
+		whitelistedBlocks = perk.whitelistedBlocks;
 	}
 
 	/**
@@ -215,6 +222,8 @@ public class Perk {
 		}
 
 		disabledWorlds = ConfigPerks.getInstance().getPerkDisabledWorlds(perk);
+		whitelistedBlocks = ConfigPerks.getInstance().getPerkWhiteListedBlocks(perk);
+		blacklistedBlocks = ConfigPerks.getInstance().getPerkBlackListedBlocks(perk);
 
 	}
 

@@ -359,6 +359,32 @@ public class ConfigPerks {
 		}
 		return items;
 	}
+	
+	public ArrayList<Material> getPerkWhiteListedBlocks(String perk) {
+		@SuppressWarnings("unchecked")
+		ArrayList<String> list = (ArrayList<String>) getData(perk).getList("WhitelistedBlocks");
+		if (list == null) {
+			list = new ArrayList<String>();
+		}
+		ArrayList<Material> items = new ArrayList<Material>();
+		for (String str : list) {
+			items.add(Material.valueOf(str));
+		}
+		return items;
+	}
+	
+	public ArrayList<Material> getPerkBlackListedBlocks(String perk) {
+		@SuppressWarnings("unchecked")
+		ArrayList<String> list = (ArrayList<String>) getData(perk).getList("BlacklistedBlocks");
+		if (list == null) {
+			list = new ArrayList<String>();
+		}
+		ArrayList<Material> items = new ArrayList<Material>();
+		for (String str : list) {
+			items.add(Material.valueOf(str));
+		}
+		return items;
+	}
 
 	public int getPerkTimeLasts(String perk) {
 		return getData(perk).getInt("TimeLasts");
