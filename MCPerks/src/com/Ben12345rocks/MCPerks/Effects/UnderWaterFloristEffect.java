@@ -5,6 +5,7 @@ package com.Ben12345rocks.MCPerks.Effects;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -15,10 +16,12 @@ import org.bukkit.block.data.Bisected.Half;
 import org.bukkit.block.data.type.CoralWallFan;
 import org.bukkit.block.data.type.SeaPickle;
 import org.bukkit.entity.Player;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
 import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
+import com.Ben12345rocks.MCPerks.Main;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -32,17 +35,17 @@ public class UnderWaterFloristEffect {
 		if (event.getPlayer().getGameMode().equals(GameMode.CREATIVE)) {
 			return;
 		}
-		if (event.getItem().getAmount() == 1) {
-			Player player = event.getPlayer();
-			if (player.getItemInHand().getType().equals(Material.BONE_MEAL)) {
-				player.setItemInHand(new ItemStack(Material.AIR));
+		if (canInteract(event.getPlayer(), event.getClickedBlock())) {
+			if (event.getItem().getAmount() == 1) {
+				Player player = event.getPlayer();
+				if (player.getItemInHand().getType().equals(Material.BONE_MEAL)) {
+					player.setItemInHand(new ItemStack(Material.AIR));
+				}
+				event.getPlayer().updateInventory();
+			} else {
+				event.getItem().setAmount(event.getItem().getAmount() - 1);
+				event.getPlayer().updateInventory();
 			}
-			event.getPlayer().updateInventory();
-			// Main.plugin.debug("Removed item");
-		} else {
-			event.getItem().setAmount(event.getItem().getAmount() - 1);
-			event.getPlayer().updateInventory();
-			// Main.plugin.debug("New Amount: " + event.getItem().getAmount());
 		}
 
 	}
@@ -50,10 +53,8 @@ public class UnderWaterFloristEffect {
 	/**
 	 * Generate flowers.
 	 *
-	 * @param loc
-	 *            the loc
-	 * @param d
-	 *            Radius
+	 * @param loc the loc
+	 * @param d   Radius
 	 */
 	public void generateFlowers(Location loc, double d) {
 		int y = loc.getBlockY();
@@ -75,8 +76,7 @@ public class UnderWaterFloristEffect {
 	/**
 	 * Pick flower.
 	 *
-	 * @param loc
-	 *            the loc
+	 * @param loc the loc
 	 */
 	public void pickFlower(Location loc) {
 		if (loc.getBlock().getType().equals(Material.WATER)) {
@@ -92,23 +92,23 @@ public class UnderWaterFloristEffect {
 			} else if (MiscUtils.getInstance().checkChance(30, 100)) {
 				// coral blocks
 				switch (ThreadLocalRandom.current().nextInt(1, 6)) {
-					case 1:
-						loc.getBlock().setType(Material.BRAIN_CORAL);
-						break;
-					case 2:
-						loc.getBlock().setType(Material.BUBBLE_CORAL);
-						break;
-					case 3:
-						loc.getBlock().setType(Material.FIRE_CORAL);
-						break;
-					case 4:
-						loc.getBlock().setType(Material.HORN_CORAL);
-						break;
-					case 5:
-						loc.getBlock().setType(Material.TUBE_CORAL);
-						break;
-					default:
-						break;
+				case 1:
+					loc.getBlock().setType(Material.BRAIN_CORAL);
+					break;
+				case 2:
+					loc.getBlock().setType(Material.BUBBLE_CORAL);
+					break;
+				case 3:
+					loc.getBlock().setType(Material.FIRE_CORAL);
+					break;
+				case 4:
+					loc.getBlock().setType(Material.HORN_CORAL);
+					break;
+				case 5:
+					loc.getBlock().setType(Material.TUBE_CORAL);
+					break;
+				default:
+					break;
 				}
 			} else if (MiscUtils.getInstance().checkChance(30, 100)) {
 				// wall fans
@@ -126,43 +126,43 @@ public class UnderWaterFloristEffect {
 				// coral fan blocks
 				if (face.equals(BlockFace.DOWN)) {
 					switch (ThreadLocalRandom.current().nextInt(1, 5)) {
-						case 1:
-							loc.getBlock().setType(Material.BRAIN_CORAL_FAN);
-							break;
-						case 2:
-							loc.getBlock().setType(Material.BUBBLE_CORAL_FAN);
-							break;
-						case 3:
-							loc.getBlock().setType(Material.FIRE_CORAL_FAN);
-							break;
-						case 4:
-							loc.getBlock().setType(Material.HORN_CORAL_FAN);
-							break;
-						case 5:
-							loc.getBlock().setType(Material.TUBE_CORAL_FAN);
-							break;
-						default:
-							break;
+					case 1:
+						loc.getBlock().setType(Material.BRAIN_CORAL_FAN);
+						break;
+					case 2:
+						loc.getBlock().setType(Material.BUBBLE_CORAL_FAN);
+						break;
+					case 3:
+						loc.getBlock().setType(Material.FIRE_CORAL_FAN);
+						break;
+					case 4:
+						loc.getBlock().setType(Material.HORN_CORAL_FAN);
+						break;
+					case 5:
+						loc.getBlock().setType(Material.TUBE_CORAL_FAN);
+						break;
+					default:
+						break;
 					}
 				} else {
 					switch (ThreadLocalRandom.current().nextInt(1, 5)) {
-						case 1:
-							loc.getBlock().setType(Material.BRAIN_CORAL_WALL_FAN);
-							break;
-						case 2:
-							loc.getBlock().setType(Material.BUBBLE_CORAL_WALL_FAN);
-							break;
-						case 3:
-							loc.getBlock().setType(Material.FIRE_CORAL_WALL_FAN);
-							break;
-						case 4:
-							loc.getBlock().setType(Material.HORN_CORAL_WALL_FAN);
-							break;
-						case 5:
-							loc.getBlock().setType(Material.TUBE_CORAL_WALL_FAN);
-							break;
-						default:
-							break;
+					case 1:
+						loc.getBlock().setType(Material.BRAIN_CORAL_WALL_FAN);
+						break;
+					case 2:
+						loc.getBlock().setType(Material.BUBBLE_CORAL_WALL_FAN);
+						break;
+					case 3:
+						loc.getBlock().setType(Material.FIRE_CORAL_WALL_FAN);
+						break;
+					case 4:
+						loc.getBlock().setType(Material.HORN_CORAL_WALL_FAN);
+						break;
+					case 5:
+						loc.getBlock().setType(Material.TUBE_CORAL_WALL_FAN);
+						break;
+					default:
+						break;
 					}
 					if (MiscUtils.getInstance().checkChance(80, 100)) {
 						CoralWallFan data = (CoralWallFan) loc.getBlock().getBlockData();
@@ -208,6 +208,16 @@ public class UnderWaterFloristEffect {
 		Bisected data = (Bisected) block.getBlockData();
 		data.setHalf(half);
 		block.setBlockData(data, false);
+	}
+
+	public boolean canInteract(Player p, Block b) {
+		BlockBreakEvent block = new BlockBreakEvent(b, p);
+		Main.plugin.getEffectHandler().getBlockBreakEvents().add(block);
+		Bukkit.getPluginManager().callEvent(block);
+		if (!block.isCancelled()) {
+			return true;
+		}
+		return false;
 	}
 
 }

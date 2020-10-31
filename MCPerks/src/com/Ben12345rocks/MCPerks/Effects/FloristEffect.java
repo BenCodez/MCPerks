@@ -3,6 +3,7 @@
  */
 package com.Ben12345rocks.MCPerks.Effects;
 
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -11,10 +12,12 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.Bisected.Half;
 import org.bukkit.entity.Player;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
 import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
+import com.Ben12345rocks.MCPerks.Main;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -28,28 +31,25 @@ public class FloristEffect {
 		if (event.getPlayer().getGameMode().equals(GameMode.CREATIVE)) {
 			return;
 		}
-		if (event.getItem().getAmount() == 1) {
-			Player player = event.getPlayer();
-			if (player.getItemInHand().getType().equals(Material.BONE_MEAL)) {
-				player.setItemInHand(new ItemStack(Material.AIR));
+		if (canInteract(event.getPlayer(), event.getClickedBlock())) {
+			if (event.getItem().getAmount() == 1) {
+				Player player = event.getPlayer();
+				if (player.getItemInHand().getType().equals(Material.BONE_MEAL)) {
+					player.setItemInHand(new ItemStack(Material.AIR));
+				}
+				event.getPlayer().updateInventory();
+			} else {
+				event.getItem().setAmount(event.getItem().getAmount() - 1);
+				event.getPlayer().updateInventory();
 			}
-			event.getPlayer().updateInventory();
-			// Main.plugin.debug("Removed item");
-		} else {
-			event.getItem().setAmount(event.getItem().getAmount() - 1);
-			event.getPlayer().updateInventory();
-			// Main.plugin.debug("New Amount: " + event.getItem().getAmount());
 		}
-
 	}
 
 	/**
 	 * Generate flowers.
 	 *
-	 * @param loc
-	 *            the loc
-	 * @param d
-	 *            Radius
+	 * @param loc the loc
+	 * @param d   Radius
 	 */
 	public void generateFlowers(Location loc, double d) {
 		int y = loc.getBlockY();
@@ -72,8 +72,7 @@ public class FloristEffect {
 	/**
 	 * Pick flower.
 	 *
-	 * @param loc
-	 *            the loc
+	 * @param loc the loc
 	 */
 	public void pickFlower(Location loc) {
 		if (loc.getBlock().getType().equals(Material.AIR)) {
@@ -131,6 +130,16 @@ public class FloristEffect {
 		Bisected data = (Bisected) block.getBlockData();
 		data.setHalf(half);
 		block.setBlockData(data, false);
+	}
+
+	public boolean canInteract(Player p, Block b) {
+		BlockBreakEvent block = new BlockBreakEvent(b, p);
+		Main.plugin.getEffectHandler().getBlockBreakEvents().add(block);
+		Bukkit.getPluginManager().callEvent(block);
+		if (!block.isCancelled()) {
+			return true;
+		}
+		return false;
 	}
 
 }
