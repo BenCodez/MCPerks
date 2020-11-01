@@ -3,22 +3,32 @@
  */
 package com.Ben12345rocks.MCPerks.Effects;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.Player;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
 
+import com.Ben12345rocks.AdvancedCore.Util.Item.ItemBuilder;
 import com.Ben12345rocks.AdvancedCore.Util.Misc.MiscUtils;
+import com.Ben12345rocks.MCPerks.Main;
 
 public class BoneMealAura {
 
 	private int range = 5;
 
-	public void checkPlants(Location loc, int chance) {
+	public void checkPlants(Player p, Location loc, int chance) {
 		int y = loc.getBlockY();
 		int x = loc.getBlockX();
 		int z = loc.getBlockZ();
+		if (!canInteract(p, loc.getBlock())) {
+			return;
+		}
 
 		for (int i = (int) (x - range); i <= x + range; ++i) {
 			for (int j = (int) (z - range); j <= z + range; ++j) {
@@ -46,6 +56,18 @@ public class BoneMealAura {
 				}
 			}
 		}
+	}
+
+	@SuppressWarnings("deprecation")
+	public boolean canInteract(Player p, Block b) {
+		PlayerInteractEvent event = new PlayerInteractEvent(p, Action.RIGHT_CLICK_BLOCK,
+				new ItemBuilder(Material.BONE_MEAL).setAmount(1).toItemStack(p), b, BlockFace.UP);
+		Main.plugin.getEffectHandler().getPlayerInteractEvents().add(event);
+		Bukkit.getPluginManager().callEvent(event);
+		if (!event.isCancelled()) {
+			return true;
+		}
+		return false;
 	}
 
 }

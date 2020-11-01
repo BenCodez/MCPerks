@@ -96,8 +96,7 @@ public class EffectListeners implements Listener {
 	/**
 	 * Entity damaged by entity.
 	 *
-	 * @param event
-	 *            the event
+	 * @param event the event
 	 */
 	@EventHandler(ignoreCancelled = true)
 	public void entityDamagedByEntity(EntityDamageByEntityEvent event) {
@@ -190,8 +189,7 @@ public class EffectListeners implements Listener {
 	/**
 	 * On block place event.
 	 *
-	 * @param event
-	 *            the event
+	 * @param event the event
 	 */
 	@EventHandler(ignoreCancelled = true)
 	public void onBlockPlaceEvent(BlockPlaceEvent event) {
@@ -318,6 +316,13 @@ public class EffectListeners implements Listener {
 		if (event.getItem() == null || !(event.getPlayer() instanceof Player)) {
 			return;
 		}
+		for (PlayerInteractEvent e : plugin.getEffectHandler().getPlayerInteractEvents()) {
+			if (e.equals(event)) {
+				plugin.getEffectHandler().getPlayerInteractEvents().remove(event);
+				return;
+			}
+		}
+
 		Player player = event.getPlayer();
 		if (plugin.getPerkHandler().effectActive(Effect.Florist, player.getUniqueId().toString(),
 				player.getWorld().getName())) {
@@ -392,7 +397,7 @@ public class EffectListeners implements Listener {
 				}
 
 				if (e != null) {
-					new BoneMealAura().checkPlants(event.getTo(), (int) e.getModifier());
+					new BoneMealAura().checkPlants(player, event.getTo(), (int) e.getModifier());
 
 				}
 			}
