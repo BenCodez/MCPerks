@@ -21,8 +21,7 @@ public class FarmerEffect {
 	/**
 	 * Instantiates a new farmer effect.
 	 *
-	 * @param perk
-	 *            the perk
+	 * @param perk the perk
 	 */
 	public FarmerEffect(Perk perk) {
 		percentIncrease = (int) perk.getIncreasePercent(Effect.Farmer);
@@ -31,8 +30,7 @@ public class FarmerEffect {
 	/**
 	 * Increase drops.
 	 *
-	 * @param ammount
-	 *            the ammount
+	 * @param ammount the ammount
 	 * @return the int
 	 */
 	public int increaseDrops(int ammount) {
@@ -42,14 +40,12 @@ public class FarmerEffect {
 	/**
 	 * Checks if is farmable.
 	 *
-	 * @param b
-	 *            the b
+	 * @param b the b
 	 * @return true, if is farmable
 	 */
 	public boolean isFarmable(Block b) {
 		return b.getType().equals(Material.POTATO) || b.getType().equals(Material.CARROT)
-				|| b.getType().equals(Material.WHEAT) || b.getType().equals(Material.SUGAR_CANE)
-				|| b.getType().equals(Material.CACTUS) || b.getType().equals(Material.MELON)
+				|| b.getType().equals(Material.WHEAT) || b.getType().equals(Material.MELON)
 				|| b.getType().equals(Material.PUMPKIN) || b.getType().equals(Material.WHEAT_SEEDS);
 	}
 }
