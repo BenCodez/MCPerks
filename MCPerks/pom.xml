@@ -2,9 +2,9 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.Ben12345rocks</groupId>
-	<artifactId>MCPerks</artifactId>
-	<version>1.16.2</version>
+	<groupId>com.bencodez</groupId>
+	<artifactId>mcperks</artifactId>
+	<version>1.17</version>
 	<packaging>jar</packaging>
 	<name>MCPerks</name>
 	<properties>
@@ -54,8 +54,8 @@
 						<!-- Lets relocate the shaded API so we dont cause any conflicts with 
 							other plugins -->
 						<relocation>
-							<pattern>com.Ben12345rocks.AdvancedCore</pattern>
-							<shadedPattern>${groupId}.${artifactId}.AdvancedCore</shadedPattern>
+							<pattern>com.bencodez.advancedcore</pattern>
+							<shadedPattern>${groupId}.${artifactId}.advancedcore</shadedPattern>
 						</relocation>
 						<!-- Lets relocate the shaded API so we dont cause any conflicts with 
 							other plugins -->
@@ -145,8 +145,8 @@
 	</repositories>
 	<dependencies>
 		<dependency>
-			<groupId>com.github.Ben12345rocks</groupId>
-			<artifactId>AdvancedCore</artifactId>
+			<groupId>com.github.bencodez</groupId>
+			<artifactId>advancedcore</artifactId>
 			<version>master-SNAPSHOT</version>
 		</dependency>
 		<dependency>
@@ -190,8 +190,8 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.github.Ben12345rocks</groupId>
-			<artifactId>VotingPlugin</artifactId>
+			<groupId>com.github.BenCodez</groupId>
+			<artifactId>votingplugin</artifactId>
 			<version>master-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
