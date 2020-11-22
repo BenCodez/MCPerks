@@ -122,7 +122,7 @@
 								<resource>
 									<directory>${basedir}/target</directory>
 									<includes>
-										<include>${project.artifactId}.jar</include>
+										<include>MCPerks.jar</include>
 									</includes>
 								</resource>
 							</resources>
@@ -144,11 +144,6 @@
 		</repository>
 	</repositories>
 	<dependencies>
-		<dependency>
-			<groupId>com.github.bencodez</groupId>
-			<artifactId>advancedcore</artifactId>
-			<version>master-SNAPSHOT</version>
-		</dependency>
 		<dependency>
 			<groupId>com.palmergames</groupId>
 			<artifactId>LlmDl</artifactId>
@@ -196,4 +191,36 @@
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
+	<profiles>
+		<profile>
+			<id>prod</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<build.profile.id>prod</build.profile.id>
+			</properties>
+			<dependencies>
+				<dependency>
+					<groupId>com.github.bencodez</groupId>
+					<artifactId>advancedcore</artifactId>
+					<version>master-SNAPSHOT</version>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>dev</id>
+			<properties>
+				<build.profile.id>dev</build.profile.id>
+			</properties>
+			<dependencies>
+				<dependency>
+					<groupId>com.bencodez</groupId>
+					<artifactId>AdvancedCore</artifactId>
+					<version>LATEST</version>
+					<scope>compile</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
 </project>
