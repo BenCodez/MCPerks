@@ -3,8 +3,8 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.bencodez</groupId>
-	<artifactId>mcperks</artifactId>
-	<version>1.17</version>
+	<artifactId>MCPerks</artifactId>
+	<version>1.17.1</version>
 	<packaging>jar</packaging>
 	<name>MCPerks</name>
 	<properties>
@@ -55,25 +55,25 @@
 							other plugins -->
 						<relocation>
 							<pattern>com.bencodez.advancedcore</pattern>
-							<shadedPattern>${groupId}.${artifactId}.advancedcore</shadedPattern>
+							<shadedPattern>${groupId}.mcperks.advancedcore</shadedPattern>
 						</relocation>
 						<!-- Lets relocate the shaded API so we dont cause any conflicts with 
 							other plugins -->
 						<relocation>
 							<pattern>net.pl3x.bukkit.chatapi</pattern>
-							<shadedPattern>${groupId}.${artifactId}</shadedPattern>
+							<shadedPattern>${groupId}.mcperks</shadedPattern>
 						</relocation>
 						<relocation>
 							<pattern>me.mrten.mysqlapi</pattern>
-							<shadedPattern>${groupId}.${artifactId}.mysqlapi</shadedPattern>
+							<shadedPattern>${groupId}.mcperks.mysqlapi</shadedPattern>
 						</relocation>
 						<relocation>
 							<pattern>com.zaxxer.HikariCP</pattern>
-							<shadedPattern>${groupId}.${artifactId}.HikariCP</shadedPattern>
+							<shadedPattern>${groupId}.mcperks.HikariCP</shadedPattern>
 						</relocation>
 						<relocation>
 							<pattern>org.slf4j.slf4j-simple</pattern>
-							<shadedPattern>${groupId}.${artifactId}.slf4j-simple</shadedPattern>
+							<shadedPattern>${groupId}.mcperks.slf4j-simple</shadedPattern>
 						</relocation>
 					</relocations>
 				</configuration>
