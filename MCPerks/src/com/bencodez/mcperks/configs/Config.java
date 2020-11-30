@@ -22,10 +22,11 @@ import com.bencodez.mcperks.MCPerksMain;
 public class Config extends YMLFile {
 
 	/** The plugin. */
-	static MCPerksMain plugin;
+	private MCPerksMain plugin;
 
 	public Config(MCPerksMain plugin) {
 		super(plugin, new File(plugin.getDataFolder(), "Config.yml"));
+		this.plugin = plugin;
 	}
 
 	public String getActivationEffectPath() {
