@@ -103,7 +103,7 @@ public enum Effect {
 
 		switch (this) {
 			case Fly:
-				new FlyEffect().disableFly(players);
+				new FlyEffect().disableFly(perk.getFlyWorlds(),players);
 				break;
 			case IncreaseMaxHealth:
 				for (Player p : players) {

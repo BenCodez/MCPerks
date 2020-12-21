@@ -9,9 +9,12 @@ import com.bencodez.mcperks.MCPerksMain;
 
 public class FlyEffect {
 
-	public void disableFly(ArrayList<Player> players) {
+	public void disableFly(ArrayList<String> flyWorlds, ArrayList<Player> players) {
 		for (Player player : players) {
-			disableFly(player);
+			if (flyWorlds.contains(player.getWorld().getName())) {
+				disableFly(player);
+			}
+			
 		}
 
 	}
