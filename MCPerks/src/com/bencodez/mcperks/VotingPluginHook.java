@@ -2,8 +2,10 @@ package com.bencodez.mcperks;
 
 import java.util.HashMap;
 
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
+import com.bencodez.advancedcore.api.javascript.JavascriptPlaceholderRequest;
 import com.bencodez.mcperks.userapi.UserManager;
 import com.bencodez.votingplugin.VotingPluginHooks;
 import com.bencodez.votingplugin.advancedcore.api.inventory.editgui.EditGUIButton;
@@ -20,6 +22,14 @@ public class VotingPluginHook {
 	}
 
 	public void loadRewards() {
+		MCPerksMain.plugin.getJavascriptEngineRequests().add(new JavascriptPlaceholderRequest("VotingPluginUser") {
+
+			@Override
+			public Object getObject(OfflinePlayer player) {
+				return com.bencodez.votingplugin.user.UserManager.getInstance().getVotingPluginUser(player);
+			}
+		});
+		
 		VotingPluginHooks.getInstance().addCustomReward(new RewardInjectInt("Activations") {
 
 			@Override

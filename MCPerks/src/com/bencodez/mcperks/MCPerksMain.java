@@ -20,6 +20,7 @@ import com.bencodez.advancedcore.AdvancedCorePlugin;
 import com.bencodez.advancedcore.api.command.CommandHandler;
 import com.bencodez.advancedcore.api.inventory.editgui.EditGUIButton;
 import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueNumber;
+import com.bencodez.advancedcore.api.javascript.JavascriptPlaceholderRequest;
 import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.advancedcore.api.metrics.BStatsMetrics;
 import com.bencodez.advancedcore.api.metrics.MCStatsMetrics;
@@ -75,10 +76,10 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	@Getter
 	private ArrayList<PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>> placeholders = new ArrayList<PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>>();
-	
+
 	@Getter
 	private ServerData mcperksServerData;
-	
+
 	@Getter
 	private Config configFile;
 
@@ -114,6 +115,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	/*
 	 * (non-Javadoc)
+	 * 
 	 * @see org.bukkit.plugin.java.JavaPlugin#onDisable()
 	 */
 	@Override
@@ -146,6 +148,22 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 		loadInjectedRewards();
 
+		getJavascriptEngineRequests().add(new JavascriptPlaceholderRequest("MCPerks") {
+
+			@Override
+			public Object getObject(OfflinePlayer player) {
+				return this;
+			}
+		});
+
+		getJavascriptEngineRequests().add(new JavascriptPlaceholderRequest("MCPerksUser") {
+
+			@Override
+			public Object getObject(OfflinePlayer player) {
+				return UserManager.getInstance().getMCPerksUser(player);
+			}
+		});
+
 		Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, new Runnable() {
 
 			@Override
@@ -167,6 +185,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	/*
 	 * (non-Javadoc)
+	 * 
 	 * @see org.bukkit.plugin.java.JavaPlugin#onEnable()
 	 */
 	@Override
@@ -185,7 +204,8 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		RewardHandler.getInstance().addInjectedReward(new RewardInjectInt("Activations") {
 
 			@Override
-			public String onRewardRequest(Reward reward, AdvancedCoreUser user, int value, HashMap<String, String> placeholders) {
+			public String onRewardRequest(Reward reward, AdvancedCoreUser user, int value,
+					HashMap<String, String> placeholders) {
 				UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(value);
 				return null;
 			}
