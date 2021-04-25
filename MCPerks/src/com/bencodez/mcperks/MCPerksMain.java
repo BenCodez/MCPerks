@@ -12,14 +12,16 @@ import java.util.HashMap;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.PluginManager;
 
 import com.bencodez.advancedcore.AdvancedCorePlugin;
 import com.bencodez.advancedcore.api.command.CommandHandler;
+import com.bencodez.advancedcore.api.inventory.BInventory.ClickEvent;
 import com.bencodez.advancedcore.api.inventory.editgui.EditGUIButton;
-import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueNumber;
+import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueInventory;
 import com.bencodez.advancedcore.api.javascript.JavascriptPlaceholderRequest;
 import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.advancedcore.api.metrics.BStatsMetrics;
@@ -27,7 +29,9 @@ import com.bencodez.advancedcore.api.metrics.MCStatsMetrics;
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.misc.MiscUtils;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
+import com.bencodez.advancedcore.api.rewards.DirectlyDefinedReward;
 import com.bencodez.advancedcore.api.rewards.Reward;
+import com.bencodez.advancedcore.api.rewards.RewardEditData;
 import com.bencodez.advancedcore.api.rewards.RewardHandler;
 import com.bencodez.advancedcore.api.rewards.injected.RewardInjectInt;
 import com.bencodez.advancedcore.api.updater.Updater;
@@ -45,8 +49,8 @@ import com.bencodez.mcperks.perk.EffectHandler;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.perk.PerkHandler;
 import com.bencodez.mcperks.perk.PerkSystemType;
+import com.bencodez.mcperks.rewardedit.MCPerksRewardEditActivations;
 import com.bencodez.mcperks.userapi.UserManager;
-import com.bencodez.votingplugin.VotingPluginHooks;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -198,7 +202,12 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	public void loadInjectedRewards() {
 		if (Bukkit.getPluginManager().getPlugin("VotingPlugin") != null) {
-			VotingPluginHook.getInstance().loadRewards();
+			// add failsafe
+			try {
+				VotingPluginHook.getInstance().loadRewards();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 
 		RewardHandler.getInstance().addInjectedReward(new RewardInjectInt("Activations") {
@@ -209,13 +218,20 @@ public class MCPerksMain extends AdvancedCorePlugin {
 				UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(value);
 				return null;
 			}
-		}.addEditButton(new EditGUIButton(new EditGUIValueNumber("Activations", null) {
+		}.addEditButton(new EditGUIButton(new EditGUIValueInventory("Activations") {
 
 			@Override
-			public void setValue(Player player, Number num) {
-				Reward reward = (Reward) getInv().getData("Reward");
-				reward.getConfig().set(getKey(), num.intValue());
-				VotingPluginHooks.getInstance().getMainClass().reload();
+			public void openInventory(ClickEvent event) {
+				RewardEditData reward = (RewardEditData) getInv().getData("Reward");
+				new MCPerksRewardEditActivations() {
+
+					@Override
+					public void setVal(String key, Object value) {
+						RewardEditData reward = (RewardEditData) getInv().getData("Reward");
+						reward.setValue(getKey(), value);
+						plugin.reloadAdvancedCore(false);
+					}
+				}.open(event.getPlayer(), reward);
 			}
 		})));
 
@@ -228,15 +244,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 					UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(perk, value);
 					return null;
 				}
-			}.addEditButton(new EditGUIButton(new EditGUIValueNumber("PerkActivations." + perk, null) {
-
-				@Override
-				public void setValue(Player player, Number num) {
-					Reward reward = (Reward) getInv().getData("Reward");
-					reward.getConfig().set(getKey(), num.intValue());
-					VotingPluginHooks.getInstance().getMainClass().reload();
-				}
-			})));
+			});
 		}
 	}
 
