@@ -19,14 +19,14 @@ import com.bencodez.advancedcore.api.command.TabCompleteHandler;
 import com.bencodez.advancedcore.api.inventory.BInventory;
 import com.bencodez.advancedcore.api.inventory.BInventory.ClickEvent;
 import com.bencodez.advancedcore.api.inventory.BInventoryButton;
+import com.bencodez.advancedcore.api.inventory.editgui.EditGUIButton;
+import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueBoolean;
+import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueList;
+import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueNumber;
 import com.bencodez.advancedcore.api.item.ItemBuilder;
 import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
-import com.bencodez.advancedcore.api.valuerequest.InputMethod;
-import com.bencodez.advancedcore.api.valuerequest.ValueRequestBuilder;
-import com.bencodez.advancedcore.api.valuerequest.listeners.BooleanListener;
-import com.bencodez.advancedcore.api.valuerequest.listeners.NumberListener;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.commands.executers.CommandAliases;
 import com.bencodez.mcperks.commands.executers.CommandPerkAliases;
@@ -643,8 +643,8 @@ public class CommandLoader {
 		ArrayList<CommandHandler> advancedCoreCommands = new ArrayList<CommandHandler>();
 		advancedCoreCommands.addAll(com.bencodez.advancedcore.command.CommandLoader.getInstance()
 				.getBasicAdminCommands(MCPerksMain.plugin.getName()));
-		advancedCoreCommands.addAll(
-				com.bencodez.advancedcore.command.CommandLoader.getInstance().getBasicCommands(MCPerksMain.plugin.getName()));
+		advancedCoreCommands.addAll(com.bencodez.advancedcore.command.CommandLoader.getInstance()
+				.getBasicCommands(MCPerksMain.plugin.getName()));
 		for (CommandHandler handle : advancedCoreCommands) {
 			String[] args = handle.getArgs();
 			String[] newArgs = new String[args.length + 1];
@@ -678,82 +678,63 @@ public class CommandLoader {
 	}
 
 	public void openPerkEdit(Player player, final String perk) {
+		Perk p = plugin.getPerkHandler().getPerk(perk);
 		BInventory inv = new BInventory("PerkEdit: " + perk);
-		inv.addButton(new BInventoryButton(new ItemBuilder(Material.REDSTONE).setName("Set Enabled")
-				.addLoreLine("Enabled: " + ConfigPerks.getInstance().getPerkEnabled(perk))) {
 
-			@Override
-			public void onClick(ClickEvent event) {
-				Player player = event.getPlayer();
-				new ValueRequestBuilder(new BooleanListener() {
+		inv.addButton(new EditGUIButton(new ItemBuilder(Material.REDSTONE),
+				new EditGUIValueBoolean("Enabled", p.isEnabled()) {
 
 					@Override
-					public void onInput(Player player, boolean value) {
-						ConfigPerks.getInstance().setPerkEnabled(perk, value);
+					public void setValue(Player player, boolean value) {
+						ConfigPerks.getInstance().set(perk, getKey(), value);
 						plugin.reload();
 						openPerkEdit(player, perk);
 					}
-				}).usingMethod(InputMethod.INVENTORY).request(player);
+				}.addLore("Set whether perk is enabled/disabled")));
 
-			}
-		});
-
-		inv.addButton(new BInventoryButton(new ItemBuilder(Material.DIAMOND_SWORD).setName("Set Priority")
-				.addLoreLine("Priority: " + ConfigPerks.getInstance().getPerkPriority(perk))) {
-
-			@Override
-			public void onClick(ClickEvent event) {
-				Player player = event.getPlayer();
-				new ValueRequestBuilder(new NumberListener() {
+		inv.addButton(new EditGUIButton(new ItemBuilder(Material.DIAMOND_SWORD),
+				new EditGUIValueNumber("Priority", p.getPriority()) {
 
 					@Override
-					public void onInput(Player player, Number value) {
-						ConfigPerks.getInstance().setPerkPriority(perk, value.intValue());
+					public void setValue(Player player, Number value) {
+						ConfigPerks.getInstance().set(perk, getKey(), value.intValue());
 						plugin.reload();
 						openPerkEdit(player, perk);
 					}
-				}, new Number[] { 0, 1, 2, 3, 4, 5, 10, 20 }).usingMethod(InputMethod.INVENTORY).allowCustomOption(true)
-						.request(player);
-			}
-		});
+				}.addLore("Set perk priority")));
 
-		inv.addButton(new BInventoryButton(new ItemBuilder(Material.DIAMOND_SWORD).setName("Set TimeLasts")
-				.addLoreLine("TimeLasts: " + ConfigPerks.getInstance().getPerkTimeLasts(perk))) {
-
-			@Override
-			public void onClick(ClickEvent event) {
-				Player player = event.getPlayer();
-				new ValueRequestBuilder(new NumberListener() {
+		inv.addButton(new EditGUIButton(new ItemBuilder(Material.DIAMOND_SWORD),
+				new EditGUIValueNumber("TimeLasts", p.getTime()) {
 
 					@Override
-					public void onInput(Player player, Number value) {
-						ConfigPerks.getInstance().setPerkTimeLasts(perk, value.intValue());
+					public void setValue(Player player, Number value) {
+						ConfigPerks.getInstance().set(perk, getKey(), value.intValue());
 						plugin.reload();
 						openPerkEdit(player, perk);
 					}
-				}, new Number[] { 0, 1, 2, 3, 4, 5, 10, 20 }).usingMethod(InputMethod.INVENTORY).allowCustomOption(true)
-						.request(player);
-			}
-		});
+				}.addLore("Set perk time lasts")));
 
-		inv.addButton(new BInventoryButton(new ItemBuilder(Material.DIAMOND_SWORD).setName("Set CoolDown")
-				.addLoreLine("CoolDown: " + ConfigPerks.getInstance().getPerkCoolDown(perk))) {
-
-			@Override
-			public void onClick(ClickEvent event) {
-				Player player = event.getPlayer();
-				new ValueRequestBuilder(new NumberListener() {
+		inv.addButton(new EditGUIButton(new ItemBuilder(Material.DIAMOND_SWORD),
+				new EditGUIValueNumber("CoolDown", p.getCoolDown()) {
 
 					@Override
-					public void onInput(Player player, Number value) {
-						ConfigPerks.getInstance().setPerkCoolDown(perk, value.intValue());
+					public void setValue(Player player, Number value) {
+						ConfigPerks.getInstance().set(perk, getKey(), value.intValue());
 						plugin.reload();
 						openPerkEdit(player, perk);
 					}
-				}, new Number[] { 0, 1, 2, 3, 4, 5, 10, 20 }).usingMethod(InputMethod.INVENTORY).allowCustomOption(true)
-						.request(player);
-			}
-		});
+				}.addLore("Set perk cooldown")));
+
+		inv.addButton(new EditGUIButton(new ItemBuilder(Material.DIAMOND_SWORD),
+				new EditGUIValueList("Effects", p.getEffects()) {
+
+					@Override
+					public void setValue(Player player, ArrayList<String> value) {
+						ConfigPerks.getInstance().set(perk, getKey(), value);
+						plugin.reload();
+						openPerkEdit(player, perk);
+					}
+				}.addLore("Set perk effects")));
 
 		inv.openInventory(player);
 	}

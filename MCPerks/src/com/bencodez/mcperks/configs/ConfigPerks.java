@@ -48,8 +48,7 @@ public class ConfigPerks {
 	/**
 	 * Instantiates a new config vote sites.
 	 *
-	 * @param plugin
-	 *            the plugin
+	 * @param plugin the plugin
 	 */
 	public ConfigPerks(MCPerksMain plugin) {
 		ConfigPerks.plugin = plugin;
@@ -63,8 +62,7 @@ public class ConfigPerks {
 	/**
 	 * Gets the data.
 	 *
-	 * @param perk
-	 *            the site name
+	 * @param perk the site name
 	 * @return the data
 	 */
 	public FileConfiguration getData(String perk) {
@@ -175,8 +173,7 @@ public class ConfigPerks {
 	/**
 	 * Gets the vote site file.
 	 *
-	 * @param perk
-	 *            the site name
+	 * @param perk the site name
 	 * @return the vote site file
 	 */
 	public File getPerkFile(String perk) {
@@ -359,7 +356,7 @@ public class ConfigPerks {
 		}
 		return items;
 	}
-	
+
 	public ArrayList<Material> getPerkWhiteListedBlocks(String perk) {
 		@SuppressWarnings("unchecked")
 		ArrayList<String> list = (ArrayList<String>) getData(perk).getList("WhitelistedBlocks");
@@ -372,7 +369,7 @@ public class ConfigPerks {
 		}
 		return items;
 	}
-	
+
 	public ArrayList<Material> getPerkBlackListedBlocks(String perk) {
 		@SuppressWarnings("unchecked")
 		ArrayList<String> list = (ArrayList<String>) getData(perk).getList("BlacklistedBlocks");
@@ -397,10 +394,8 @@ public class ConfigPerks {
 	/**
 	 * Rename vote site.
 	 *
-	 * @param perk
-	 *            the site name
-	 * @param newName
-	 *            the new name
+	 * @param perk    the site name
+	 * @param newName the new name
 	 * @return true, if successful
 	 */
 	public boolean renamePerk(String perk, String newName) {
@@ -411,10 +406,8 @@ public class ConfigPerks {
 	/**
 	 * Save data.
 	 * 
-	 * @param dFile
-	 *            dFile
-	 * @param data
-	 *            data
+	 * @param dFile dFile
+	 * @param data  data
 	 */
 	public void saveData(File dFile, FileConfiguration data) {
 		try {
@@ -427,12 +420,9 @@ public class ConfigPerks {
 	/**
 	 * Sets the.
 	 *
-	 * @param perk
-	 *            the site name
-	 * @param path
-	 *            the path
-	 * @param value
-	 *            the value
+	 * @param perk  the site name
+	 * @param path  the path
+	 * @param value the value
 	 */
 	public void set(String perk, String path, Object value) {
 		// String playerName = user.getPlayerName();
@@ -469,8 +459,7 @@ public class ConfigPerks {
 	/**
 	 * Sets the up.
 	 *
-	 * @param perk
-	 *            the new up
+	 * @param perk the new up
 	 */
 	public void setup(String perk) {
 		if (!plugin.getDataFolder().exists()) {
