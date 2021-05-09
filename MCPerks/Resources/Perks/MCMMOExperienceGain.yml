@@ -1,3 +1,5 @@
+# This perk may not work perfectly
+# MCMMO is tricky to work with
 Enabled: true
 TimeLasts: 60
 CoolDown: 86400

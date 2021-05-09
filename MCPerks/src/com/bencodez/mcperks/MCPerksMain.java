@@ -110,6 +110,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 		pm.registerEvents(new EffectListeners(this), this);
 		if (Bukkit.getPluginManager().getPlugin("mcMMO") != null) {
+			plugin.debug("Loading mcMMO support");
 			pm.registerEvents(new McMMOEvents(this), this);
 		}
 
@@ -265,6 +266,15 @@ public class MCPerksMain extends AdvancedCorePlugin {
 				return ArrayUtils.getInstance().makeStringList(list);
 			}
 		});
+		
+		addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("CurrentActivePerks") {
+
+			@Override
+			public String placeholderRequest(OfflinePlayer player, com.bencodez.mcperks.userapi.MCPerksUser user,
+					String identifier) {
+				return "" + user.getActivePerks();
+			}
+		});
 
 		addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("activations") {
 
@@ -363,7 +373,6 @@ public class MCPerksMain extends AdvancedCorePlugin {
 							return Lang.getInstance().getPerkActivePlaceholder();
 						}
 					}
-
 					return Lang.getInstance().getPerkInactivePlaceholder();
 				}
 			});
