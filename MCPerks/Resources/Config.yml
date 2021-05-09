@@ -191,3 +191,7 @@ Lore:
   
 # Data is saved in ServerData.yml
 StorePerkHistory: false
+
+# Enable Geyser prefix support
+GeyserPrefixSupport: false
+GeyserPrefix: '*'
