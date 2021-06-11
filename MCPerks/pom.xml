@@ -154,7 +154,7 @@
 		<dependency>
 			<groupId>org.spigotmc</groupId>
 			<artifactId>spigot-api</artifactId>
-			<version>1.16.5-R0.1-SNAPSHOT</version>
+			<version>1.17-R0.1-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -184,7 +184,12 @@
 			<version>1.18.2</version>
 			<scope>provided</scope>
 		</dependency>
-
+		<dependency>
+			<groupId>com.github.BenCodez</groupId>
+			<artifactId>votingplugin</artifactId>
+			<version>master-SNAPSHOT</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 	<profiles>
 		<profile>
@@ -225,7 +230,7 @@
 					<groupId>com.bencodez</groupId>
 					<artifactId>VotingPlugin</artifactId>
 					<version>LATEST</version>
-					<scope>compile</scope>
+					<scope>provided</scope>
 				</dependency>
 			</dependencies>
 		</profile>
