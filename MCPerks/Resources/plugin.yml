@@ -5,6 +5,8 @@ version: ${project.version}
 main: com.bencodez.mcperks.MCPerksMain
 softdepend: [VotingPlugin]
 api-version: 1.13
+libraries:
+  - org.openjdk.nashorn:nashorn-core:15.2
 commands:
   mcperks:
     description: MCPerks commands
