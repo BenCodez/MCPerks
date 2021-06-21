@@ -1,6 +1,3 @@
-/*
- *
- */
 package com.bencodez.mcperks;
 
 import java.io.IOException;
@@ -203,7 +200,14 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		if (Bukkit.getPluginManager().getPlugin("VotingPlugin") != null) {
 			// add failsafe
 			try {
-				VotingPluginHook.getInstance().loadRewards();
+				Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+
+					@Override
+					public void run() {
+						VotingPluginHook.getInstance().loadRewards();
+						getLogger().info("VotingPlugin hook loaded");
+					}
+				});
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -266,7 +270,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 				return ArrayUtils.getInstance().makeStringList(list);
 			}
 		});
-		
+
 		addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("CurrentActivePerks") {
 
 			@Override
