@@ -1,6 +1,5 @@
 package com.bencodez.mcperks;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -21,7 +20,6 @@ import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueIn
 import com.bencodez.advancedcore.api.javascript.JavascriptPlaceholderRequest;
 import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.advancedcore.api.metrics.BStatsMetrics;
-import com.bencodez.advancedcore.api.metrics.MCStatsMetrics;
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.misc.MiscUtils;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
@@ -137,14 +135,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 		loadPlaceholders();
 
-		try {
-			MCStatsMetrics metrics = new MCStatsMetrics(this);
-			metrics.start();
-		} catch (IOException e) {
-			debug("Failed to load metrics");
-		}
-
-		new BStatsMetrics(this);
+		new BStatsMetrics(this, 40);
 
 		loadInjectedRewards();
 
