@@ -142,6 +142,10 @@
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
 		</repository>
+		<repository>
+			<id>bencodez repo</id>
+			<url>http://51.161.110.19:8081/repository/maven-releases/</url>
+		</repository>
 	</repositories>
 	<dependencies>
 		<dependency>
@@ -184,12 +188,6 @@
 			<version>1.18.2</version>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>com.github.BenCodez</groupId>
-			<artifactId>votingplugin</artifactId>
-			<version>master-SNAPSHOT</version>
-			<scope>provided</scope>
-		</dependency>
 	</dependencies>
 	<profiles>
 		<profile>
@@ -202,14 +200,15 @@
 			</properties>
 			<dependencies>
 				<dependency>
-					<groupId>com.github.bencodez</groupId>
-					<artifactId>advancedcore</artifactId>
-					<version>master-SNAPSHOT</version>
+					<groupId>com.bencodez</groupId>
+					<artifactId>AdvancedCore</artifactId>
+					<version>LATEST</version>
+					<scope>compile</scope>
 				</dependency>
 				<dependency>
-					<groupId>com.github.BenCodez</groupId>
-					<artifactId>votingplugin</artifactId>
-					<version>master-SNAPSHOT</version>
+					<groupId>com.bencodez</groupId>
+					<artifactId>VotingPlugin</artifactId>
+					<version>LATEST</version>
 					<scope>provided</scope>
 				</dependency>
 			</dependencies>
