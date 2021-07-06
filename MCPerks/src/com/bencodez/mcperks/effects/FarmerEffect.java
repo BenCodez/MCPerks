@@ -44,7 +44,7 @@ public class FarmerEffect {
 	 * @return true, if is farmable
 	 */
 	public boolean isFarmable(Block b) {
-		return b.getType().equals(Material.POTATO) || b.getType().equals(Material.CARROT)
+		return b.getType().equals(Material.POTATOES) || b.getType().equals(Material.CARROTS)
 				|| b.getType().equals(Material.WHEAT) || b.getType().equals(Material.WHEAT_SEEDS);
 	}
 }
