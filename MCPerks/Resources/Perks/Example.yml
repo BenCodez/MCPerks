@@ -32,6 +32,9 @@ Effects:
 - Rewards
 - Commands
 
+# Only give perk effects on activation
+OnlyGiveOnce: false
+
 # Will execute for each player who gets the effect, needs Commands effect
 Commands:
 - 'say test'

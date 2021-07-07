@@ -75,6 +75,10 @@ public class ConfigPerks {
 		return "CountDownEffect";
 	}
 
+	public boolean getOnlyGiveOnce(String perk) {
+		return getData(perk).getBoolean("OnlyGiveOnce", false);
+	}
+
 	@SuppressWarnings("unchecked")
 	public ArrayList<String> getCountDownTimes(String perk) {
 		return (ArrayList<String>) getData(perk).getList("CountDownTimes", plugin.getConfigFile().getCountDownTimes());

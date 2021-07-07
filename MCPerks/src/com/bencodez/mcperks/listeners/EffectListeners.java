@@ -275,7 +275,7 @@ public class EffectListeners implements Listener {
 						giveEffect = true;
 					}
 
-					if (giveEffect) {
+					if (giveEffect && !perk.isOnlyGiveOnce()) {
 						perk.giveEffect(player);
 						BossBar bar = perk.getBossBar();
 						if (bar != null) {

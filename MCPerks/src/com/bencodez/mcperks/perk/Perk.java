@@ -121,8 +121,11 @@ public class Perk {
 	private MCPerksUser activater;
 
 	private ArrayList<String> disabledWorlds;
-	
+
 	private MCPerksMain plugin = MCPerksMain.plugin;
+
+	@Getter
+	private boolean onlyGiveOnce;
 
 	public Perk(Perk perk) {
 		this.perk = perk.perk;
@@ -156,6 +159,7 @@ public class Perk {
 		disabledWorlds = perk.disabledWorlds;
 		blacklistedBlocks = perk.blacklistedBlocks;
 		whitelistedBlocks = perk.whitelistedBlocks;
+		onlyGiveOnce= perk.onlyGiveOnce;
 	}
 
 	/**
@@ -223,7 +227,7 @@ public class Perk {
 		disabledWorlds = ConfigPerks.getInstance().getPerkDisabledWorlds(perk);
 		whitelistedBlocks = ConfigPerks.getInstance().getPerkWhiteListedBlocks(perk);
 		blacklistedBlocks = ConfigPerks.getInstance().getPerkBlackListedBlocks(perk);
-
+		onlyGiveOnce = ConfigPerks.getInstance().getOnlyGiveOnce(perk);
 	}
 
 	/**
