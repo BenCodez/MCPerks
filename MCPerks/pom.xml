@@ -3,7 +3,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.bencodez</groupId>
-	<artifactId>MCPerks</artifactId>
+	<artifactId>mcperks</artifactId>
 	<version>1.17.5</version>
 	<packaging>jar</packaging>
 	<name>MCPerks</name>
@@ -149,6 +149,18 @@
 	</repositories>
 	<dependencies>
 		<dependency>
+			<groupId>com.bencodez</groupId>
+			<artifactId>advancedcore</artifactId>
+			<version>LATEST</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.bencodez</groupId>
+			<artifactId>votingplugin</artifactId>
+			<version>LATEST</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.palmergames</groupId>
 			<artifactId>LlmDl</artifactId>
 			<version>LATEST</version>
@@ -189,49 +201,4 @@
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
-	<profiles>
-		<profile>
-			<id>prod</id>
-			<activation>
-				<activeByDefault>true</activeByDefault>
-			</activation>
-			<properties>
-				<build.profile.id>prod</build.profile.id>
-			</properties>
-			<dependencies>
-				<dependency>
-					<groupId>com.bencodez</groupId>
-					<artifactId>AdvancedCore</artifactId>
-					<version>LATEST</version>
-					<scope>compile</scope>
-				</dependency>
-				<dependency>
-					<groupId>com.bencodez</groupId>
-					<artifactId>VotingPlugin</artifactId>
-					<version>LATEST</version>
-					<scope>provided</scope>
-				</dependency>
-			</dependencies>
-		</profile>
-		<profile>
-			<id>dev</id>
-			<properties>
-				<build.profile.id>dev</build.profile.id>
-			</properties>
-			<dependencies>
-				<dependency>
-					<groupId>com.bencodez</groupId>
-					<artifactId>AdvancedCore</artifactId>
-					<version>LATEST</version>
-					<scope>compile</scope>
-				</dependency>
-				<dependency>
-					<groupId>com.bencodez</groupId>
-					<artifactId>VotingPlugin</artifactId>
-					<version>LATEST</version>
-					<scope>provided</scope>
-				</dependency>
-			</dependencies>
-		</profile>
-	</profiles>
 </project>
