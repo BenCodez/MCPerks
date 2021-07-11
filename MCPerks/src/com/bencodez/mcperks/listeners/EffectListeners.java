@@ -8,6 +8,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -224,8 +225,7 @@ public class EffectListeners implements Listener {
 	@EventHandler(ignoreCancelled = true)
 	public void onEntityDeath(EntityDeathEvent event) {
 
-		if (!(event.getEntity() instanceof Player)) {
-
+		if (!(event.getEntity() instanceof Player) && !event.getEntityType().equals(EntityType.ARMOR_STAND)) {
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 				if (active.getEffects().contains(Effect.IncreaseMobDrops)) {
 					MobDropEffect effect = new MobDropEffect(active);
