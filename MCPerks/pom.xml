@@ -144,7 +144,7 @@
 		</repository>
 		<repository>
 			<id>bencodez repo</id>
-			<url>http://51.161.110.19:8081/repository/maven-releases/</url>
+			<url>https://nexus.bencodez.com/repository/maven-releases/</url>
 		</repository>
 	</repositories>
 	<dependencies>
