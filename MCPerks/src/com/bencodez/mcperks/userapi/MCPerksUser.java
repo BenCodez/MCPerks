@@ -1,8 +1,9 @@
 package com.bencodez.mcperks.userapi;
 
+import java.util.UUID;
+
 import org.bukkit.entity.Player;
 
-import com.bencodez.advancedcore.api.user.UUID;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.Perk;
 

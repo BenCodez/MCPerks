@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -35,7 +36,6 @@ import com.bencodez.advancedcore.api.misc.effects.BossBar;
 import com.bencodez.advancedcore.api.rewards.RewardBuilder;
 import com.bencodez.advancedcore.api.rewards.RewardHandler;
 import com.bencodez.advancedcore.api.user.AdvancedCoreUser;
-import com.bencodez.advancedcore.api.user.UUID;
 import com.bencodez.advancedcore.api.user.UserManager;
 import com.bencodez.advancedcore.logger.Logger;
 import com.bencodez.mcperks.MCPerksMain;
@@ -168,7 +168,7 @@ public class PerkHandler {
 						HashMap<String, String> phs = new HashMap<String, String>();
 						phs.putAll(placeholders);
 						for (String uuid : clone.getEffectedPlayers()) {
-							AdvancedCoreUser user = UserManager.getInstance().getUser(new UUID(uuid));
+							AdvancedCoreUser user = UserManager.getInstance().getUser(UUID.fromString(uuid));
 							user.sendMessage(msg, phs);
 
 							if (RewardHandler.getInstance().hasRewards(
@@ -209,10 +209,10 @@ public class PerkHandler {
 			if (perkRewards) {
 				new RewardBuilder(ConfigPerks.getInstance().getData(perk.getPerk()),
 						ConfigPerks.getInstance().getActivationEffectPath()).setGiveOffline(false)
-								.send(UserManager.getInstance().getUser(new UUID(uuid)));
+								.send(UserManager.getInstance().getUser(UUID.fromString(uuid)));
 			} else {
 				new RewardBuilder(plugin.getConfigFile().getData(), plugin.getConfigFile().getActivationEffectPath())
-						.setGiveOffline(false).send(UserManager.getInstance().getUser(new UUID(uuid)));
+						.setGiveOffline(false).send(UserManager.getInstance().getUser(UUID.fromString(uuid)));
 			}
 		}
 
@@ -447,7 +447,7 @@ public class PerkHandler {
 			public void run() {
 				ArrayList<MCPerksUser> users = new ArrayList<MCPerksUser>();
 				for (String uuid : UserManager.getInstance().getAllUUIDs()) {
-					users.add(com.bencodez.mcperks.userapi.UserManager.getInstance().getMCPerksUser(new UUID(uuid)));
+					users.add(com.bencodez.mcperks.userapi.UserManager.getInstance().getMCPerksUser(UUID.fromString(uuid)));
 				}
 				for (Perk perk : getLoadedPerks().values()) {
 					for (MCPerksUser user : users) {

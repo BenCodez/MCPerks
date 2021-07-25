@@ -159,7 +159,7 @@ public class Perk {
 		disabledWorlds = perk.disabledWorlds;
 		blacklistedBlocks = perk.blacklistedBlocks;
 		whitelistedBlocks = perk.whitelistedBlocks;
-		onlyGiveOnce= perk.onlyGiveOnce;
+		onlyGiveOnce = perk.onlyGiveOnce;
 	}
 
 	/**
@@ -243,8 +243,7 @@ public class Perk {
 
 	public void addEffectedPlayer(String uuid) {
 		if (!this.effectedPlayers.contains(uuid)) {
-			MCPerksUser user = UserManager.getInstance()
-					.getMCPerksUser(new com.bencodez.advancedcore.api.user.UUID(uuid));
+			MCPerksUser user = UserManager.getInstance().getMCPerksUser(UUID.fromString(uuid));
 			if (!user.isIgnorePerkEffects()) {
 				this.effectedPlayers.add(uuid);
 			} else {
@@ -359,7 +358,7 @@ public class Perk {
 		boolean perkRewards = RewardHandler.getInstance().hasRewards(ConfigPerks.getInstance().getData(perk),
 				ConfigPerks.getInstance().getDeactivationEffect());
 		for (String uuid : getEffectedPlayers()) {
-			MCPerksUser u = UserManager.getInstance().getMCPerksUser(new com.bencodez.advancedcore.api.user.UUID(uuid));
+			MCPerksUser u = UserManager.getInstance().getMCPerksUser(UUID.fromString(uuid));
 			u.sendMessage(msg);
 			// users.add(u);
 			if (perkRewards) {
