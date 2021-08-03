@@ -121,7 +121,7 @@ public class PerkHandler {
 				Resident res = Towny.plugin.getTownyUniverse().getResident(user.getPlayerName());
 				if (res.hasTown()) {
 					for (Resident r : res.getTown().getResidents()) {
-						clone.addEffectedPlayer(UserManager.getInstance().getUser(r.getName()).getUUID());
+						clone.addEffectedPlayer(plugin.getUserManager().getUser(r.getName()).getUUID());
 					}
 				} else {
 					clone.addEffectedPlayer(user.getUUID());
@@ -168,7 +168,7 @@ public class PerkHandler {
 						HashMap<String, String> phs = new HashMap<String, String>();
 						phs.putAll(placeholders);
 						for (String uuid : clone.getEffectedPlayers()) {
-							AdvancedCoreUser user = UserManager.getInstance().getUser(UUID.fromString(uuid));
+							AdvancedCoreUser user = plugin.getUserManager().getUser(UUID.fromString(uuid));
 							user.sendMessage(msg, phs);
 
 							if (RewardHandler.getInstance().hasRewards(
@@ -209,10 +209,10 @@ public class PerkHandler {
 			if (perkRewards) {
 				new RewardBuilder(ConfigPerks.getInstance().getData(perk.getPerk()),
 						ConfigPerks.getInstance().getActivationEffectPath()).setGiveOffline(false)
-								.send(UserManager.getInstance().getUser(UUID.fromString(uuid)));
+								.send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
 			} else {
 				new RewardBuilder(plugin.getConfigFile().getData(), plugin.getConfigFile().getActivationEffectPath())
-						.setGiveOffline(false).send(UserManager.getInstance().getUser(UUID.fromString(uuid)));
+						.setGiveOffline(false).send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
 			}
 		}
 
@@ -446,8 +446,9 @@ public class PerkHandler {
 			@Override
 			public void run() {
 				ArrayList<MCPerksUser> users = new ArrayList<MCPerksUser>();
-				for (String uuid : UserManager.getInstance().getAllUUIDs()) {
-					users.add(com.bencodez.mcperks.userapi.UserManager.getInstance().getMCPerksUser(UUID.fromString(uuid)));
+				for (String uuid : plugin.getUserManager().getAllUUIDs()) {
+					users.add(com.bencodez.mcperks.userapi.UserManager.getUserManager()
+							.getMCPerksUser(UUID.fromString(uuid)));
 				}
 				for (Perk perk : getLoadedPerks().values()) {
 					for (MCPerksUser user : users) {

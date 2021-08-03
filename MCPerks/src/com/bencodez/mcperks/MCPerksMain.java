@@ -418,6 +418,5 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	public void updateHook() {
 		setConfigData(configFile.getData());
-		getOptions().setPreloadSkulls(false);
 	}
 }
