@@ -447,7 +447,7 @@ public class PerkHandler {
 			public void run() {
 				ArrayList<MCPerksUser> users = new ArrayList<MCPerksUser>();
 				for (String uuid : plugin.getUserManager().getAllUUIDs()) {
-					users.add(com.bencodez.mcperks.userapi.UserManager.getUserManager()
+					users.add(com.bencodez.mcperks.userapi.UserManager.getInstance()
 							.getMCPerksUser(UUID.fromString(uuid)));
 				}
 				for (Perk perk : getLoadedPerks().values()) {
