@@ -1,0 +1,20 @@
+# TempPermission perm
+
+# Wether perk is enabled
+Enabled: true
+
+# CoolDown to use perk after its been activated for user, in seconds
+# 86400 = 24 hours
+CoolDown: 86400
+
+# Perk display name
+Name: 'Temp Permission'
+
+# Perk description
+Description: 'Gives a temporary permission'
+# Permissions list past :, use | between permissions if needed
+Effects:
+- TempPermission:MCPerks.test
+    
+Item:
+  Material: 'REDSTONE_DUST'

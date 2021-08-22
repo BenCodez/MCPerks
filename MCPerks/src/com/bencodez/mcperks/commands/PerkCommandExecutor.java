@@ -6,7 +6,6 @@ import org.bukkit.entity.Player;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.userapi.MCPerksUser;
-import com.bencodez.mcperks.userapi.UserManager;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -37,8 +36,7 @@ public class PerkCommandExecutor {
 	/**
 	 * Instantiates a new commands.
 	 *
-	 * @param plugin
-	 *            the plugin
+	 * @param plugin the plugin
 	 */
 	public PerkCommandExecutor(MCPerksMain plugin) {
 		PerkCommandExecutor.plugin = plugin;
@@ -60,7 +58,7 @@ public class PerkCommandExecutor {
 			plugin.debug("Issuing perk " + perk + ", Timed: " + Boolean.toString(timed));
 
 			Perk p = plugin.getPerkHandler().getPerk(perk);
-			MCPerksUser user = UserManager.getInstance().getMCPerksUser((Player) sender);
+			MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser((Player) sender);
 			if (plugin.getConfigFile().getDisableOnClick() && p.isPerkActive(user)) {
 				Perk ap = plugin.getPerkHandler().getActivePerk(user, p);
 				ap.deactivatePerk(user);

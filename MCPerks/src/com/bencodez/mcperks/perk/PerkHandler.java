@@ -226,8 +226,7 @@ public class PerkHandler {
 			clone.setBossBar(bossBar);
 
 			for (String uuid : clone.getEffectedPlayers()) {
-				if (com.bencodez.mcperks.userapi.UserManager.getInstance()
-						.getMCPerksUser(java.util.UUID.fromString(uuid)).isUseBossBar()) {
+				if (plugin.getMcperksUserManager().getMCPerksUser(java.util.UUID.fromString(uuid)).isUseBossBar()) {
 					bossBar.addPlayer(Bukkit.getPlayer(java.util.UUID.fromString(uuid)),
 							plugin.getConfigFile().getBossBarHideInDelay());
 				}
@@ -446,8 +445,7 @@ public class PerkHandler {
 			public void run() {
 				ArrayList<MCPerksUser> users = new ArrayList<MCPerksUser>();
 				for (String uuid : plugin.getUserManager().getAllUUIDs()) {
-					MCPerksUser user = com.bencodez.mcperks.userapi.UserManager.getInstance()
-							.getMCPerksUser(UUID.fromString(uuid));
+					MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid));
 					user.dontCache();
 					users.add(user);
 				}

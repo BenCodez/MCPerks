@@ -17,7 +17,6 @@ import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.Lang;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.userapi.MCPerksUser;
-import com.bencodez.mcperks.userapi.UserManager;
 
 import net.md_5.bungee.api.chat.TextComponent;
 
@@ -60,7 +59,7 @@ public class Commands {
 	public void openGUI(CommandSender sender) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
-			MCPerksUser user = UserManager.getInstance().getMCPerksUser(player);
+			MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(player);
 			String title = StringParser.getInstance().replacePlaceHolder(Lang.getInstance().getGUIName(), "Activations",
 					"" + user.getActivations());
 			BInventory inv = new BInventory(title);
@@ -71,7 +70,7 @@ public class Commands {
 				if ((player.hasPermission(plugin.getPerkHandler().invPerks.get(num).getPermission())
 						|| player.hasPermission("MCPerks.AllPerks")) || !plugin.getConfigFile().getRequirePermToView()) {
 					inv.addButton(slot, new BInventoryButton(
-							perk.getItem(UserManager.getInstance().getMCPerksUser(player)).setAmountNone(1)) {
+							perk.getItem(plugin.getMcperksUserManager().getMCPerksUser(player)).setAmountNone(1)) {
 
 						@Override
 						public void onClick(ClickEvent event) {

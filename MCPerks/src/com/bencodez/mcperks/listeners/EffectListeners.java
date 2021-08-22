@@ -47,7 +47,6 @@ import com.bencodez.mcperks.effects.UnderWaterFloristEffect;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.perk.PerkSystemType;
-import com.bencodez.mcperks.userapi.UserManager;
 
 public class EffectListeners implements Listener {
 
@@ -279,7 +278,7 @@ public class EffectListeners implements Listener {
 						perk.giveEffect(player);
 						BossBar bar = perk.getBossBar();
 						if (bar != null) {
-							if (UserManager.getInstance().getMCPerksUser(player).isUseBossBar()) {
+							if (plugin.getMcperksUserManager().getMCPerksUser(player).isUseBossBar()) {
 								bar.addPlayer(player, plugin.getConfigFile().getBossBarHideInDelay());
 								plugin.debug("adding player to bossbar");
 							}

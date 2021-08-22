@@ -79,6 +79,9 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	@Getter
 	private Config configFile;
+	
+	@Getter
+	private UserManager mcperksUserManager;
 
 	public void addPlacehlder(PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser> placeholder) {
 		placeholders.add(placeholder);
@@ -151,7 +154,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 			@Override
 			public Object getObject(OfflinePlayer player) {
-				return UserManager.getInstance().getMCPerksUser(player);
+				return getMcperksUserManager().getMCPerksUser(player);
 			}
 		});
 
@@ -184,6 +187,9 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		plugin = this;
 		flyingUUIDs = new HashMap<String, Boolean>();
 		setupFiles();
+		
+		mcperksUserManager = new UserManager(this);
+		mcperksUserManager.addCachingKeys();
 		updateHook();
 	}
 
@@ -209,7 +215,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 			@Override
 			public String onRewardRequest(Reward reward, AdvancedCoreUser user, int value,
 					HashMap<String, String> placeholders) {
-				UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(value);
+				getMcperksUserManager().getMCPerksUser(user.getPlayerName()).addActivation(value);
 				return null;
 			}
 		}.addEditButton(new EditGUIButton(new EditGUIValueInventory("Activations") {
@@ -235,7 +241,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 				@Override
 				public String onRewardRequest(Reward reward, AdvancedCoreUser user, int value,
 						HashMap<String, String> placeholders) {
-					UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(perk, value);
+					getMcperksUserManager().getMCPerksUser(user.getPlayerName()).addActivation(perk, value);
 					return null;
 				}
 			});
@@ -381,7 +387,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	public String placeHolder(OfflinePlayer p, String identifier) {
 		identifier = StringParser.getInstance().replaceJavascript(p, identifier);
-		com.bencodez.mcperks.userapi.MCPerksUser user = UserManager.getInstance().getMCPerksUser(p);
+		com.bencodez.mcperks.userapi.MCPerksUser user = getMcperksUserManager().getMCPerksUser(p);
 
 		for (PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser> placeholder : placeholders) {
 			if (placeholder.matches(identifier)) {

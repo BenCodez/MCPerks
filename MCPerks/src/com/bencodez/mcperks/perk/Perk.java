@@ -33,7 +33,6 @@ import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.ConfigPerks;
 import com.bencodez.mcperks.configs.Lang;
 import com.bencodez.mcperks.userapi.MCPerksUser;
-import com.bencodez.mcperks.userapi.UserManager;
 
 import lombok.Getter;
 
@@ -122,6 +121,7 @@ public class Perk {
 
 	private ArrayList<String> disabledWorlds;
 
+	@Getter
 	private MCPerksMain plugin = MCPerksMain.plugin;
 
 	@Getter
@@ -214,6 +214,8 @@ public class Perk {
 							increasePercent = effect.getModifier();
 						}
 					}
+				} else if (effect.equals(Effect.TempPermission)) {
+					effect.setPermission(data[1]);
 				}
 
 			} else {
@@ -238,12 +240,12 @@ public class Perk {
 	 */
 	public void activatePerk(MCPerksUser user, int length) {
 		activater = user;
-		MCPerksMain.plugin.getPerkHandler().activePerk(this, user, length);
+		plugin.getPerkHandler().activePerk(this, user, length);
 	}
 
 	public void addEffectedPlayer(String uuid) {
 		if (!this.effectedPlayers.contains(uuid)) {
-			MCPerksUser user = UserManager.getInstance().getMCPerksUser(UUID.fromString(uuid));
+			MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid));
 			if (!user.isIgnorePerkEffects()) {
 				this.effectedPlayers.add(uuid);
 			} else {
@@ -358,7 +360,7 @@ public class Perk {
 		boolean perkRewards = RewardHandler.getInstance().hasRewards(ConfigPerks.getInstance().getData(perk),
 				ConfigPerks.getInstance().getDeactivationEffect());
 		for (String uuid : getEffectedPlayers()) {
-			MCPerksUser u = UserManager.getInstance().getMCPerksUser(UUID.fromString(uuid));
+			MCPerksUser u = plugin.getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid));
 			u.sendMessage(msg);
 			// users.add(u);
 			if (perkRewards) {
@@ -414,13 +416,13 @@ public class Perk {
 	}
 
 	public void forcePerk(String name, int length) {
-		MCPerksUser user = UserManager.getInstance().getMCPerksUser(name);
+		MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(name);
 		if (isActive()) {
 			user.sendMessage(ConfigPerks.getInstance().getPerkAlreayActive(perk));
 			return;
 		}
 
-		execute(UserManager.getInstance().getMCPerksUser(name), length);
+		execute(plugin.getMcperksUserManager().getMCPerksUser(name), length);
 	}
 
 	/**

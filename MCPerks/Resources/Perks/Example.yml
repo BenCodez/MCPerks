@@ -65,11 +65,9 @@ Rewards:
     
 # Item to use in /mcperks
 Item:
-  # List of material for 1.10: 
+  # List of materials:
   # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
   Material: 'BREAD'
-  # Item Data
-  Data: 0
   
 
 # Defaults to options in Config.yml if not specificed

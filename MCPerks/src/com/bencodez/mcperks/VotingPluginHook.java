@@ -6,7 +6,6 @@ import org.bukkit.OfflinePlayer;
 
 import com.bencodez.advancedcore.api.javascript.JavascriptPlaceholderRequest;
 import com.bencodez.mcperks.rewardedit.VotingPluginRewardEditActivations;
-import com.bencodez.mcperks.userapi.UserManager;
 import com.bencodez.votingplugin.VotingPluginHooks;
 import com.bencodez.votingplugin.advancedcore.api.inventory.BInventory.ClickEvent;
 import com.bencodez.votingplugin.advancedcore.api.inventory.editgui.EditGUIButton;
@@ -37,7 +36,7 @@ public class VotingPluginHook {
 			@Override
 			public String onRewardRequest(Reward reward, AdvancedCoreUser user, int value,
 					HashMap<String, String> placeholders) {
-				UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(value);
+				MCPerksMain.plugin.getMcperksUserManager().getMCPerksUser(user.getPlayerName()).addActivation(value);
 				return null;
 			}
 		}.addEditButton(new EditGUIButton(new EditGUIValueInventory("Activations") {
@@ -63,7 +62,8 @@ public class VotingPluginHook {
 				@Override
 				public String onRewardRequest(Reward reward, AdvancedCoreUser user, int value,
 						HashMap<String, String> placeholders) {
-					UserManager.getInstance().getMCPerksUser(user.getPlayerName()).addActivation(perk, value);
+					MCPerksMain.plugin.getMcperksUserManager().getMCPerksUser(user.getPlayerName()).addActivation(perk,
+							value);
 					return null;
 				}
 			});
