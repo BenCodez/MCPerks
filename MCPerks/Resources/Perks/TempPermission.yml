@@ -7,6 +7,9 @@ Enabled: true
 # 86400 = 24 hours
 CoolDown: 86400
 
+# Time lasting in seconds
+TimeLasts: 60
+
 # Perk display name
 Name: 'Temp Permission'
 
@@ -17,4 +20,4 @@ Effects:
 - TempPermission:MCPerks.test
     
 Item:
-  Material: 'REDSTONE_DUST'
+  Material: 'REDSTONE'

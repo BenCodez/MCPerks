@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -12,6 +13,7 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.permissions.Permission;
 
 import com.bencodez.advancedcore.api.command.CommandHandler;
 import com.bencodez.advancedcore.api.command.TabCompleteHandle;
@@ -98,6 +100,23 @@ public class CommandLoader {
 	public void loadAliases() {
 
 		for (CommandHandler cmdHandle : plugin.getCommands()) {
+			int argLength = cmdHandle.getArgs().length;
+			String arg0 = "";
+			if (argLength > 0) {
+				arg0 = cmdHandle.getArgs()[0];
+			}
+			String[] perms = cmdHandle.getPerm().split(Pattern.quote("|"));
+			try {
+				if (perms.length > 1) {
+					// has another perm
+					plugin.devDebug("Adding child perm " + perms[0] + " to " + perms[1] + " from /mcperks" + arg0);
+					Permission p = Bukkit.getPluginManager().getPermission(perms[1]);
+					p.getChildren().put(perms[0], true);
+					p.recalculatePermissibles();
+				}
+			} catch (Exception e) {
+				plugin.debug("Failed to set permission for /mcperks" + arg0);
+			}
 			if (cmdHandle.getArgs().length > 0) {
 				String[] args = cmdHandle.getArgs()[0].split("&");
 				for (String arg : args) {
@@ -106,12 +125,17 @@ public class CommandLoader {
 
 						plugin.getCommand("mcperks" + arg)
 								.setTabCompleter(new AliasesTabCompleter().setCMDHandle(cmdHandle));
-						commands.put("mcperks" + arg, cmdHandle);
+						String currentPerm = plugin.getCommand("mcperks" + arg).getPermission();
+						if (currentPerm == null || currentPerm.length() > perms[0].length()) {
+							plugin.getCommand("mcperks" + arg).setPermission(perms[0]);
+						}
+						for (String str : plugin.getCommand("vote" + arg).getAliases()) {
+							commands.put(str, cmdHandle);
+						}
 					} catch (Exception ex) {
-						plugin.debug("Failed to load command and tab completer for /mcperks" + arg);
+						//plugin.devDebug("Failed to load command and tab completer for /mcperks" + arg);
 					}
 				}
-
 			}
 		}
 	}
@@ -424,7 +448,8 @@ public class CommandLoader {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
-				Perk perk = plugin.getPerkHandler().getActivePerk(plugin.getMcperksUserManager().getMCPerksUser(args[1]),
+				Perk perk = plugin.getPerkHandler().getActivePerk(
+						plugin.getMcperksUserManager().getMCPerksUser(args[1]),
 						plugin.getPerkHandler().getPerk(args[2]));
 				perk.deactivatePerk(plugin.getMcperksUserManager().getMCPerksUser(args[1]));
 				sender.sendMessage("Forcefly deactivated perk " + perk.getPerk() + " for " + args[1]);
@@ -655,6 +680,7 @@ public class CommandLoader {
 			plugin.getCommands().add(handle);
 		}
 
+		loadAliases();
 		loadTabComplete();
 
 	}

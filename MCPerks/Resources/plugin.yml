@@ -15,3 +15,6 @@ commands:
     description: MCPerks commands
   mcperkshelp:
     description: MCPerks commands
+permissions:
+  MCPerks.AllPerks:
+    description: Permission for all perks
