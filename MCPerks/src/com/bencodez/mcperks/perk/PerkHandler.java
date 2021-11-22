@@ -451,6 +451,7 @@ public class PerkHandler {
 				}
 				for (Perk perk : getLoadedPerks().values()) {
 					for (MCPerksUser user : users) {
+						user.dontCache();
 						if (perk.getExperation(user) < 0) {
 							perk.activatePerk(user, perk.getTime());
 						} else {
