@@ -133,7 +133,8 @@ public class CommandLoader {
 							commands.put(str, cmdHandle);
 						}
 					} catch (Exception ex) {
-						//plugin.devDebug("Failed to load command and tab completer for /mcperks" + arg);
+						// plugin.devDebug("Failed to load command and tab completer for /mcperks" +
+						// arg);
 					}
 				}
 			}
@@ -328,8 +329,7 @@ public class CommandLoader {
 					if (identifier.endsWith("_")) {
 						identifier += "1";
 					}
-					msg.add("%MCPerks_" + identifier + "% = "
-							+ placeholder.placeholderRequest(user.getOfflinePlayer(), user, identifier));
+					msg.add("%MCPerks_" + identifier + "% = " + placeholder.placeholderRequest(user, identifier));
 				}
 
 				sendMessage(sender, msg);

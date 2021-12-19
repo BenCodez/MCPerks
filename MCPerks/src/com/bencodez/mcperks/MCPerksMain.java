@@ -79,7 +79,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	@Getter
 	private Config configFile;
-	
+
 	@Getter
 	private UserManager mcperksUserManager;
 
@@ -187,7 +187,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		plugin = this;
 		flyingUUIDs = new HashMap<String, Boolean>();
 		setupFiles();
-		
+
 		mcperksUserManager = new UserManager(this);
 		mcperksUserManager.addCachingKeys();
 		updateHook();
@@ -253,13 +253,12 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("ActivePerks") {
 
 			@Override
-			public String placeholderRequest(OfflinePlayer player, com.bencodez.mcperks.userapi.MCPerksUser user,
-					String identifier) {
+			public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 				ArrayList<String> list = new ArrayList<String>();
 				for (Perk p : plugin.getPerkHandler().getActivePerks()) {
-					if (p.getActivater().getUUID().equalsIgnoreCase(player.getUniqueId().toString())) {
+					if (p.getActivater().getUUID().equalsIgnoreCase(user.getUUID())) {
 						list.add(p.getName());
-					} else if (p.getEffectedPlayers().contains(player.getUniqueId().toString())) {
+					} else if (p.getEffectedPlayers().contains(user.getUUID())) {
 						list.add(p.getName());
 					}
 
@@ -271,8 +270,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("CurrentActivePerks") {
 
 			@Override
-			public String placeholderRequest(OfflinePlayer player, com.bencodez.mcperks.userapi.MCPerksUser user,
-					String identifier) {
+			public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 				return "" + user.getActivePerks();
 			}
 		});
@@ -280,8 +278,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("activations") {
 
 			@Override
-			public String placeholderRequest(OfflinePlayer p, com.bencodez.mcperks.userapi.MCPerksUser user,
-					String identifier) {
+			public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 				return "" + user.getActivations();
 			}
 		});
@@ -289,8 +286,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("perklimit") {
 
 			@Override
-			public String placeholderRequest(OfflinePlayer p, com.bencodez.mcperks.userapi.MCPerksUser user,
-					String identifier) {
+			public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 				return "" + user.getPerkLimit();
 			}
 		});
@@ -298,8 +294,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("usebossbar") {
 
 			@Override
-			public String placeholderRequest(OfflinePlayer p, com.bencodez.mcperks.userapi.MCPerksUser user,
-					String identifier) {
+			public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 				return "" + user.isUseBossBar();
 			}
 		});
@@ -308,16 +303,14 @@ public class MCPerksMain extends AdvancedCorePlugin {
 			addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("activations_" + perk) {
 
 				@Override
-				public String placeholderRequest(OfflinePlayer p, com.bencodez.mcperks.userapi.MCPerksUser user,
-						String identifier) {
+				public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 					return "" + user.getActivations(perk);
 				}
 			});
 			addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("cooldown_" + perk) {
 
 				@Override
-				public String placeholderRequest(OfflinePlayer p, com.bencodez.mcperks.userapi.MCPerksUser user,
-						String identifier) {
+				public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 					long coolDownTime = user.getPerkCoolDown(plugin.getPerkHandler().getPerk(perk));
 					if (coolDownTime < mcperksServerData.getData().getLong(perk + ".CoolDown", 0)) {
 						coolDownTime = mcperksServerData.getData().getLong(perk + ".CoolDown");
@@ -336,8 +329,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 			addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("perkcooldown_" + perk) {
 
 				@Override
-				public String placeholderRequest(OfflinePlayer p, com.bencodez.mcperks.userapi.MCPerksUser user,
-						String identifier) {
+				public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 					int CooldownMin = plugin.getPerkHandler().getPerk(perk).getCoolDown() / 60;
 					int CooldownHour = CooldownMin / 60;
 					CooldownMin = CooldownHour * 60 - CooldownMin;
@@ -349,8 +341,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 			addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("timeleft_" + perk) {
 
 				@Override
-				public String placeholderRequest(OfflinePlayer p, com.bencodez.mcperks.userapi.MCPerksUser user,
-						String identifier) {
+				public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 					Perk pe = plugin.getPerkHandler().getPerk(perk);
 					long left = pe.getExperation(user) - Calendar.getInstance().getTime().getTime();
 					int min = (int) (left / (1000 * 64));
@@ -366,11 +357,10 @@ public class MCPerksMain extends AdvancedCorePlugin {
 			addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("status_" + perk) {
 
 				@Override
-				public String placeholderRequest(OfflinePlayer p, com.bencodez.mcperks.userapi.MCPerksUser user,
-						String identifier) {
+				public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 					for (Perk perk : getPerkHandler().getActivePerks()) {
-						if (perk.getActivater().getPlayerName().equalsIgnoreCase(p.getName())
-								|| perk.getEffectedPlayers().contains(p.getUniqueId().toString())) {
+						if (perk.getActivater().getPlayerName().equalsIgnoreCase(user.getPlayerName())
+								|| perk.getEffectedPlayers().contains(user.getUUID())) {
 							return Lang.getInstance().getPerkActivePlaceholder();
 						}
 					}
@@ -391,7 +381,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 		for (PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser> placeholder : placeholders) {
 			if (placeholder.matches(identifier)) {
-				return placeholder.placeholderRequest(p, user, identifier);
+				return placeholder.placeholderRequest(user, identifier);
 			}
 		}
 
