@@ -1,0 +1,10 @@
+Enabled: true
+CoolDown: 86400
+TimeLasts: 60
+Name: 'FlyBoost'
+Description: 'Boost elytra with empty hand and clicking'
+Effects:
+- FlyBoost
+Item:
+  Material: 'ELYTRA'
+  Data: 0

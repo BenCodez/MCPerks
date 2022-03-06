@@ -83,7 +83,9 @@ public enum Effect {
 
 	BoneMealAura,
 
-	TempPermission;
+	TempPermission,
+
+	FlyBoost;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {

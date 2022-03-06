@@ -309,11 +309,30 @@ public class EffectListeners implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-	public void onPlayerInteractEvent(PlayerInteractEvent event) {
-		if (event.getItem() == null || !(event.getPlayer() instanceof Player)) {
+	@EventHandler(priority = EventPriority.HIGHEST)
+	public void onPlayerInteractEventElytra(PlayerInteractEvent event) {
+		if (!(event.getPlayer() instanceof Player)) {
 			return;
 		}
+
+		Player player = event.getPlayer();
+
+		if (plugin.getPerkHandler().effectActive(Effect.FlyBoost, player.getUniqueId().toString(),
+				player.getWorld().getName())) {
+			if (event.getAction() == Action.LEFT_CLICK_AIR) {
+				if (player.isGliding()) {
+					player.setVelocity(player.getEyeLocation().getDirection().normalize().multiply(2.0));
+				}
+			}
+		}
+	}
+
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	public void onPlayerInteractEvent(PlayerInteractEvent event) {
+		if (!(event.getPlayer() instanceof Player)) {
+			return;
+		}
+
 		for (PlayerInteractEvent e : plugin.getEffectHandler().getPlayerInteractEvents()) {
 			if (e.equals(event)) {
 				plugin.getEffectHandler().getPlayerInteractEvents().remove(event);
@@ -321,7 +340,12 @@ public class EffectListeners implements Listener {
 			}
 		}
 
+		if (event.getItem() == null) {
+			return;
+		}
+
 		Player player = event.getPlayer();
+
 		if (plugin.getPerkHandler().effectActive(Effect.Florist, player.getUniqueId().toString(),
 				player.getWorld().getName())) {
 			if (event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) {
