@@ -273,8 +273,10 @@ public class Perk {
 				}
 			}
 
-			for (Player p : players) {
-				p.sendMessage(StringParser.getInstance().colorize(msg));
+			if (!msg.isEmpty()) {
+				for (Player p : players) {
+					p.sendMessage(StringParser.getInstance().colorize(msg));
+				}
 			}
 
 			if (isTimed() && !isLastForever()) {
