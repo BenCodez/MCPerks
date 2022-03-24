@@ -286,8 +286,10 @@ public class Perk {
 				placeholders.put("TimeLastsHour", "" + length / 60 / 60);
 				msg = StringParser.getInstance()
 						.replacePlaceHolder(ConfigPerks.getInstance().getPerkActivatedTimed(getPerk()), placeholders);
-				for (Player p : players) {
-					p.sendMessage(StringParser.getInstance().colorize(msg));
+				if (!msg.isEmpty()) {
+					for (Player p : players) {
+						p.sendMessage(StringParser.getInstance().colorize(msg));
+					}
 				}
 			}
 		}
@@ -363,7 +365,9 @@ public class Perk {
 				ConfigPerks.getInstance().getDeactivationEffect());
 		for (String uuid : getEffectedPlayers()) {
 			MCPerksUser u = plugin.getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid));
-			u.sendMessage(msg);
+			if (!msg.isEmpty()) {
+				u.sendMessage(msg);
+			}
 			// users.add(u);
 			if (perkRewards) {
 				new RewardBuilder(ConfigPerks.getInstance().getData(perk),
