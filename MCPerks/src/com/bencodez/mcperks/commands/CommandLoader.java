@@ -389,10 +389,20 @@ public class CommandLoader {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
-
 				Perk perk = plugin.getPerkHandler().getPerk(args[2]);
 				perk.forcePerk(args[1]);
 				sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " + args[1]);
+			}
+		});
+		
+		plugin.getCommands().add(new CommandHandler(new String[] { "ActivatePerkSilent", "(player)", "(perk)" },
+				"MCPerks.ActivatePerkSilent", "Forcefly Activate Perk, with no message") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				Perk perk = plugin.getPerkHandler().getPerk(args[2]);
+				perk.forcePerk(args[1]);
+				//sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " + args[1]);
 			}
 		});
 
@@ -401,7 +411,6 @@ public class CommandLoader {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
-
 				Perk perk = plugin.getPerkHandler().getPerk(args[2]);
 				perk.forcePerk(args[1], Integer.parseInt(args[3]));
 				sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " + args[1] + " for " + args[3]
