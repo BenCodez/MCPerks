@@ -538,10 +538,12 @@ public class PerkHandler {
 		perk.setActivater(user);
 
 		for (int i = getActivePerks().size() - 1; i >= 0; i--) {
-			Perk p = getActivePerks().get(i);
-			if (p.getPerk().equals(perk.getPerk())
-					&& p.getActivater().getPlayerName().equals(perk.getActivater().getPlayerName())) {
-				getActivePerks().remove(i);
+			if (i >= getActivePerks().size() - 1) {
+				Perk p = getActivePerks().get(i);
+				if (p.getPerk().equals(perk.getPerk())
+						&& p.getActivater().getPlayerName().equals(perk.getActivater().getPlayerName())) {
+					getActivePerks().remove(i);
+				}
 			}
 		}
 		checkQue();
