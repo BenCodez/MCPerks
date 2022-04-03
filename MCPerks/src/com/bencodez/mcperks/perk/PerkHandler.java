@@ -533,7 +533,7 @@ public class PerkHandler {
 
 	}
 
-	public void remove(Perk pe, MCPerksUser user) {
+	public synchronized void remove(Perk pe, MCPerksUser user) {
 		Perk perk = pe.clone();
 		perk.setActivater(user);
 
