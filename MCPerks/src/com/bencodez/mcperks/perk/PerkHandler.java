@@ -327,32 +327,37 @@ public class PerkHandler {
 	}
 
 	public void copyPerks() throws IOException {
-		CodeSource src = this.getClass().getProtectionDomain().getCodeSource();
-		if (src != null) {
-			URL jar = src.getLocation();
-			ZipInputStream zip = null;
-			zip = new ZipInputStream(jar.openStream());
-			while (true) {
-				ZipEntry e;
-				e = zip.getNextEntry();
-				if (e == null) {
-					break;
-				}
-				String name = e.getName();
-				if (name.startsWith("Perks")) {
-					// plugin.debug(name);
-					String[] list = name.split("/");
-					if (list.length > 1) {
-						if (!list[1].equals("")) {
-							if (!new File(plugin.getDataFolder(), "Perks" + File.separator + list[1]).exists()) {
-								plugin.saveResource(name, false);
+		File file = new File(plugin.getDataFolder(), "Perks");
+		if (!file.exists()) {
+			CodeSource src = this.getClass().getProtectionDomain().getCodeSource();
+			if (src != null) {
+				URL jar = src.getLocation();
+				ZipInputStream zip = null;
+				zip = new ZipInputStream(jar.openStream());
+				while (true) {
+					ZipEntry e;
+					e = zip.getNextEntry();
+					if (e == null) {
+						break;
+					}
+					String name = e.getName();
+					if (name.startsWith("Perks")) {
+						// plugin.debug(name);
+						String[] list = name.split("/");
+						if (list.length > 1) {
+							if (!list[1].equals("")) {
+								if (!new File(plugin.getDataFolder(), "Perks" + File.separator + list[1]).exists()) {
+									plugin.saveResource(name, false);
+								}
 							}
 						}
 					}
 				}
+			} else {
+				plugin.debug("Failed to copy perks");
 			}
 		} else {
-			plugin.debug("Failed to copy perks");
+			plugin.debug("Perk folder already exists, not generating perks");
 		}
 	}
 
