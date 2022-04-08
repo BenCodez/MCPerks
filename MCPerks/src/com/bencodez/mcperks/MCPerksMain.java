@@ -360,7 +360,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 				public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 					String perkName = perk;
 					for (Perk perk : getPerkHandler().getActivePerks()) {
-						if (perk.getName().equalsIgnoreCase(perkName)) {
+						if (perk.getPerk().equalsIgnoreCase(perkName)) {
 							if (perk.getActivater().getPlayerName().equalsIgnoreCase(user.getPlayerName())
 									|| perk.getEffectedPlayers().contains(user.getUUID())) {
 								return Lang.getInstance().getPerkActivePlaceholder();
@@ -377,7 +377,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 				public String placeholderRequest(com.bencodez.mcperks.userapi.MCPerksUser user, String identifier) {
 					String perkName = perk;
 					for (Perk perk : getPerkHandler().getActivePerks()) {
-						if (perk.getName().equalsIgnoreCase(perkName)) {
+						if (perk.getPerk().equalsIgnoreCase(perkName)) {
 							return perk.getActivater().getPlayerName();
 						}
 					}
