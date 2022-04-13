@@ -3,14 +3,17 @@ description: Some EULA friendly perks.
 author: BenCodez
 version: ${project.version}
 main: com.bencodez.mcperks.MCPerksMain
-softdepend: [VotingPlugin]
+softdepend:
+- VotingPlugin
 api-version: 1.13
 libraries:
-  - org.openjdk.nashorn:nashorn-core:15.3
+- org.openjdk.nashorn:nashorn-core:15.3
 commands:
   mcperks:
     description: MCPerks commands
-    aliases: [mcp, perks]
+    aliases:
+    - mcp
+    - perks
   mcperksreload:
     description: MCPerks commands
   mcperkshelp:

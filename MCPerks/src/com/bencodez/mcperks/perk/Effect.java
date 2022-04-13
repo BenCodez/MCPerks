@@ -179,6 +179,13 @@ public enum Effect {
 				}
 			}
 			break;
+		case Commands:
+			for (Player p : players) {
+				HashMap<String, String> placeholders = new HashMap<String, String>();
+				placeholders.put("player", p.getName());
+				MiscUtils.getInstance().executeConsoleCommands(p, perk.getDisableCommands(), placeholders);
+			}
+			break;
 		default:
 			break;
 

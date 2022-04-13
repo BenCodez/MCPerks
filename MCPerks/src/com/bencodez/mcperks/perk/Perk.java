@@ -111,6 +111,9 @@ public class Perk {
 
 	private ArrayList<String> commands;
 
+	@Getter
+	private ArrayList<String> disableCommands;
+
 	private ArrayList<String> mcmmoSkills;
 
 	private BossBar bossBar;
@@ -160,6 +163,7 @@ public class Perk {
 		blacklistedBlocks = perk.blacklistedBlocks;
 		whitelistedBlocks = perk.whitelistedBlocks;
 		onlyGiveOnce = perk.onlyGiveOnce;
+		disableCommands = perk.disableCommands;
 	}
 
 	/**
@@ -230,6 +234,7 @@ public class Perk {
 		whitelistedBlocks = ConfigPerks.getInstance().getPerkWhiteListedBlocks(perk);
 		blacklistedBlocks = ConfigPerks.getInstance().getPerkBlackListedBlocks(perk);
 		onlyGiveOnce = ConfigPerks.getInstance().getOnlyGiveOnce(perk);
+		disableCommands = ConfigPerks.getInstance().getDisableCommands(perk);
 	}
 
 	/**

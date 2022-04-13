@@ -39,6 +39,10 @@ OnlyGiveOnce: false
 Commands:
 - 'say test'
 
+# Execute commands on disable, needs Commands effect
+DisableCommands:
+- 'say perk ended'
+
 # List of disabled worlds per perk level
 DisabledWorlds: []
 
