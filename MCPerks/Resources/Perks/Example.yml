@@ -36,10 +36,12 @@ Effects:
 OnlyGiveOnce: false
 
 # Will execute for each player who gets the effect, needs Commands effect
+# player placeholder %player% - runs commands for each player affected in perk
 Commands:
 - 'say test'
 
 # Execute commands on disable, needs Commands effect
+# player placeholder %player% - runs commands for each player affected in perk
 DisableCommands:
 - 'say perk ended'
 
