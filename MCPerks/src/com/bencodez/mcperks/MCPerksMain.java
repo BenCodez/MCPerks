@@ -25,7 +25,6 @@ import com.bencodez.advancedcore.api.misc.MiscUtils;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
 import com.bencodez.advancedcore.api.rewards.Reward;
 import com.bencodez.advancedcore.api.rewards.RewardEditData;
-import com.bencodez.advancedcore.api.rewards.RewardHandler;
 import com.bencodez.advancedcore.api.rewards.injected.RewardInjectInt;
 import com.bencodez.advancedcore.api.updater.Updater;
 import com.bencodez.advancedcore.api.user.AdvancedCoreUser;
@@ -210,7 +209,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 			}
 		}
 
-		RewardHandler.getInstance().addInjectedReward(new RewardInjectInt("Activations") {
+		plugin.getRewardHandler().addInjectedReward(new RewardInjectInt("Activations") {
 
 			@Override
 			public String onRewardRequest(Reward reward, AdvancedCoreUser user, int value,
@@ -236,7 +235,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		})));
 
 		for (final String perk : MCPerksMain.plugin.getPerkHandler().getLoadedPerks().keySet()) {
-			RewardHandler.getInstance().addInjectedReward(new RewardInjectInt("PerkActivations." + perk) {
+			plugin.getRewardHandler().addInjectedReward(new RewardInjectInt("PerkActivations." + perk) {
 
 				@Override
 				public String onRewardRequest(Reward reward, AdvancedCoreUser user, int value,

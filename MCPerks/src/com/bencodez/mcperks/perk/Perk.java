@@ -15,7 +15,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 
-import org.apache.commons.lang.time.DateUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -26,9 +25,9 @@ import org.bukkit.inventory.ItemStack;
 import com.bencodez.advancedcore.api.item.ItemBuilder;
 import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
+import com.bencodez.advancedcore.api.misc.MiscUtils;
 import com.bencodez.advancedcore.api.misc.effects.BossBar;
 import com.bencodez.advancedcore.api.rewards.RewardBuilder;
-import com.bencodez.advancedcore.api.rewards.RewardHandler;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.ConfigPerks;
 import com.bencodez.mcperks.configs.Lang;
@@ -366,7 +365,7 @@ public class Perk {
 
 		String msg = ConfigPerks.getInstance().getPerkDeactivated(perk).replace("%Perk%", getName());
 		// ArrayList<User> users = new ArrayList<User>();
-		boolean perkRewards = RewardHandler.getInstance().hasRewards(ConfigPerks.getInstance().getData(perk),
+		boolean perkRewards = plugin.getRewardHandler().hasRewards(ConfigPerks.getInstance().getData(perk),
 				ConfigPerks.getInstance().getDeactivationEffect());
 		for (String uuid : getEffectedPlayers()) {
 			MCPerksUser u = plugin.getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid));
@@ -411,9 +410,9 @@ public class Perk {
 	}
 
 	public void execute(MCPerksUser user, int length) {
-		user.setPerkCoolDown(this, DateUtils.addSeconds(new Date(), getCoolDown()).getTime());
+		user.setPerkCoolDown(this, MiscUtils.getInstance().addSeconds(new Date(), getCoolDown()).getTime());
 		if (getServerWideCoolDown() > 0) {
-			setServerCoolDownTime(DateUtils.addSeconds(new Date(), getServerWideCoolDown()).getTime());
+			setServerCoolDownTime(MiscUtils.getInstance().addSeconds(new Date(), getServerWideCoolDown()).getTime());
 		}
 		activatePerk(user, length);
 	}

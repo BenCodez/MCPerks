@@ -34,7 +34,6 @@ import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.misc.effects.BossBar;
 import com.bencodez.advancedcore.api.rewards.RewardBuilder;
-import com.bencodez.advancedcore.api.rewards.RewardHandler;
 import com.bencodez.advancedcore.api.user.AdvancedCoreUser;
 import com.bencodez.advancedcore.logger.Logger;
 import com.bencodez.mcperks.MCPerksMain;
@@ -170,16 +169,15 @@ public class PerkHandler {
 							AdvancedCoreUser user = plugin.getUserManager().getUser(UUID.fromString(uuid));
 							user.sendMessage(msg, phs);
 
-							if (RewardHandler.getInstance().hasRewards(
-									ConfigPerks.getInstance().getData(perk.getPerk()),
+							if (plugin.getRewardHandler().hasRewards(ConfigPerks.getInstance().getData(perk.getPerk()),
 									ConfigPerks.getInstance().getCountDownEffectPath())) {
 								new RewardBuilder(ConfigPerks.getInstance().getData(perk.getPerk()),
 										ConfigPerks.getInstance().getCountDownEffectPath()).setGiveOffline(false)
-												.setGiveOffline(false).send(user);
+										.setGiveOffline(false).send(user);
 							} else {
 								new RewardBuilder(plugin.getConfigFile().getData(),
 										plugin.getConfigFile().getCountDownEffectPath()).setGiveOffline(false)
-												.setGiveOffline(false).send(user);
+										.setGiveOffline(false).send(user);
 							}
 						}
 					}
@@ -202,13 +200,13 @@ public class PerkHandler {
 			activePerks.add(clone);
 		}
 
-		boolean perkRewards = RewardHandler.getInstance().hasRewards(ConfigPerks.getInstance().getData(perk.getPerk()),
+		boolean perkRewards = plugin.getRewardHandler().hasRewards(ConfigPerks.getInstance().getData(perk.getPerk()),
 				ConfigPerks.getInstance().getActivationEffectPath());
 		for (String uuid : clone.getEffectedPlayers()) {
 			if (perkRewards) {
 				new RewardBuilder(ConfigPerks.getInstance().getData(perk.getPerk()),
 						ConfigPerks.getInstance().getActivationEffectPath()).setGiveOffline(false)
-								.send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
+						.send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
 			} else {
 				new RewardBuilder(plugin.getConfigFile().getData(), plugin.getConfigFile().getActivationEffectPath())
 						.setGiveOffline(false).send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
