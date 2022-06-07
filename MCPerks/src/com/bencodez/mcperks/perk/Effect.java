@@ -85,7 +85,9 @@ public enum Effect {
 
 	TempPermission,
 
-	FlyBoost;
+	FlyBoost,
+
+	NoItemDamage;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {
@@ -283,7 +285,7 @@ public enum Effect {
 			for (Player p : players) {
 				new RewardBuilder(ConfigPerks.getInstance().getData(perk.getPerk()),
 						ConfigPerks.getInstance().getPerkRewardsPath(perk.getPerk()))
-								.send(MCPerksMain.plugin.getMcperksUserManager().getMCPerksUser(p));
+						.send(MCPerksMain.plugin.getMcperksUserManager().getMCPerksUser(p));
 
 			}
 

@@ -12,4 +12,3 @@ BlackListedMobs:
 - WITHER_SKELETON
 Item:
   Material: 'PLAYER_HEAD'
-  Data: 0

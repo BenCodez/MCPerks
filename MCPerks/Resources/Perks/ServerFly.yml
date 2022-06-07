@@ -7,7 +7,6 @@ Effects:
 - Fly
 Item:
   Material: 'ELYTRA'
-  Data: 0
 FlyWorlds:
 - world
 - world_nether

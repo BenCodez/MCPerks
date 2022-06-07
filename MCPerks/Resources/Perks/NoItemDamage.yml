@@ -1,0 +1,9 @@
+Enabled: true
+TimeLasts: 60
+CoolDown: 86400
+Name: 'Disable item durability lost'
+Description: 'Disable items losing durability for a short time'
+Effects:
+- NoItemDamage
+Item:
+  Material: 'DIAMOND_SHOVEL'

@@ -7,7 +7,6 @@ Effects:
 - 'IncreaseMiningArea:1'
 Item:
   Material: 'DIAMOND_PICKAXE'
-  Data: 0
 WhitelistedTools: []
 WhiteListedBlocks: []
 BlackListedBlocks: []

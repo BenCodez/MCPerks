@@ -22,6 +22,7 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
@@ -107,6 +108,15 @@ public class EffectListeners implements Listener {
 			}
 		}
 
+	}
+
+	@EventHandler(ignoreCancelled = true)
+	public void entityDamagedByEntity(PlayerItemDamageEvent event) {
+		Player player = (Player) event.getPlayer();
+		if (plugin.getPerkHandler().effectActive(Effect.NoItemDamage, player.getUniqueId().toString(),
+				player.getWorld().getName())) {
+			event.setCancelled(true);
+		}
 	}
 
 	@SuppressWarnings("deprecation")

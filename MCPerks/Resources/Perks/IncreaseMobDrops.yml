@@ -9,6 +9,5 @@ Effects:
 - 'IncreaseMobDrops:10' # 10 percent
 Item:
   Material: 'ROTTEN_FLESH'
-  Data: 0
 SpecialDrops:
 #- IRON_SPADE
