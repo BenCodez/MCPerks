@@ -54,10 +54,6 @@ KeepGUIOpen: false
 # Load default perks
 LoadDefaultPerks: true
 
-# Give Perks for the player that activated it only
-# Old config option, may not work, use the one below
-#PerPlayerPerks: false
-
 # Valid options
 # - ALL
 # - PLAYER
