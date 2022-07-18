@@ -504,7 +504,7 @@ public class PerkHandler {
 		try {
 			Perk perk = new Perk(perkName);
 			if (perk.isEnabled()) {
-				plugin.debug("Loading perk: " + perk.getName() + " : " + perk.getPerkType().toString());
+				plugin.debug("Loading perk: " + perk.getName() + " : " + perk.getPerkType().toString() + " effects: " + perk.listEffects());
 				addToList(perkName, perk);
 			} else {
 				plugin.debug("Perk " + perk.getName() + " not enabled");

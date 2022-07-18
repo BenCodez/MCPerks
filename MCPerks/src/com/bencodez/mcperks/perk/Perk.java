@@ -970,4 +970,12 @@ public class Perk {
 		}
 	}
 
+	public String listEffects() {
+		String str = "";
+		for (Effect effect : getEffects()) {
+			str += effect.toString() + ":" + effect.getModifier() + " ";
+		}
+		return str;
+	}
+
 }
