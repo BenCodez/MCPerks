@@ -71,30 +71,32 @@ public class Commands {
 						|| player.hasPermission("MCPerks.AllPerks"))
 						|| !plugin.getConfigFile().getRequirePermToView()) {
 					inv.addPlaceholder("Activations_" + perk.getPerk(), "" + user.getActivations(perk.getPerk()));
-					inv.addButton(slot, new BInventoryButton(
-							perk.getItem(plugin.getMcperksUserManager().getMCPerksUser(player)).setAmountNone(1)) {
-
-						@Override
-						public void onClick(ClickEvent event) {
-
-							Player player = event.getWhoClicked();
-							Perk perk = plugin.getPerkHandler().invPerks.get(num);
-							Bukkit.getScheduler().runTask(plugin, new Runnable() {
+					inv.addButton(slot,
+							new BInventoryButton(perk.getItem(plugin.getMcperksUserManager().getMCPerksUser(player))
+									.setAmountNone(1)
+									.addPlaceholder("PerkActivations", "" + user.getActivations(perk.getPerk()))) {
 
 								@Override
-								public void run() {
-									player.performCommand("mcperks " + perk.getPerk());
+								public void onClick(ClickEvent event) {
+
+									Player player = event.getWhoClicked();
+									Perk perk = plugin.getPerkHandler().invPerks.get(num);
+									Bukkit.getScheduler().runTask(plugin, new Runnable() {
+
+										@Override
+										public void run() {
+											player.performCommand("mcperks " + perk.getPerk());
+										}
+									});
+
+									if (plugin.getConfigFile().getKeepGUIOpen()) {
+										openGUI(sender);
+									} else {
+										event.closeInventory();
+									}
+
 								}
 							});
-
-							if (plugin.getConfigFile().getKeepGUIOpen()) {
-								openGUI(sender);
-							} else {
-								event.closeInventory();
-							}
-
-						}
-					});
 					slot++;
 				}
 
