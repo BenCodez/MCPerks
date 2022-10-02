@@ -49,8 +49,7 @@ public class Commands {
 	/**
 	 * Instantiates a new commands.
 	 *
-	 * @param plugin
-	 *            the plugin
+	 * @param plugin the plugin
 	 */
 	public Commands(MCPerksMain plugin) {
 		Commands.plugin = plugin;
@@ -63,12 +62,15 @@ public class Commands {
 			String title = StringParser.getInstance().replacePlaceHolder(Lang.getInstance().getGUIName(), "Activations",
 					"" + user.getActivations());
 			BInventory inv = new BInventory(title);
+			inv.addPlaceholder("Activations", "" + user.getActivations());
 			int slot = 0;
 			for (final Integer num : plugin.getPerkHandler().invPerks.keySet()) {
 
 				Perk perk = plugin.getPerkHandler().invPerks.get(num);
 				if ((player.hasPermission(plugin.getPerkHandler().invPerks.get(num).getPermission())
-						|| player.hasPermission("MCPerks.AllPerks")) || !plugin.getConfigFile().getRequirePermToView()) {
+						|| player.hasPermission("MCPerks.AllPerks"))
+						|| !plugin.getConfigFile().getRequirePermToView()) {
+					inv.addPlaceholder("Activations_" + perk.getPerk(), "" + user.getActivations(perk.getPerk()));
 					inv.addButton(slot, new BInventoryButton(
 							perk.getItem(plugin.getMcperksUserManager().getMCPerksUser(player)).setAmountNone(1)) {
 
@@ -106,8 +108,7 @@ public class Commands {
 	/**
 	 * Vote help text.
 	 *
-	 * @param sender
-	 *            the sender
+	 * @param sender the sender
 	 * @return the array list
 	 */
 	public ArrayList<TextComponent> perksHelpText(CommandSender sender) {
