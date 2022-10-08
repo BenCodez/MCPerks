@@ -741,13 +741,19 @@ public class Perk {
 			return;
 		}
 
+		int CooldownMin = plugin.getPerkHandler().getPerk(perk).getCoolDown() / 60;
+		int CooldownHour = CooldownMin / 60;
+		CooldownMin = CooldownHour * 60 - CooldownMin;
+
+		String coolDown = CooldownHour + " Hours " + CooldownMin + " Minutes";
+
 		if (!checkCoolDown(user)) {
-			user.sendMessage(ConfigPerks.getInstance().getPerkInCoolDown(perk));
+			user.sendMessage(ConfigPerks.getInstance().getPerkInCoolDown(perk), "cooldown", coolDown);
 			return;
 		}
 
 		if (!checkServerWideCoolDown(user)) {
-			user.sendMessage(ConfigPerks.getInstance().getPerkInCoolDown(perk));
+			user.sendMessage(ConfigPerks.getInstance().getPerkInCoolDown(perk), "cooldown", coolDown);
 			return;
 		}
 
