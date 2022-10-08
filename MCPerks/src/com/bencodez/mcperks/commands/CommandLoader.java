@@ -407,7 +407,7 @@ public class CommandLoader {
 		});
 
 		plugin.getCommands().add(new CommandHandler(new String[] { "ActivatePerk", "(player)", "(perk)", "(number)" },
-				"MCPerks.ActivatePerkLength", "Forcefly Activate Perk with a set length") {
+				"MCPerks.ActivatePerkLength", "Forcefully Activate Perk with a set length") {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
@@ -453,7 +453,7 @@ public class CommandLoader {
 		});
 
 		plugin.getCommands().add(new CommandHandler(new String[] { "DeactivatePerk", "(player)", "(perk)" },
-				"MCPerks.DeactivatePerk", "Forcefly deactivate Perk") {
+				"MCPerks.DeactivatePerk", "Forcefully deactivate Perk") {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
