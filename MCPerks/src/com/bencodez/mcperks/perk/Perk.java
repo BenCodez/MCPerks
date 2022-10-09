@@ -353,7 +353,7 @@ public class Perk {
 		return new Perk(this);
 	}
 
-	public void deactivatePerk(MCPerksUser user) {
+	public synchronized void deactivatePerk(MCPerksUser user) {
 		setExperation(user, 0);
 		setActive(false);
 		// Main.plugin.getEffectHandler().deactivate(this);
@@ -399,13 +399,7 @@ public class Perk {
 		}
 		Perk p = this;
 
-		Bukkit.getScheduler().runTaskLaterAsynchronously(MCPerksMain.plugin, new Runnable() {
-
-			@Override
-			public void run() {
-				MCPerksMain.plugin.getPerkHandler().remove(p, user);
-			}
-		}, 20l);
+		MCPerksMain.plugin.getPerkHandler().remove(p, user);
 
 	}
 
@@ -741,11 +735,16 @@ public class Perk {
 			return;
 		}
 
-		int CooldownMin = plugin.getPerkHandler().getPerk(perk).getCoolDown() / 60;
-		int CooldownHour = CooldownMin / 60;
-		CooldownMin = CooldownHour * 60 - CooldownMin;
+		long coolDownTime = user.getPerkCoolDown(plugin.getPerkHandler().getPerk(perk));
+		if (coolDownTime < plugin.getMcperksServerData().getData().getLong(perk + ".CoolDown", 0)) {
+			coolDownTime = plugin.getMcperksServerData().getData().getLong(perk + ".CoolDown");
+		}
+		long cooldown = coolDownTime - Calendar.getInstance().getTime().getTime();
+		Duration dur = Duration.of(cooldown, ChronoUnit.MILLIS);
+		int coolDownHours = (int) dur.toHours();
+		int coolDownMin = (int) dur.toMinutes() - coolDownHours * 60;
 
-		String coolDown = CooldownHour + " Hours " + CooldownMin + " Minutes";
+		String coolDown = coolDownHours + " hours " + coolDownMin + " minutes";
 
 		if (!checkCoolDown(user)) {
 			user.sendMessage(ConfigPerks.getInstance().getPerkInCoolDown(perk), "cooldown", coolDown);

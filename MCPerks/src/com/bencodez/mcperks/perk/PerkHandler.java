@@ -537,18 +537,7 @@ public class PerkHandler {
 	}
 
 	public synchronized void remove(Perk pe, MCPerksUser user) {
-		Perk perk = pe.clone();
-		perk.setActivater(user);
-
-		for (int i = getActivePerks().size() - 1; i >= 0; i--) {
-			if (i >= getActivePerks().size() - 1) {
-				Perk p = getActivePerks().get(i);
-				if (p.getPerk().equals(perk.getPerk())
-						&& p.getActivater().getPlayerName().equals(perk.getActivater().getPlayerName())) {
-					getActivePerks().remove(i);
-				}
-			}
-		}
+		getActivePerks().remove(pe);
 		checkQue();
 		printActivePerks();
 	}
