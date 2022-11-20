@@ -81,6 +81,9 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	@Getter
 	private UserManager mcperksUserManager;
+	
+	@Getter
+	private CommandLoader commandLoader;
 
 	public void addPlacehlder(PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser> placeholder) {
 		placeholders.add(placeholder);
@@ -130,7 +133,8 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		perkHandler = new PerkHandler();
 		effectHandler = new EffectHandler();
 
-		CommandLoader.getInstance().loadCommands();
+		commandLoader = new CommandLoader(this);
+		commandLoader.loadCommands();
 
 		getCommand("mcperks").setExecutor(new CommandMCPerks());
 		getCommand("mcperks").setTabCompleter(new MCPerksTabCompleter());
@@ -412,7 +416,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		Lang.getInstance().reloadData();
 		mcperksServerData.reloadData();
 		getPerkHandler().reload();
-		CommandLoader.getInstance().loadTabComplete();
+		commandLoader.loadTabComplete();
 		updateHook();
 		reloadAdvancedCore(true);
 	}

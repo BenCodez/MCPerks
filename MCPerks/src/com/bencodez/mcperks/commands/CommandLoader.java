@@ -45,29 +45,12 @@ import net.md_5.bungee.api.chat.TextComponent;
  */
 public class CommandLoader {
 
-	/** The instance. */
-	static CommandLoader instance = new CommandLoader();
-
-	/** The plugin. */
-	static MCPerksMain plugin = MCPerksMain.plugin;
-
-	/**
-	 * Gets the single instance of CommandLoader.
-	 *
-	 * @return single instance of CommandLoader
-	 */
-	public static CommandLoader getInstance() {
-		return instance;
-	}
+	MCPerksMain plugin = MCPerksMain.plugin;
 
 	/** The commands. */
 	private HashMap<String, CommandHandler> commands;
 
-	/**
-	 * Instantiates a new command loader.
-	 */
-	private CommandLoader() {
-	}
+	private Object activationsLock = new Object();
 
 	/**
 	 * Instantiates a new command loader.
@@ -75,7 +58,7 @@ public class CommandLoader {
 	 * @param plugin the plugin
 	 */
 	public CommandLoader(MCPerksMain plugin) {
-		CommandLoader.plugin = plugin;
+		this.plugin = plugin;
 	}
 
 	/**
@@ -394,7 +377,7 @@ public class CommandLoader {
 				sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " + args[1]);
 			}
 		});
-		
+
 		plugin.getCommands().add(new CommandHandler(new String[] { "ActivatePerkSilent", "(player)", "(perk)" },
 				"MCPerks.ActivatePerkSilent", "Forcefly Activate Perk, with no message") {
 
@@ -402,7 +385,8 @@ public class CommandLoader {
 			public void execute(CommandSender sender, String[] args) {
 				Perk perk = plugin.getPerkHandler().getPerk(args[2]);
 				perk.forcePerk(args[1]);
-				//sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " + args[1]);
+				// sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " +
+				// args[1]);
 			}
 		});
 
@@ -501,9 +485,11 @@ public class CommandLoader {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
-				MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-				user.setActivations(Integer.parseInt(args[2]));
-				sendMessage(sender, "&cSet activations to " + args[2]);
+				synchronized (activationsLock) {
+					MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
+					user.setActivations(Integer.parseInt(args[2]));
+					sendMessage(sender, "&cSet activations to " + args[2]);
+				}
 			}
 		});
 
@@ -512,16 +498,18 @@ public class CommandLoader {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
-				if (args[1].equals("*")) {
-					for (Player p : Bukkit.getOnlinePlayers()) {
-						MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(p);
+				synchronized (activationsLock) {
+					if (args[1].equals("*")) {
+						for (Player p : Bukkit.getOnlinePlayers()) {
+							MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(p);
+							user.addActivation(Integer.parseInt(args[2]));
+						}
+						sendMessage(sender, "&cAdded activations to " + args[2]);
+					} else {
+						MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
 						user.addActivation(Integer.parseInt(args[2]));
+						sendMessage(sender, "&cSet activations to " + user.getActivations());
 					}
-					sendMessage(sender, "&cAdded activations to " + args[2]);
-				} else {
-					MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-					user.addActivation(Integer.parseInt(args[2]));
-					sendMessage(sender, "&cSet activations to " + user.getActivations());
 				}
 			}
 		});
@@ -590,9 +578,11 @@ public class CommandLoader {
 
 					@Override
 					public void execute(CommandSender sender, String[] args) {
-						MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-						user.setActivations(args[2], Integer.parseInt(args[3]));
-						sendMessage(sender, "&cSet activations to " + args[3]);
+						synchronized (activationsLock) {
+							MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
+							user.setActivations(args[2], Integer.parseInt(args[3]));
+							sendMessage(sender, "&cSet activations to " + args[3]);
+						}
 					}
 				});
 
@@ -602,16 +592,18 @@ public class CommandLoader {
 
 					@Override
 					public void execute(CommandSender sender, String[] args) {
-						if (args[1].equals("*")) {
-							for (Player p : Bukkit.getOnlinePlayers()) {
-								MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(p);
+						synchronized (activationsLock) {
+							if (args[1].equals("*")) {
+								for (Player p : Bukkit.getOnlinePlayers()) {
+									MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(p);
+									user.addActivation(args[2], Integer.parseInt(args[3]));
+								}
+								sendMessage(sender, "&cAdded activations to " + args[3]);
+							} else {
+								MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
 								user.addActivation(args[2], Integer.parseInt(args[3]));
+								sendMessage(sender, "&cSet activations to " + user.getActivations(args[2]));
 							}
-							sendMessage(sender, "&cAdded activations to " + args[3]);
-						} else {
-							MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-							user.addActivation(args[2], Integer.parseInt(args[3]));
-							sendMessage(sender, "&cSet activations to " + user.getActivations(args[2]));
 						}
 					}
 				});
@@ -622,12 +614,14 @@ public class CommandLoader {
 
 					@Override
 					public void execute(CommandSender sender, String[] args) {
-						MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-						user.addActivation(-Integer.parseInt(args[3]));
-						if (user.getActivations(args[2]) < 0) {
-							user.setActivations(args[2], 0);
+						synchronized (activationsLock) {
+							MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
+							user.addActivation(-Integer.parseInt(args[3]));
+							if (user.getActivations(args[2]) < 0) {
+								user.setActivations(args[2], 0);
+							}
+							sendMessage(sender, "&cSet activations to " + user.getActivations());
 						}
-						sendMessage(sender, "&cSet activations to " + user.getActivations());
 					}
 				});
 
