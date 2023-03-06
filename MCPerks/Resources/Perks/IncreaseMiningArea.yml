@@ -8,5 +8,5 @@ Effects:
 Item:
   Material: 'DIAMOND_PICKAXE'
 WhitelistedTools: []
-WhiteListedBlocks: []
-BlackListedBlocks: []
+WhitelistedBlocks: []
+BlacklistedBlocks: []
