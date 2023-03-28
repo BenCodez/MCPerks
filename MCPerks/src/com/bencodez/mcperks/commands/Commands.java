@@ -11,7 +11,8 @@ import org.bukkit.entity.Player;
 import com.bencodez.advancedcore.api.command.CommandHandler;
 import com.bencodez.advancedcore.api.inventory.BInventory;
 import com.bencodez.advancedcore.api.inventory.BInventory.ClickEvent;
-import com.bencodez.advancedcore.api.inventory.BInventoryButton;
+import com.bencodez.advancedcore.api.inventory.UpdatingBInventoryButton;
+import com.bencodez.advancedcore.api.item.ItemBuilder;
 import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.Lang;
@@ -63,6 +64,7 @@ public class Commands {
 					"" + user.getActivations());
 			BInventory inv = new BInventory(title);
 			inv.addPlaceholder("Activations", "" + user.getActivations());
+			inv.addData("MCPerksUser", user);
 			int slot = 0;
 			for (final Integer num : plugin.getPerkHandler().invPerks.keySet()) {
 
@@ -71,32 +73,36 @@ public class Commands {
 						|| player.hasPermission("MCPerks.AllPerks"))
 						|| !plugin.getConfigFile().getRequirePermToView()) {
 					inv.addPlaceholder("Activations_" + perk.getPerk(), "" + user.getActivations(perk.getPerk()));
-					inv.addButton(slot,
-							new BInventoryButton(perk.getItem(plugin.getMcperksUserManager().getMCPerksUser(player))
-									.setAmountNone(1)
-									.addPlaceholder("PerkActivations", "" + user.getActivations(perk.getPerk()))) {
+
+					inv.addButton(slot, new UpdatingBInventoryButton(perk.getItem(user).setAmountNone(1)
+							.addPlaceholder("PerkActivations", "" + user.getActivations(perk.getPerk())), 1000, 1000) {
+
+						@Override
+						public void onClick(ClickEvent event) {
+
+							Player player = event.getWhoClicked();
+							Perk perk = plugin.getPerkHandler().invPerks.get(num);
+							Bukkit.getScheduler().runTask(plugin, new Runnable() {
 
 								@Override
-								public void onClick(ClickEvent event) {
-
-									Player player = event.getWhoClicked();
-									Perk perk = plugin.getPerkHandler().invPerks.get(num);
-									Bukkit.getScheduler().runTask(plugin, new Runnable() {
-
-										@Override
-										public void run() {
-											player.performCommand("mcperks " + perk.getPerk());
-										}
-									});
-
-									if (plugin.getConfigFile().getKeepGUIOpen()) {
-										openGUI(sender);
-									} else {
-										event.closeInventory();
-									}
-
+								public void run() {
+									player.performCommand("mcperks " + perk.getPerk());
 								}
 							});
+
+							if (!plugin.getConfigFile().getKeepGUIOpen()) {
+								event.closeInventory();
+							}
+
+						}
+
+						@Override
+						public ItemBuilder onUpdate(Player player) {
+							MCPerksUser user = (MCPerksUser) inv.getData("MCPerksUser");
+							return perk.getItem(user).setAmountNone(1).addPlaceholder("PerkActivations",
+									"" + user.getActivations(perk.getPerk()));
+						}
+					});
 					slot++;
 				}
 

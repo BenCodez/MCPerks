@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import org.bukkit.entity.Player;
 
+import com.bencodez.advancedcore.api.user.AdvancedCoreUser;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.Perk;
 
@@ -13,50 +14,42 @@ import com.bencodez.mcperks.perk.Perk;
  */
 public class MCPerksUser extends com.bencodez.advancedcore.api.user.AdvancedCoreUser {
 
-	/** The plugin. */
-	static MCPerksMain plugin = MCPerksMain.plugin;
+	@SuppressWarnings("unused")
+	private MCPerksMain plugin;
 
-	/**
-	 * Instantiates a new user.
-	 *
-	 * @param player the player
-	 */
 	@Deprecated
-	public MCPerksUser(Player player) {
-		super(MCPerksMain.plugin, player);
+	public MCPerksUser(MCPerksMain plugin, Player player) {
+		super(plugin, player);
+		this.plugin = plugin;
 	}
 
-	/**
-	 * Instantiates a new user.
-	 *
-	 * @param playerName the player name
-	 */
 	@Deprecated
-	public MCPerksUser(String playerName) {
-		super(MCPerksMain.plugin, playerName);
-
+	public MCPerksUser(MCPerksMain plugin, String playerName) {
+		super(plugin, playerName);
+		this.plugin = plugin;
 	}
 
-	/**
-	 * Instantiates a new user.
-	 *
-	 * @param uuid the uuid
-	 */
 	@Deprecated
-	public MCPerksUser(UUID uuid) {
-		super(MCPerksMain.plugin, uuid);
-
+	public MCPerksUser(MCPerksMain plugin, UUID uuid) {
+		super(plugin, uuid);
+		this.plugin = plugin;
 	}
 
-	/**
-	 * Instantiates a new user.
-	 *
-	 * @param uuid     the uuid
-	 * @param loadName the load name
-	 */
 	@Deprecated
-	public MCPerksUser(UUID uuid, boolean loadName) {
-		super(MCPerksMain.plugin, uuid, loadName);
+	public MCPerksUser(MCPerksMain plugin, UUID uuid, boolean loadName) {
+		super(plugin, uuid, loadName);
+		this.plugin = plugin;
+	}
+
+	@Deprecated
+	public MCPerksUser(MCPerksMain plugin, UUID uuid, String playerName) {
+		super(plugin, uuid, playerName);
+		this.plugin = plugin;
+	}
+
+	public MCPerksUser(MCPerksMain plugin, AdvancedCoreUser user) {
+		super(plugin, user);
+		this.plugin = plugin;
 	}
 
 	public long getPerkCoolDown(Perk perk) {

@@ -20,11 +20,11 @@ public class UserManager {
 	}
 
 	public MCPerksUser getMCPerksUser(OfflinePlayer player) {
-		return getMCPerksUser(player.getName());
+		return getMCPerksUser(player.getUniqueId(), player.getName());
 	}
 
 	public MCPerksUser getMCPerksUser(Player player) {
-		return getMCPerksUser(player.getName());
+		return getMCPerksUser(player.getUniqueId(), player.getName());
 	}
 
 	public MCPerksUser getMCPerksUser(String playerName) {
@@ -33,7 +33,12 @@ public class UserManager {
 
 	@SuppressWarnings("deprecation")
 	public MCPerksUser getMCPerksUser(UUID uuid) {
-		return new MCPerksUser(uuid);
+		return new MCPerksUser(plugin, uuid);
+	}
+
+	@SuppressWarnings("deprecation")
+	public MCPerksUser getMCPerksUser(UUID uuid, String playerName) {
+		return new MCPerksUser(plugin, uuid, playerName);
 	}
 
 	public void addCachingKeys() {
