@@ -20,6 +20,8 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
@@ -105,6 +107,20 @@ public class EffectListeners implements Listener {
 			if (plugin.getPerkHandler().effectActive(Effect.DisablePVP, player.getUniqueId().toString(),
 					player.getWorld().getName())) {
 				event.setCancelled(true);
+				return;
+			}
+		}
+
+	}
+
+	@EventHandler(ignoreCancelled = true)
+	public void foodChange(FoodLevelChangeEvent event) {
+		if (event.getEntity() instanceof Player) {
+			Player player = (Player) event.getEntity();
+			if (plugin.getPerkHandler().effectActive(Effect.NoHunger, player.getUniqueId().toString(),
+					player.getWorld().getName())) {
+				event.setCancelled(true);
+				return;
 			}
 		}
 
@@ -116,6 +132,7 @@ public class EffectListeners implements Listener {
 		if (plugin.getPerkHandler().effectActive(Effect.NoItemDamage, player.getUniqueId().toString(),
 				player.getWorld().getName())) {
 			event.setCancelled(true);
+			return;
 		}
 	}
 
@@ -315,6 +332,20 @@ public class EffectListeners implements Listener {
 			if (plugin.getPerkHandler().effectActive(Effect.God, player.getUniqueId().toString(),
 					player.getWorld().getName())) {
 				event.setCancelled(true);
+				return;
+			}
+		}
+	}
+
+	@EventHandler(ignoreCancelled = true)
+	public void onPlayerDamage(PlayerDeathEvent event) {
+		if (event.getEntity() instanceof Player) {
+			Player player = (Player) event.getEntity();
+			if (plugin.getPerkHandler().effectActive(Effect.God, player.getUniqueId().toString(),
+					player.getWorld().getName())) {
+				event.getDrops().clear();
+				event.setKeepInventory(true);
+				return;
 			}
 		}
 	}

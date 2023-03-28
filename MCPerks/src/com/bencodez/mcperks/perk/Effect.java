@@ -87,7 +87,11 @@ public enum Effect {
 
 	FlyBoost,
 
-	NoItemDamage;
+	NoItemDamage,
+
+	NoHunger,
+
+	KeepInv;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {
@@ -212,6 +216,17 @@ public enum Effect {
 		}
 		switch (this) {
 		case CureHunger:
+			Bukkit.getScheduler().runTask(MCPerksMain.plugin, new Runnable() {
+
+				@Override
+				public void run() {
+					for (Player player : players) {
+						player.setFoodLevel(20);
+					}
+				}
+			});
+			break;
+		case NoHunger:
 			Bukkit.getScheduler().runTask(MCPerksMain.plugin, new Runnable() {
 
 				@Override
