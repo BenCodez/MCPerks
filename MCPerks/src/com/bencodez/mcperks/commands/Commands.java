@@ -63,6 +63,9 @@ public class Commands {
 			String title = StringParser.getInstance().replacePlaceHolder(Lang.getInstance().getGUIName(), "Activations",
 					"" + user.getActivations());
 			BInventory inv = new BInventory(title);
+			if (plugin.getConfigFile().getKeepGUIOpen()) {
+				inv.dontClose();
+			}
 			inv.addPlaceholder("Activations", "" + user.getActivations());
 			inv.addData("MCPerksUser", user);
 			int slot = 0;
