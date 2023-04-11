@@ -122,6 +122,9 @@ public class Perk {
 	private MCPerksUser activater;
 
 	private ArrayList<String> disabledWorlds;
+	
+	@Getter
+	private int reActivateEffectsTimer;
 
 	@Getter
 	private MCPerksMain plugin = MCPerksMain.plugin;
@@ -163,6 +166,7 @@ public class Perk {
 		whitelistedBlocks = perk.whitelistedBlocks;
 		onlyGiveOnce = perk.onlyGiveOnce;
 		disableCommands = perk.disableCommands;
+		reActivateEffectsTimer = perk.reActivateEffectsTimer;
 	}
 
 	/**
@@ -234,6 +238,8 @@ public class Perk {
 		blacklistedBlocks = ConfigPerks.getInstance().getPerkBlackListedBlocks(perk);
 		onlyGiveOnce = ConfigPerks.getInstance().getOnlyGiveOnce(perk);
 		disableCommands = ConfigPerks.getInstance().getDisableCommands(perk);
+		
+		reActivateEffectsTimer = ConfigPerks.getInstance().getPerkReActivateEffectsTimer(perk);
 	}
 
 	/**

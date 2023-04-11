@@ -48,6 +48,10 @@ DisableCommands:
 # List of disabled worlds per perk level
 DisabledWorlds: []
 
+# Number of seconds to reactive effects again (if perk is active)
+# Useful for potions effect
+#ReActivateEffectsTimer: 60
+
 # Requires Potions to be listed in effects
 Potions:
   # Potion type

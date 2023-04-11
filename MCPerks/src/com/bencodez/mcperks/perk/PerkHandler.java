@@ -54,7 +54,9 @@ public class PerkHandler {
 	private Map<String, Perk> loadedPerks = new HashMap<String, Perk>();
 
 	/** The main. */
-	private MCPerksMain plugin = MCPerksMain.plugin;
+	private MCPerksMain plugin;
+
+	private Timer timer = new Timer();
 
 	public Map<Integer, Perk> invPerks = new HashMap<Integer, Perk>();
 
@@ -62,11 +64,10 @@ public class PerkHandler {
 
 	private List<Perk> activePerks = Collections.synchronizedList(new ArrayList<Perk>());
 
-	private Timer timer = new Timer();
-
 	private Logger activationLog;
 
-	public PerkHandler() {
+	public PerkHandler(MCPerksMain plugin) {
+		this.plugin = plugin;
 		if (plugin.getConfigFile().getLoadDefaultPerks()) {
 			try {
 				copyPerks();
@@ -185,7 +186,7 @@ public class PerkHandler {
 			}
 		}
 
-		MCPerksMain.plugin.getEffectHandler().activate(clone, user);
+		plugin.getEffectHandler().activate(clone, user);
 		if (clone.isTimed()) {
 			clone.setActive(true);
 			if (!clone.isLastForever()) {
@@ -198,6 +199,22 @@ public class PerkHandler {
 				clone.setExperation(user, -1);
 			}
 			activePerks.add(clone);
+		}
+
+		if (clone.getReActivateEffectsTimer() > 0) {
+			final Perk clonedFinal = clone;
+			timer.scheduleAtFixedRate(new TimerTask() {
+
+				@Override
+				public void run() {
+					if (clonedFinal.isActive()) {
+						plugin.getEffectHandler().activate(clonedFinal, user);
+					} else {
+						cancel();
+					}
+
+				}
+			}, clone.getReActivateEffectsTimer() * 1000, clone.getReActivateEffectsTimer() * 1000);
 		}
 
 		boolean perkRewards = plugin.getRewardHandler().hasRewards(ConfigPerks.getInstance().getData(perk.getPerk()),
@@ -504,7 +521,8 @@ public class PerkHandler {
 		try {
 			Perk perk = new Perk(perkName);
 			if (perk.isEnabled()) {
-				plugin.debug("Loading perk: " + perk.getName() + " : " + perk.getPerkType().toString() + " effects: " + perk.listEffects());
+				plugin.debug("Loading perk: " + perk.getName() + " : " + perk.getPerkType().toString() + " effects: "
+						+ perk.listEffects());
 				addToList(perkName, perk);
 			} else {
 				plugin.debug("Perk " + perk.getName() + " not enabled");

@@ -157,6 +157,10 @@ public class ConfigPerks {
 		return getData(perk).getInt("CoolDown");
 	}
 
+	public int getPerkReActivateEffectsTimer(String perk) {
+		return getData(perk).getInt("ReActivateEffectsTimer", -1);
+	}
+
 	@SuppressWarnings("deprecation")
 	public String getPerkDeactivated(String perk) {
 		return getData(perk).getString("Lang.PerkDeactivated", Lang.getInstance().getPerkDeactivated());

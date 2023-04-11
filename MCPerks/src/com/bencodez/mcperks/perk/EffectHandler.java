@@ -17,19 +17,20 @@ import lombok.Getter;
 
 public class EffectHandler implements Listener {
 
-	MCPerksMain plugin = MCPerksMain.plugin;
+	private MCPerksMain plugin;
 
 	// private HashMap<Effect, ArrayList<String>> effectedPlayers = new
 	// HashMap<Effect, ArrayList<String>>();
 
 	/*
 	 * public HashMap<Effect, ArrayList<String>> getEffectedPlayers() { return
-	 * effectedPlayers; }
-	 * public void setEffectedPlayers(HashMap<Effect, ArrayList<String>>
-	 * effectedPlayers) { this.effectedPlayers = effectedPlayers; }
+	 * effectedPlayers; } public void setEffectedPlayers(HashMap<Effect,
+	 * ArrayList<String>> effectedPlayers) { this.effectedPlayers = effectedPlayers;
+	 * }
 	 */
 
-	public EffectHandler() {
+	public EffectHandler(MCPerksMain plugin) {
+		this.plugin = plugin;
 	}
 
 	@Getter
@@ -37,9 +38,10 @@ public class EffectHandler implements Listener {
 
 	@Getter
 	private List<BlockBreakEvent> blockBreakEvents = Collections.synchronizedList(new ArrayList<BlockBreakEvent>());
-	
+
 	@Getter
-	private List<PlayerInteractEvent> playerInteractEvents = Collections.synchronizedList(new ArrayList<PlayerInteractEvent>());
+	private List<PlayerInteractEvent> playerInteractEvents = Collections
+			.synchronizedList(new ArrayList<PlayerInteractEvent>());
 
 	public void activate(Perk perk, MCPerksUser user) {
 		for (Effect effect : perk.getEffects()) {
@@ -51,8 +53,7 @@ public class EffectHandler implements Listener {
 	}
 
 	/**
-	 * @param uuid
-	 *            uuid
+	 * @param uuid uuid
 	 * @return the flyWorlds
 	 */
 	public ArrayList<String> getFlyWorlds(String uuid) {

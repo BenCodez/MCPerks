@@ -81,7 +81,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	@Getter
 	private UserManager mcperksUserManager;
-	
+
 	@Getter
 	private CommandLoader commandLoader;
 
@@ -130,8 +130,8 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	@Override
 	public void onPostLoad() {
 		loadListeners();
-		perkHandler = new PerkHandler();
-		effectHandler = new EffectHandler();
+		perkHandler = new PerkHandler(this);
+		effectHandler = new EffectHandler(this);
 
 		commandLoader = new CommandLoader(this);
 		commandLoader.loadCommands();
