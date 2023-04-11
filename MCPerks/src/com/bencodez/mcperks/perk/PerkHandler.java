@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -503,18 +504,39 @@ public class PerkHandler {
 	}
 
 	public void loadInvPerks() {
-		HashMap<Perk, Integer> perksSorted = new HashMap<Perk, Integer>();
+		HashMap<Perk, Integer> perksSorted = new LinkedHashMap<Perk, Integer>();
 		for (Perk perk : getLoadedPerks().values()) {
 			perksSorted.put(perk, perk.getPriority());
 		}
 
-		perksSorted = sortByValues(perksSorted, false);
-
-		int count = 0;
-		for (Perk perk : perksSorted.keySet()) {
-			invPerks.put(count, perk);
-			count++;
+		boolean usePriority = false;
+		for (Integer num : perksSorted.values()) {
+			if (num.intValue() > 0) {
+				usePriority = true;
+			}
 		}
+
+		if (usePriority) {
+			perksSorted = sortByValues(perksSorted, false);
+
+			int count = 0;
+			for (Perk perk : perksSorted.keySet()) {
+				invPerks.put(count, perk);
+				count++;
+			}
+		} else {
+			Map<String, Perk> sortedMap = new TreeMap<String, Perk>();
+			for (Perk perk : perksSorted.keySet()) {
+				sortedMap.put(perk.getName(), perk);
+			}
+
+			int count = 0;
+			for (Perk perk : sortedMap.values()) {
+				invPerks.put(count, perk);
+				count++;
+			}
+		}
+
 	}
 
 	public void loadPerk(String perkName) {
