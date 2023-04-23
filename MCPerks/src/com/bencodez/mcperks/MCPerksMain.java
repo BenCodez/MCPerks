@@ -412,7 +412,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	@Override
 	public void reload() {
 		configFile.reloadData();
-		perkSystemType = PerkSystemType.valueOf(configFile.getPerkSystemType());
+		perkSystemType = configFile.getPerkSystemType();
 		Lang.getInstance().reloadData();
 		mcperksServerData.reloadData();
 		getPerkHandler().reload();
@@ -428,7 +428,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		configFile = new Config(this);
 		configFile.setup();
 		Lang.getInstance().setup(this);
-		perkSystemType = PerkSystemType.valueOf(configFile.getPerkSystemType());
+		perkSystemType = configFile.getPerkSystemType();
 		mcperksServerData = new ServerData(this);
 	}
 

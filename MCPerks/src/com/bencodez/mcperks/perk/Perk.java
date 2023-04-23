@@ -106,7 +106,8 @@ public class Perk {
 
 	private ArrayList<String> flyWorlds;
 
-	private String perkType;
+	@Getter
+	private PerkSystemType perkType;
 
 	private ArrayList<String> commands;
 
@@ -122,7 +123,7 @@ public class Perk {
 	private MCPerksUser activater;
 
 	private ArrayList<String> disabledWorlds;
-	
+
 	@Getter
 	private int reActivateEffectsTimer;
 
@@ -238,7 +239,7 @@ public class Perk {
 		blacklistedBlocks = ConfigPerks.getInstance().getPerkBlackListedBlocks(perk);
 		onlyGiveOnce = ConfigPerks.getInstance().getOnlyGiveOnce(perk);
 		disableCommands = ConfigPerks.getInstance().getDisableCommands(perk);
-		
+
 		reActivateEffectsTimer = ConfigPerks.getInstance().getPerkReActivateEffectsTimer(perk);
 	}
 
@@ -616,11 +617,6 @@ public class Perk {
 	 */
 	public String getPerk() {
 		return perk;
-	}
-
-	public PerkSystemType getPerkType() {
-		// Main.plugin.debug(perkType);
-		return PerkSystemType.getType(perkType);
 	}
 
 	public String getPermission() {

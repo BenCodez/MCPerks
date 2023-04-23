@@ -2,8 +2,15 @@ package com.bencodez.mcperks.perk;
 
 import com.bencodez.mcperks.MCPerksMain;
 
+import lombok.Getter;
+import lombok.Setter;
+
 public enum PerkSystemType {
-	ALL, PLAYER, TOWNY, FACTIONS;
+	ALL, PLAYER, TOWNY, FACTIONS, PERMISSION;
+	
+	@Getter
+	@Setter
+	private String permissionRequired = "";
 
 	public static PerkSystemType getType(String str) {
 		for (PerkSystemType t : values()) {

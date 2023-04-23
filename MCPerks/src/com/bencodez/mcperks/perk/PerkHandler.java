@@ -147,6 +147,12 @@ public class PerkHandler {
 				e.printStackTrace();
 			}
 
+		} else if (perkType.equals(PerkSystemType.PERMISSION)) {
+			for (Player player : Bukkit.getOnlinePlayers()) {
+				if (player.hasPermission(perkType.getPermissionRequired())) {
+					clone.addEffectedPlayer(player.getUniqueId().toString());
+				}
+			}
 		}
 
 		// countdown effects

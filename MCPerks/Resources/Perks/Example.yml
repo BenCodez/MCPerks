@@ -24,6 +24,9 @@ Description: 'Fill everybodys stomach.'
 # Will override config.yml option
 #PerkType: 'ALL'
 
+# Permission if perksystemtype is permission
+#PerkTypePermission: "Permission here"
+
 # Effects
 # Can have multiple
 Effects:

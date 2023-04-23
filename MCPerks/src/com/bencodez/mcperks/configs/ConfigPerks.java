@@ -17,6 +17,7 @@ import org.bukkit.inventory.ItemStack;
 
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.mcperks.MCPerksMain;
+import com.bencodez.mcperks.perk.PerkSystemType;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -400,8 +401,16 @@ public class ConfigPerks {
 		return getData(perk).getInt("TimeLasts");
 	}
 
-	public String getPerkType(String perk) {
-		return getData(perk).getString("PerkType", "");
+	public PerkSystemType getPerkType(String perk) {
+		String type = getData(perk).getString("PerkType", "");
+		if (type.isEmpty()) {
+			return plugin.getPerkSystemType();
+		}
+		PerkSystemType perkType = PerkSystemType.getType(type);
+		if (perkType.equals(PerkSystemType.PERMISSION)) {
+			perkType.setPermissionRequired(getData(perk).getString("PerkTypePermission", ""));
+		}
+		return perkType;
 	}
 
 	/**

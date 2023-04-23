@@ -14,6 +14,7 @@ import org.bukkit.configuration.ConfigurationSection;
 
 import com.bencodez.advancedcore.api.yml.YMLFile;
 import com.bencodez.mcperks.MCPerksMain;
+import com.bencodez.mcperks.perk.PerkSystemType;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -213,7 +214,7 @@ public class Config extends YMLFile {
 		return new ArrayList<String>();
 	}
 
-	public String getPerkSystemType() {
+	public PerkSystemType getPerkSystemType() {
 		String type = getData().getString("PerkSystemType", "");
 		if (type.equals("")) {
 			if (getPerPlayerPerks()) {
@@ -228,7 +229,11 @@ public class Config extends YMLFile {
 				type = "ALL";
 			}
 		}
-		return type;
+		PerkSystemType perkType = PerkSystemType.getType(type);
+		if (perkType.equals(PerkSystemType.PERMISSION)) {
+			perkType.setPermissionRequired(getData().getString("PerkSystemTypePermission", ""));
+		}
+		return perkType;
 	}
 
 	/**

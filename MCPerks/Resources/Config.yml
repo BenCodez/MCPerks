@@ -13,7 +13,7 @@ DebugLevel: NONE
 # - FLAT
 # - SQLITE
 # - MYSQL
-DataStorage: FLAT
+DataStorage: SQLITE
 
 # Log perks being activated
 LogActivation: false
@@ -55,7 +55,11 @@ LoadDefaultPerks: true
 # - PLAYER
 # - TOWNY
 # - FACTIONS
+# - PERMISSION
 PerkSystemType: 'ALL'
+
+# Permission if perksystemtype is permission
+PerkSystemTypePermission: "Permission here"
 
 # If true, reactivating a perk will deactivate
 DisableOnClick: false
