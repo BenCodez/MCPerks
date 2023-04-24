@@ -10,7 +10,6 @@
 DebugLevel: NONE
 
 # Valid Options:
-# - FLAT
 # - SQLITE
 # - MYSQL
 DataStorage: SQLITE
