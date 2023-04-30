@@ -296,6 +296,11 @@ public class EffectListeners implements Listener {
 					if (perk.getPerkType().equals(PerkSystemType.ALL)) {
 						perk.addEffectedPlayer(player.getUniqueId().toString());
 						giveEffect = true;
+					} else if (perk.getPerkType().equals(PerkSystemType.PERMISSION)) {
+						if (player.hasPermission(perk.getPerkType().getPermissionRequired())) {
+							perk.addEffectedPlayer(player.getUniqueId().toString());
+							giveEffect = true;
+						}
 					}
 					if (perk.getEffectedPlayers().contains(player.getUniqueId().toString())) {
 						giveEffect = true;
