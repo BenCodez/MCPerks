@@ -547,18 +547,22 @@ public class Perk {
 		}
 
 		long left = getExperation(user) - Calendar.getInstance().getTime().getTime();
-		int seconds = (int) (left/1000);
-		int min = seconds/60;
-		int sec = seconds - min*60;
+		int seconds = (int) (left / 1000);
+		int min = seconds / 60;
+		int sec = seconds - min * 60;
 
 		long coolDownTime = user.getPerkCoolDown(this);
 		if (coolDownTime < MCPerksMain.plugin.getMcperksServerData().getData().getLong(getPerk() + ".CoolDown", 0)) {
 			coolDownTime = MCPerksMain.plugin.getMcperksServerData().getData().getLong(getPerk() + ".CoolDown");
 		}
 		long cooldown = coolDownTime - Calendar.getInstance().getTime().getTime();
+		
 		Duration dur = Duration.of(cooldown, ChronoUnit.MILLIS);
 		int coolDownHours = (int) dur.toHours();
 		int coolDownMin = (int) dur.toMinutes() - coolDownHours * 60;
+		if (coolDownMin < 0) {
+			coolDownMin = coolDownMin * -1;
+		}
 
 		HashMap<String, String> placeholders = new HashMap<String, String>();
 		int timeLasts = getTime();
@@ -575,10 +579,13 @@ public class Perk {
 		} else {
 			placeholders.put("TimeLeft", "Forever");
 		}
-		int CooldownMin = getCoolDown() / 60;
-		int CooldownHour = CooldownMin / 60;
-		CooldownMin = CooldownHour * 60 - CooldownMin;
-		placeholders.put("CoolDown", "" + CooldownHour + " Hours " + CooldownMin + " Minutes");
+		int cooldownMin1 = getCoolDown() / 60;
+		int cooldownHour = cooldownMin1 / 60;
+		int cooldownMin = cooldownHour * 60 - cooldownMin1;
+		if (cooldownMin < 0) {
+			cooldownMin = cooldownMin * -1;
+		}
+		placeholders.put("CoolDown", "" + cooldownHour + " Hours " + cooldownMin + " Minutes");
 		// lore = Utils.getInstance().replacePlaceStringList(lore, "", "");
 
 		lore = ArrayUtils.getInstance().replacePlaceHolder(lore, placeholders);
