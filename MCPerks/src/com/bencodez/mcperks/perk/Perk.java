@@ -547,8 +547,9 @@ public class Perk {
 		}
 
 		long left = getExperation(user) - Calendar.getInstance().getTime().getTime();
-		int min = (int) (left / (1000 * 64));
-		long sec = left / 1000 - min * 1000 * 64;
+		int seconds = (int) (left/1000);
+		int min = seconds/60;
+		int sec = seconds - min*60;
 
 		long coolDownTime = user.getPerkCoolDown(this);
 		if (coolDownTime < MCPerksMain.plugin.getMcperksServerData().getData().getLong(getPerk() + ".CoolDown", 0)) {
@@ -570,7 +571,7 @@ public class Perk {
 		placeholders.put("HasPerm", Boolean.toString(hasPerm));
 		placeholders.put("CoolDownLeft", "" + coolDownHours + " hours " + coolDownMin + " minutes");
 		if (!isLastForever()) {
-			placeholders.put("TimeLeft", "" + left / (1000 * 64) + " minutes " + sec + " seconds");
+			placeholders.put("TimeLeft", "" + min + " minutes " + sec + " seconds");
 		} else {
 			placeholders.put("TimeLeft", "Forever");
 		}

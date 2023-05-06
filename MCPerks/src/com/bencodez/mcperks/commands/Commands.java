@@ -77,7 +77,7 @@ public class Commands {
 						|| !plugin.getConfigFile().getRequirePermToView()) {
 					inv.addPlaceholder("Activations_" + perk.getPerk(), "" + user.getActivations(perk.getPerk()));
 
-					inv.addButton(slot, new UpdatingBInventoryButton(perk.getItem(user).setAmountNone(1)
+					inv.addButton(slot, new UpdatingBInventoryButton(plugin, perk.getItem(user).setAmountNone(1)
 							.addPlaceholder("PerkActivations", "" + user.getActivations(perk.getPerk())), 1000, 1000) {
 
 						@Override
