@@ -28,7 +28,6 @@ import com.bencodez.advancedcore.api.rewards.RewardEditData;
 import com.bencodez.advancedcore.api.rewards.injected.RewardInjectInt;
 import com.bencodez.advancedcore.api.updater.Updater;
 import com.bencodez.advancedcore.api.user.AdvancedCoreUser;
-import com.bencodez.advancedcore.thread.Thread;
 import com.bencodez.mcperks.commands.CommandLoader;
 import com.bencodez.mcperks.commands.executers.CommandMCPerks;
 import com.bencodez.mcperks.commands.tabcompleter.MCPerksTabCompleter;
@@ -165,17 +164,11 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 			@Override
 			public void run() {
-				Thread.getInstance().run(new Runnable() {
-
-					@Override
-					public void run() {
-						Updater updater = new Updater(plugin, 27898, false);
-						if (updater.getResult().equals(Updater.UpdateResult.UPDATE_AVAILABLE)) {
-							plugin.getLogger().info("Found an update available! Your version: "
-									+ plugin.getDescription().getVersion() + " New Version: " + updater.getVersion());
-						}
-					}
-				});
+				Updater updater = new Updater(plugin, 27898, false);
+				if (updater.getResult().equals(Updater.UpdateResult.UPDATE_AVAILABLE)) {
+					plugin.getLogger().info("Found an update available! Your version: "
+							+ plugin.getDescription().getVersion() + " New Version: " + updater.getVersion());
+				}
 			}
 		}, 10l);
 	}

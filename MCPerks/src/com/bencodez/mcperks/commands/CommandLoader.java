@@ -34,6 +34,7 @@ import com.bencodez.mcperks.commands.executers.CommandAliases;
 import com.bencodez.mcperks.commands.executers.CommandPerkAliases;
 import com.bencodez.mcperks.commands.tabcompleter.AliasesTabCompleter;
 import com.bencodez.mcperks.configs.ConfigPerks;
+import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.userapi.MCPerksUser;
 
@@ -753,8 +754,12 @@ public class CommandLoader {
 					}
 				}.addLore("Set perk cooldown")));
 
-		inv.addButton(new EditGUIButton(new ItemBuilder(Material.DIAMOND_SWORD),
-				new EditGUIValueList("Effects", p.getEffects()) {
+		ArrayList<String> effects = new ArrayList<String>();
+		for (Effect e : p.getEffects()) {
+			effects.add(e.toString());
+		}
+		inv.addButton(
+				new EditGUIButton(new ItemBuilder(Material.DIAMOND_SWORD), new EditGUIValueList("Effects", effects) {
 
 					@Override
 					public void setValue(Player player, ArrayList<String> value) {
