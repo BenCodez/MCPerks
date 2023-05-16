@@ -347,7 +347,9 @@ public class EffectListeners implements Listener {
 		if (event.getEntity() instanceof Player) {
 			Player player = (Player) event.getEntity();
 			if (plugin.getPerkHandler().effectActive(Effect.God, player.getUniqueId().toString(),
-					player.getWorld().getName())) {
+					player.getWorld().getName())
+					|| plugin.getPerkHandler().effectActive(Effect.KeepInv, player.getUniqueId().toString(),
+							player.getWorld().getName())) {
 				event.getDrops().clear();
 				event.setKeepInventory(true);
 				return;
