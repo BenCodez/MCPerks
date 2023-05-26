@@ -15,6 +15,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDropItemEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -133,6 +134,17 @@ public class EffectListeners implements Listener {
 				player.getWorld().getName())) {
 			event.setCancelled(true);
 			return;
+		}
+	}
+
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	public void onBlockBreak(BlockDropItemEvent event) {
+		Player player = event.getPlayer();
+		if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, player.getUniqueId().toString(),
+				player.getWorld().getName())) {
+			event.setCancelled(true);
+			plugin.getMcperksUserManager().getMCPerksUser(player)
+					.giveItems(ArrayUtils.getInstance().convertItems(event.getItems()));
 		}
 	}
 

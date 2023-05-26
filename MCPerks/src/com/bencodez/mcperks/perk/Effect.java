@@ -91,7 +91,9 @@ public enum Effect {
 
 	NoHunger,
 
-	KeepInv;
+	KeepInv,
+
+	AutoPickupItems;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {
