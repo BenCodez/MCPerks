@@ -3,12 +3,17 @@
  */
 package com.bencodez.mcperks.effects;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.Perk;
@@ -30,10 +35,25 @@ public class TreeHarvestEffect {
 		if (perk.getBlacklistedBlocks().contains(block.getType())) {
 			return;
 		}
-		breakRelativeLogs(player, block, 2);
+		int blocksBroken = breakRelativeLogs(player, block, 2);
+		ItemMeta meta = itemInHand.getItemMeta();
+		Damageable dMeta = (Damageable) meta;
+		int level = itemInHand.getEnchantmentLevel(Enchantment.DURABILITY);
+		int chance = (100 / (level + 1));
+		int addedDamage = 0;
+		for (int i = 0; i < blocksBroken; i++) {
+			if (chance == 100 || ThreadLocalRandom.current().nextInt(100) < chance) {
+				addedDamage++;
+			}
+		}
+		if (addedDamage > 0) {
+			dMeta.setDamage(dMeta.getDamage() + addedDamage);
+			itemInHand.setItemMeta(dMeta);
+		}
 	}
 
-	public void breakRelativeLogs(Player player, Block orgBlock, int range) {
+	public int breakRelativeLogs(Player player, Block orgBlock, int range) {
+		int numberOfBlocksBroken = 0;
 		int x = orgBlock.getX();
 		int y = orgBlock.getY();
 		int z = orgBlock.getZ();
@@ -44,12 +64,14 @@ public class TreeHarvestEffect {
 					if (Tag.LOGS.isTagged(block.getType())) {
 						if (canBreakBlock(player, orgBlock)) {
 							block.breakNaturally(player.getInventory().getItemInMainHand());
-							breakRelativeLogs(player, block, range);
+							numberOfBlocksBroken += breakRelativeLogs(player, block, range);
+							numberOfBlocksBroken++;
 						}
 					}
 				}
 			}
 		}
+		return numberOfBlocksBroken;
 	}
 
 	public boolean canBreakBlock(Player p, Block b) {
