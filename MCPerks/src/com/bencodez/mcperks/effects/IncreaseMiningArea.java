@@ -101,18 +101,20 @@ public class IncreaseMiningArea {
 		}
 
 		ItemMeta meta = itemInHand.getItemMeta();
-		Damageable dMeta = (Damageable) meta;
-		int level = itemInHand.getEnchantmentLevel(Enchantment.DURABILITY);
-		int chance = (100 / (level + 1));
-		int addedDamage = 0;
-		for (int i = 0; i < numberOfBlocks; i++) {
-			if (chance == 100 || ThreadLocalRandom.current().nextInt(100) < chance) {
-				addedDamage++;
+		if (meta instanceof Damageable) {
+			Damageable dMeta = (Damageable) meta;
+			int level = itemInHand.getEnchantmentLevel(Enchantment.DURABILITY);
+			int chance = (100 / (level + 1));
+			int addedDamage = 0;
+			for (int i = 0; i < numberOfBlocks; i++) {
+				if (chance == 100 || ThreadLocalRandom.current().nextInt(100) < chance) {
+					addedDamage++;
+				}
 			}
-		}
-		if (addedDamage > 0) {
-			dMeta.setDamage(dMeta.getDamage() + addedDamage);
-			itemInHand.setItemMeta(dMeta);
+			if (addedDamage > 0) {
+				dMeta.setDamage(dMeta.getDamage() + addedDamage);
+				itemInHand.setItemMeta(dMeta);
+			}
 		}
 	}
 
