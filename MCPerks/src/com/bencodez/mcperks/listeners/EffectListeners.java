@@ -38,6 +38,7 @@ import com.bencodez.advancedcore.api.misc.PlayerUtils;
 import com.bencodez.advancedcore.api.misc.effects.BossBar;
 import com.bencodez.advancedcore.listeners.AdvancedCoreLoginEvent;
 import com.bencodez.mcperks.MCPerksMain;
+import com.bencodez.mcperks.effects.AutoPlant;
 import com.bencodez.mcperks.effects.BoneMealAura;
 import com.bencodez.mcperks.effects.DoubleExperienceEffect;
 import com.bencodez.mcperks.effects.FarmerEffect;
@@ -168,6 +169,7 @@ public class EffectListeners implements Listener {
 			if (Tag.LOGS.isTagged(event.getBlock().getType())) {
 				if (plugin.getPerkHandler().effectActive(Effect.TreeHarvest, player.getUniqueId().toString(),
 						player.getWorld().getName())) {
+					boolean found = false;
 					for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 						Effect e = null;
 						for (Effect effect : active.getEffects()) {
@@ -176,13 +178,34 @@ public class EffectListeners implements Listener {
 							}
 						}
 
-						if (e != null) {
+						if (e != null && !found) {
 							new TreeHarvestEffect(player, event.getBlock(), active);
-
+							found = true;
 						}
 					}
 
 				}
+			}
+
+			if (plugin.getPerkHandler().effectActive(Effect.AutoPlant, player.getUniqueId().toString(),
+					player.getWorld().getName())) {
+				boolean found = false;
+				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
+					Effect e = null;
+					for (Effect effect : active.getEffects()) {
+						if (effect.isEffect(Effect.AutoPlant)) {
+							e = effect;
+						}
+					}
+
+					if (e != null && !found) {
+						new AutoPlant(plugin, player, event.getBlock(), active, event);
+						found = true;
+
+					}
+
+				}
+
 			}
 
 			if (plugin.getPerkHandler().effectActive(Effect.Fortune, player.getUniqueId().toString(),
@@ -226,6 +249,7 @@ public class EffectListeners implements Listener {
 
 			if (plugin.getPerkHandler().effectActive(Effect.IncreaseMiningArea, player.getUniqueId().toString(),
 					player.getWorld().getName())) {
+				boolean found = false;
 				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 					Effect e = null;
 					for (Effect effect : active.getEffects()) {
@@ -234,10 +258,11 @@ public class EffectListeners implements Listener {
 						}
 					}
 
-					if (e != null) {
+					if (e != null && !found) {
 						blockBroken = event.getBlock();
 						BlockFace f = PlayerUtils.getInstance().yawToFace(player.getLocation().getYaw(), false);
 						new IncreaseMiningArea(event, active, player, e.getModifier(), f);
+						found = true;
 
 					}
 				}
