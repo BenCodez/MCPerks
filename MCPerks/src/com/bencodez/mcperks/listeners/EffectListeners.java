@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
+import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.EntityType;
@@ -47,6 +48,7 @@ import com.bencodez.mcperks.effects.HeadDropperEffect;
 import com.bencodez.mcperks.effects.IncreaseMiningArea;
 import com.bencodez.mcperks.effects.MobDropEffect;
 import com.bencodez.mcperks.effects.ProtectionEffect;
+import com.bencodez.mcperks.effects.TreeHarvestEffect;
 import com.bencodez.mcperks.effects.UnderWaterFloristEffect;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
@@ -138,7 +140,7 @@ public class EffectListeners implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-	public void onBlockBreak(BlockDropItemEvent event) {
+	public void onBlockDropItem(BlockDropItemEvent event) {
 		Player player = event.getPlayer();
 		if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, player.getUniqueId().toString(),
 				player.getWorld().getName())) {
@@ -162,6 +164,26 @@ public class EffectListeners implements Listener {
 
 			Block blockBroken;
 			Collection<ItemStack> var5;
+
+			if (Tag.LOGS.isTagged(event.getBlock().getType())) {
+				if (plugin.getPerkHandler().effectActive(Effect.TreeHarvest, player.getUniqueId().toString(),
+						player.getWorld().getName())) {
+					for (Perk active : plugin.getPerkHandler().getActivePerks()) {
+						Effect e = null;
+						for (Effect effect : active.getEffects()) {
+							if (effect.isEffect(Effect.TreeHarvest)) {
+								e = effect;
+							}
+						}
+
+						if (e != null) {
+							new TreeHarvestEffect(player, event.getBlock(), active);
+
+						}
+					}
+
+				}
+			}
 
 			if (plugin.getPerkHandler().effectActive(Effect.Fortune, player.getUniqueId().toString(),
 					player.getWorld().getName())) {

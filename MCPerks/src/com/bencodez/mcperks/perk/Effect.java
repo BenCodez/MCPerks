@@ -93,7 +93,9 @@ public enum Effect {
 
 	KeepInv,
 
-	AutoPickupItems;
+	AutoPickupItems,
+
+	TreeHarvest;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {
