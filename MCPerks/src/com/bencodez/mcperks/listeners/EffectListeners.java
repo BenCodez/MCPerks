@@ -179,7 +179,7 @@ public class EffectListeners implements Listener {
 						}
 
 						if (e != null && !found) {
-							new TreeHarvestEffect(player, event.getBlock(), active);
+							new TreeHarvestEffect(plugin, player, event.getBlock(), active);
 							found = true;
 						}
 					}

@@ -6,6 +6,7 @@ package com.bencodez.mcperks.effects;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
@@ -15,12 +16,14 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.mcperks.MCPerksMain;
+import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
 
 public class TreeHarvestEffect {
 
-	public TreeHarvestEffect(Player player, Block block, Perk perk) {
+	public TreeHarvestEffect(MCPerksMain plugin, Player player, Block block, Perk perk) {
 		ItemStack itemInHand = player.getInventory().getItemInMainHand();
 		if (!perk.getWhitelistedTools().isEmpty()) {
 			if (!perk.getWhitelistedTools().contains(itemInHand.getType())) {
@@ -35,7 +38,7 @@ public class TreeHarvestEffect {
 		if (perk.getBlacklistedBlocks().contains(block.getType())) {
 			return;
 		}
-		int blocksBroken = breakRelativeLogs(player, block, 2);
+		int blocksBroken = breakRelativeLogs(plugin, player, block, 2);
 		ItemMeta meta = itemInHand.getItemMeta();
 		if (meta instanceof Damageable) {
 			Damageable dMeta = (Damageable) meta;
@@ -54,7 +57,7 @@ public class TreeHarvestEffect {
 		}
 	}
 
-	public int breakRelativeLogs(Player player, Block orgBlock, int range) {
+	public int breakRelativeLogs(MCPerksMain plugin, Player player, Block orgBlock, int range) {
 		int numberOfBlocksBroken = 0;
 		int x = orgBlock.getX();
 		int y = orgBlock.getY();
@@ -65,8 +68,16 @@ public class TreeHarvestEffect {
 					Block block = orgBlock.getWorld().getBlockAt(i, k, j);
 					if (Tag.LOGS.isTagged(block.getType())) {
 						if (canBreakBlock(player, orgBlock)) {
-							block.breakNaturally(player.getInventory().getItemInMainHand());
-							numberOfBlocksBroken += breakRelativeLogs(player, block, range);
+							if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems,
+									player.getUniqueId().toString(), player.getWorld().getName())) {
+								plugin.getMcperksUserManager().getMCPerksUser(player).giveItems(ArrayUtils.getInstance()
+										.convertItems(block.getDrops(player.getInventory().getItemInMainHand())));
+								block.setType(Material.AIR);
+							} else {
+								block.breakNaturally(player.getInventory().getItemInMainHand());
+							}
+
+							numberOfBlocksBroken += breakRelativeLogs(plugin, player, block, range);
 							numberOfBlocksBroken++;
 						}
 					}
