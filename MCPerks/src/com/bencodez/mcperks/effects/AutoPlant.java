@@ -153,6 +153,7 @@ public class AutoPlant {
 			if (item != null) {
 				if (item.getType().equals(seed)) {
 					if (item.getAmount() == 1) {
+						item.setAmount(0);
 						item.setType(Material.AIR);
 					} else {
 						item.setAmount(item.getAmount() - 1);

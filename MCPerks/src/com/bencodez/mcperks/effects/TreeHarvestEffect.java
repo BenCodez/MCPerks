@@ -6,9 +6,11 @@ package com.bencodez.mcperks.effects;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -57,6 +59,36 @@ public class TreeHarvestEffect {
 		}
 	}
 
+	public Material getSapling(Material log) {
+		switch (log) {
+		case OAK_LOG:
+			return Material.OAK_SAPLING;
+		case ACACIA_LOG:
+			return Material.ACACIA_SAPLING;
+		case BIRCH_LOG:
+			return Material.BIRCH_SAPLING;
+		case CHERRY_LOG:
+			return Material.CHERRY_SAPLING;
+		case DARK_OAK_LOG:
+			return Material.DARK_OAK_SAPLING;
+		case JUNGLE_LOG:
+			return Material.JUNGLE_SAPLING;
+		case MANGROVE_LOG:
+			return Material.MANGROVE_PROPAGULE;
+		case SPRUCE_LOG:
+			return Material.SPRUCE_SAPLING;
+		default:
+			return null;
+		}
+	}
+
+	public void replant(Block replantBlock, Material sapling) {
+
+		if (sapling != null) {
+			replantBlock.setType(sapling);
+		}
+	}
+
 	public int breakRelativeLogs(MCPerksMain plugin, Player player, Block orgBlock, int range) {
 		int numberOfBlocksBroken = 0;
 		int x = orgBlock.getX();
@@ -67,6 +99,12 @@ public class TreeHarvestEffect {
 				for (int k = (int) y - range; k <= y + range; k++) {
 					Block block = orgBlock.getWorld().getBlockAt(i, k, j);
 					if (Tag.LOGS.isTagged(block.getType())) {
+						boolean isBottom = false;
+						final Material sapling = getSapling(block.getType());
+						if (Tag.DIRT.isTagged(block.getRelative(BlockFace.DOWN).getType())) {
+							isBottom = true;
+						}
+
 						if (canBreakBlock(player, orgBlock)) {
 							if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems,
 									player.getUniqueId().toString(), player.getWorld().getName())) {
@@ -79,12 +117,62 @@ public class TreeHarvestEffect {
 
 							numberOfBlocksBroken += breakRelativeLogs(plugin, player, block, range);
 							numberOfBlocksBroken++;
+							if (isBottom && sapling != null) {
+								if (hasSapling(player, sapling)) {
+									deductSapling(player, sapling);
+									Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+
+										@Override
+										public void run() {
+											replant(block, sapling);
+										}
+									}, 1);
+
+								}
+
+							}
 						}
 					}
 				}
 			}
 		}
 		return numberOfBlocksBroken;
+	}
+
+	public boolean hasSapling(Player player, Material seed) {
+		if (player.getGameMode().equals(GameMode.CREATIVE)) {
+			return true;
+		}
+
+		for (ItemStack item : player.getInventory().getContents()) {
+			if (item != null) {
+				if (item.getType().equals(seed)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public void deductSapling(Player player, Material seed) {
+		if (player.getGameMode().equals(GameMode.CREATIVE)) {
+			return;
+		}
+
+		for (ItemStack item : player.getInventory().getContents()) {
+			if (item != null) {
+				if (item.getType().equals(seed)) {
+					if (item.getAmount() == 1) {
+						item.setAmount(0);
+						item.setType(Material.AIR);
+					} else {
+						item.setAmount(item.getAmount() - 1);
+					}
+					player.updateInventory();
+					return;
+				}
+			}
+		}
 	}
 
 	public boolean canBreakBlock(Player p, Block b) {
