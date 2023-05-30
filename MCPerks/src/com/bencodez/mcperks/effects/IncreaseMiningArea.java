@@ -16,7 +16,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.mcperks.MCPerksMain;
+import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
 
 // TODO: Auto-generated Javadoc
@@ -25,7 +27,8 @@ import com.bencodez.mcperks.perk.Perk;
  */
 public class IncreaseMiningArea {
 
-	public IncreaseMiningArea(BlockBreakEvent event, Perk perk, Player p, double range, BlockFace face) {
+	public IncreaseMiningArea(MCPerksMain plugin, BlockBreakEvent event, Perk perk, Player p, double range,
+			BlockFace face) {
 		ItemStack itemInHand = p.getInventory().getItemInMainHand();
 		if (!perk.getWhitelistedTools().isEmpty()) {
 			if (!perk.getWhitelistedTools().contains(itemInHand.getType())) {
@@ -74,7 +77,14 @@ public class IncreaseMiningArea {
 						canBreak = false;
 					}
 					if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
-						b.breakNaturally(itemInHand);
+						if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, p.getUniqueId().toString(),
+								p.getWorld().getName())) {
+							plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(ArrayUtils.getInstance()
+									.convertItems(b.getDrops(p.getInventory().getItemInMainHand())));
+							b.setType(Material.AIR);
+						} else {
+							b.breakNaturally(itemInHand);
+						}
 						numberOfBlocks++;
 					}
 				}
@@ -93,7 +103,14 @@ public class IncreaseMiningArea {
 						canBreak = false;
 					}
 					if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
-						b.breakNaturally(itemInHand);
+						if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, p.getUniqueId().toString(),
+								p.getWorld().getName())) {
+							plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(ArrayUtils.getInstance()
+									.convertItems(b.getDrops(p.getInventory().getItemInMainHand())));
+							b.setType(Material.AIR);
+						} else {
+							b.breakNaturally(itemInHand);
+						}
 						numberOfBlocks++;
 					}
 				}

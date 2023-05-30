@@ -261,7 +261,7 @@ public class EffectListeners implements Listener {
 					if (e != null && !found) {
 						blockBroken = event.getBlock();
 						BlockFace f = PlayerUtils.getInstance().yawToFace(player.getLocation().getYaw(), false);
-						new IncreaseMiningArea(event, active, player, e.getModifier(), f);
+						new IncreaseMiningArea(plugin, event, active, player, e.getModifier(), f);
 						found = true;
 
 					}
@@ -410,6 +410,7 @@ public class EffectListeners implements Listener {
 					|| plugin.getPerkHandler().effectActive(Effect.KeepInv, player.getUniqueId().toString(),
 							player.getWorld().getName())) {
 				event.getDrops().clear();
+				event.setKeepLevel(true);
 				event.setKeepInventory(true);
 				return;
 			}
