@@ -55,6 +55,9 @@ public class TreeHarvestEffect {
 			if (addedDamage > 0) {
 				dMeta.setDamage(dMeta.getDamage() + addedDamage);
 				itemInHand.setItemMeta(dMeta);
+				if (dMeta.getDamage() > (int)(itemInHand.getType().getMaxDurability())) {
+					player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+				}
 			}
 		}
 	}
