@@ -29,6 +29,7 @@ import com.bencodez.advancedcore.api.item.ItemBuilder;
 import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
+import com.bencodez.advancedcore.scheduler.BukkitScheduler;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.commands.executers.CommandAliases;
 import com.bencodez.mcperks.commands.executers.CommandPerkAliases;
@@ -167,6 +168,42 @@ public class CommandLoader {
 						"&c" + plugin.getName() + " v" + plugin.getDescription().getVersion() + " reloaded!"));
 			}
 		});
+
+		plugin.getCommands()
+				.add(new CommandHandler(new String[] { "Version" }, "MCPerks.Version", "List version info") {
+
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						if (sender instanceof Player) {
+							Player player = (Player) sender;
+							BukkitScheduler.runTask(plugin, new Runnable() {
+
+								@Override
+								public void run() {
+									player.performCommand("bukkit:version " + plugin.getName());
+								}
+							});
+
+						} else {
+							BukkitScheduler.runTask(plugin, new Runnable() {
+
+								@Override
+								public void run() {
+									Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(),
+											"bukkit:version " + plugin.getName());
+								}
+							});
+
+						}
+
+						sendMessage(sender,
+								"Using AdvancedCore " + plugin.getVersion() + "' built on '" + plugin.getBuildTime());
+						if (!plugin.getAdvancedCoreBuildNumber().equals("NOTSET")) {
+							sendMessage(sender,
+									"AdvancedCore Jenkins build number: " + plugin.getAdvancedCoreBuildNumber());
+						}
+					}
+				});
 
 		plugin.getCommands().add(new CommandHandler(new String[] { "Edit" }, "MCPerks.Edit", "Edit perks", false) {
 
