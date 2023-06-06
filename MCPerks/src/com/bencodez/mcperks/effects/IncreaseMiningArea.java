@@ -44,29 +44,42 @@ public class IncreaseMiningArea {
 			return;
 		}
 		boolean xdirection = false;
-		switch (face) {
-		case EAST:
-			xdirection = false;
-			break;
-		case NORTH:
-			xdirection = true;
-			break;
-		case SOUTH:
-			xdirection = true;
-			break;
-		case WEST:
-			xdirection = false;
-			break;
-		default:
-			break;
+		boolean vertical = false;
+		float pitch = p.getLocation().getPitch();
+		if (pitch>60 || pitch <-60) {
+			vertical = true;
+		}
+		if (!vertical) {
+			switch (face) {
+			case EAST:
+				xdirection = false;
+				break;
+			case NORTH:
+				xdirection = true;
+				break;
+			case SOUTH:
+				xdirection = true;
+				break;
+			case WEST:
+				xdirection = false;
+				break;
+			case UP:
+				vertical = true;
+				break;
+			case DOWN:
+				vertical = true;
+				break;
+			default:
+				break;
+			}
 		}
 
 		int numberOfBlocks = 0;
 
-		if (xdirection) {
+		if (vertical) {
 			for (int x = (int) (event.getBlock().getX() - range); x <= event.getBlock().getX() + range; x++) {
-				for (int y = (int) (event.getBlock().getY() - range); y <= event.getBlock().getY() + range; y++) {
-					Block b = event.getBlock().getWorld().getBlockAt(x, y, event.getBlock().getZ());
+				for (int z = (int) (event.getBlock().getZ() - range); z <= event.getBlock().getZ() + range; z++) {
+					Block b = event.getBlock().getWorld().getBlockAt(x, event.getBlock().getY(), z);
 					boolean canBreak = true;
 					if (!perk.getWhitelistedBlocks().isEmpty()) {
 						if (!perk.getWhitelistedBlocks().contains(b.getType())) {
@@ -90,28 +103,56 @@ public class IncreaseMiningArea {
 				}
 			}
 		} else {
-			for (int z = (int) (event.getBlock().getZ() - range); z <= event.getBlock().getZ() + range; z++) {
-				for (int y = (int) (event.getBlock().getY() - range); y <= event.getBlock().getY() + range; y++) {
-					Block b = event.getBlock().getWorld().getBlockAt(event.getBlock().getX(), y, z);
-					boolean canBreak = true;
-					if (!perk.getWhitelistedBlocks().isEmpty()) {
-						if (!perk.getWhitelistedBlocks().contains(b.getType())) {
+			if (xdirection) {
+				for (int x = (int) (event.getBlock().getX() - range); x <= event.getBlock().getX() + range; x++) {
+					for (int y = (int) (event.getBlock().getY() - range); y <= event.getBlock().getY() + range; y++) {
+						Block b = event.getBlock().getWorld().getBlockAt(x, y, event.getBlock().getZ());
+						boolean canBreak = true;
+						if (!perk.getWhitelistedBlocks().isEmpty()) {
+							if (!perk.getWhitelistedBlocks().contains(b.getType())) {
+								canBreak = false;
+							}
+						}
+						if (perk.getBlacklistedBlocks().contains(b.getType())) {
 							canBreak = false;
 						}
-					}
-					if (perk.getBlacklistedBlocks().contains(b.getType())) {
-						canBreak = false;
-					}
-					if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
-						if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, p.getUniqueId().toString(),
-								p.getWorld().getName())) {
-							plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(ArrayUtils.getInstance()
-									.convertItems(b.getDrops(p.getInventory().getItemInMainHand())));
-							b.setType(Material.AIR);
-						} else {
-							b.breakNaturally(itemInHand);
+						if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
+							if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, p.getUniqueId().toString(),
+									p.getWorld().getName())) {
+								plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(ArrayUtils.getInstance()
+										.convertItems(b.getDrops(p.getInventory().getItemInMainHand())));
+								b.setType(Material.AIR);
+							} else {
+								b.breakNaturally(itemInHand);
+							}
+							numberOfBlocks++;
 						}
-						numberOfBlocks++;
+					}
+				}
+			} else {
+				for (int z = (int) (event.getBlock().getZ() - range); z <= event.getBlock().getZ() + range; z++) {
+					for (int y = (int) (event.getBlock().getY() - range); y <= event.getBlock().getY() + range; y++) {
+						Block b = event.getBlock().getWorld().getBlockAt(event.getBlock().getX(), y, z);
+						boolean canBreak = true;
+						if (!perk.getWhitelistedBlocks().isEmpty()) {
+							if (!perk.getWhitelistedBlocks().contains(b.getType())) {
+								canBreak = false;
+							}
+						}
+						if (perk.getBlacklistedBlocks().contains(b.getType())) {
+							canBreak = false;
+						}
+						if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
+							if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, p.getUniqueId().toString(),
+									p.getWorld().getName())) {
+								plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(ArrayUtils.getInstance()
+										.convertItems(b.getDrops(p.getInventory().getItemInMainHand())));
+								b.setType(Material.AIR);
+							} else {
+								b.breakNaturally(itemInHand);
+							}
+							numberOfBlocks++;
+						}
 					}
 				}
 			}
@@ -131,7 +172,7 @@ public class IncreaseMiningArea {
 			if (addedDamage > 0) {
 				dMeta.setDamage(dMeta.getDamage() + addedDamage);
 				itemInHand.setItemMeta(dMeta);
-				if (dMeta.getDamage() > (int)(itemInHand.getType().getMaxDurability())) {
+				if (dMeta.getDamage() > (int) (itemInHand.getType().getMaxDurability())) {
 					p.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
 				}
 			}
