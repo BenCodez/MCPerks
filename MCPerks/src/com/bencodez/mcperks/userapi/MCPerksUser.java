@@ -62,7 +62,7 @@ public class MCPerksUser extends com.bencodez.advancedcore.api.user.AdvancedCore
 
 	public long getPerkExperation(Perk perk) {
 		try {
-			return Long.parseLong(getData().getString("Experation." + perk.getPerk(), isCacheData(), isWaitForCache()));
+			return Long.parseLong(getData().getString("Experation_" + perk.getPerk(), isCacheData(), isWaitForCache()));
 		} catch (NumberFormatException e) {
 			return 0;
 		}
@@ -85,7 +85,7 @@ public class MCPerksUser extends com.bencodez.advancedcore.api.user.AdvancedCore
 	}
 
 	public void setPerkExperation(Perk perk, long time) {
-		getData().setString("Experation." + perk.getPerk(), "" + time);
+		getData().setString("Experation_" + perk.getPerk(), "" + time);
 	}
 
 	public void setPerkTimesUsed(Perk perk, int value) {
@@ -134,11 +134,11 @@ public class MCPerksUser extends com.bencodez.advancedcore.api.user.AdvancedCore
 	}
 
 	public int getActivations(String perk) {
-		return getData().getInt("PerkActivations." + perk, true);
+		return getData().getInt("PerkActivations_" + perk, true);
 	}
 
 	public void setActivations(String perk, int value) {
-		getData().setInt("PerkActivations." + perk, value);
+		getData().setInt("PerkActivations_" + perk, value);
 	}
 
 	public void addActivation(String perk, int add) {
