@@ -518,6 +518,38 @@ public class CommandLoader {
 			}
 		});
 
+		plugin.getCommands().add(new CommandHandler(new String[] { "RemoveModifiersAllOnline" },
+				"MCPerks.RemoveModifiersAllOnline", "Forcefly remove modiifers of all online players") {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+
+				for (Player p : Bukkit.getOnlinePlayers()) {
+
+					if (p != null) {
+						for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers()) {
+							p.getAttribute(Attribute.GENERIC_MAX_HEALTH).removeModifier(m);
+						}
+
+						for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getModifiers()) {
+							p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).removeModifier(m);
+						}
+
+						for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_LUCK).getModifiers()) {
+							p.getAttribute(Attribute.GENERIC_LUCK).removeModifier(m);
+						}
+
+						for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getModifiers()) {
+							p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).removeModifier(m);
+						}
+
+						sendMessage(sender, "&cAttributes cleared");
+					}
+				}
+
+			}
+		});
+
 		plugin.getCommands().add(new CommandHandler(new String[] { "SetActivations", "(player)", "(number)" },
 				"MCPerks.SetActivations", "Add amount of activations") {
 
