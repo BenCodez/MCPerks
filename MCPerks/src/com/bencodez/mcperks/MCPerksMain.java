@@ -122,6 +122,9 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	 */
 	@Override
 	public void onUnLoad() {
+		for (Perk perk : getPerkHandler().getActivePerks()) {
+			perk.deactivatePerk(perk.getActivater());
+		}
 		HandlerList.unregisterAll(plugin);
 		plugin = null;
 	}
