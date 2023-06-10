@@ -132,6 +132,9 @@ public class Perk {
 
 	@Getter
 	private boolean onlyGiveOnce;
+	
+	@Getter
+	private boolean clearModifiers;
 
 	public Perk(Perk perk) {
 		this.perk = perk.perk;
@@ -168,6 +171,7 @@ public class Perk {
 		onlyGiveOnce = perk.onlyGiveOnce;
 		disableCommands = perk.disableCommands;
 		reActivateEffectsTimer = perk.reActivateEffectsTimer;
+		clearModifiers = perk.clearModifiers;
 	}
 
 	/**
@@ -241,6 +245,7 @@ public class Perk {
 		disableCommands = ConfigPerks.getInstance().getDisableCommands(perk);
 
 		reActivateEffectsTimer = ConfigPerks.getInstance().getPerkReActivateEffectsTimer(perk);
+		clearModifiers = ConfigPerks.getInstance().getPerkClearModifiers(perk);
 	}
 
 	/**

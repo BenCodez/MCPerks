@@ -51,6 +51,9 @@ DisableCommands:
 # List of disabled worlds per perk level
 DisabledWorlds: []
 
+# If true, plugin will clear previous modifiers for effects
+ClearModifiers: false
+
 # Number of seconds to reactive effects again (if perk is active)
 # Useful for potions effect
 #ReActivateEffectsTimer: 60

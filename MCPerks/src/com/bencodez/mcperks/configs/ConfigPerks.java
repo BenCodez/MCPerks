@@ -183,6 +183,10 @@ public class ConfigPerks {
 	public boolean getPerkEnabled(String perk) {
 		return getData(perk).getBoolean("Enabled");
 	}
+	
+	public boolean getPerkClearModifiers(String perk) {
+		return getData(perk).getBoolean("ClearModifiers");
+	}
 
 	/**
 	 * Gets the vote site file.

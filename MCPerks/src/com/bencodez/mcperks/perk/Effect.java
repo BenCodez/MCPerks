@@ -319,6 +319,14 @@ public enum Effect {
 			}
 			break;
 		case IncreaseMaxHealth:
+			if (perk.isClearModifiers()) {
+				for (Player p : players) {
+					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers()) {
+						p.getAttribute(Attribute.GENERIC_MAX_HEALTH).removeModifier(m);
+					}
+				}
+			}
+
 			for (Player p : players) {
 				AttributeModifier m = new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER);
 				MCPerksMain.plugin.getEffectHandler().add(m.getUniqueId());
@@ -326,6 +334,13 @@ public enum Effect {
 			}
 			break;
 		case IncreaseStrength:
+			if (perk.isClearModifiers()) {
+				for (Player p : players) {
+					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getModifiers()) {
+						p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).removeModifier(m);
+					}
+				}
+			}
 			for (Player p : players) {
 				AttributeModifier m = new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER);
 				MCPerksMain.plugin.getEffectHandler().add(m.getUniqueId());
@@ -333,6 +348,13 @@ public enum Effect {
 			}
 			break;
 		case IncreaseLuck:
+			if (perk.isClearModifiers()) {
+				for (Player p : players) {
+					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_LUCK).getModifiers()) {
+						p.getAttribute(Attribute.GENERIC_LUCK).removeModifier(m);
+					}
+				}
+			}
 			for (Player p : players) {
 				AttributeModifier m = new AttributeModifier("MCPERKS", getModifier(), Operation.ADD_NUMBER);
 				MCPerksMain.plugin.getEffectHandler().add(m.getUniqueId());
@@ -340,6 +362,13 @@ public enum Effect {
 			}
 			break;
 		case MoveSpeed:
+			if (perk.isClearModifiers()) {
+				for (Player p : players) {
+					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getModifiers()) {
+						p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).removeModifier(m);
+					}
+				}
+			}
 			for (Player p : players) {
 				AttributeModifier m = new AttributeModifier("MCPERKS", getModifier(), Operation.MULTIPLY_SCALAR_1);
 				MCPerksMain.plugin.getEffectHandler().add(m.getUniqueId());
