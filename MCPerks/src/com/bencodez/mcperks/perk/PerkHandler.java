@@ -45,6 +45,8 @@ import com.massivecraft.factions.entity.MPlayer;
 import com.palmergames.bukkit.towny.Towny;
 import com.palmergames.bukkit.towny.object.Resident;
 
+import lombok.Getter;
+
 // TODO: Auto-generated Javadoc
 /**
  * The Class ModuleHandler.
@@ -63,6 +65,7 @@ public class PerkHandler {
 
 	public HashMap<MCPerksUser, Perk> que = new HashMap<MCPerksUser, Perk>();
 
+	@Getter
 	private List<Perk> activePerks = Collections.synchronizedList(new ArrayList<Perk>());
 
 	private Logger activationLog;
@@ -418,13 +421,6 @@ public class PerkHandler {
 			}
 		}
 		return defaultValue;
-	}
-
-	/**
-	 * @return the activePerks
-	 */
-	public List<Perk> getActivePerks() {
-		return activePerks;
 	}
 
 	/**
