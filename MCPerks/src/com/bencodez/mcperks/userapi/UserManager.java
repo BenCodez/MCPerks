@@ -47,9 +47,9 @@ public class UserManager {
 		manager.addKey(new UserDataKeyString("IgnoreEffects").setColumnType("VARCHAR(5)"));
 		manager.addKey(new UserDataKeyInt("Activations"));
 		for (String perk : ConfigPerks.getInstance().getPerksNames()) {
-			manager.addKey(new UserDataKeyInt("PerkActivations." + perk));
+			manager.addKey(new UserDataKeyInt("PerkActivations_" + perk));
 			manager.addKey(new UserDataKeyInt(perk + "_TimesUsed"));
-			manager.addKey(new UserDataKeyString("Experation." + perk));
+			manager.addKey(new UserDataKeyString("Experation_" + perk));
 			manager.addKey(new UserDataKeyString(perk + "_CoolDown"));
 		}
 
