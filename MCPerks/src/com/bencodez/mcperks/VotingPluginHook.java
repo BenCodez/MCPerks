@@ -7,6 +7,7 @@ import org.bukkit.OfflinePlayer;
 import com.bencodez.advancedcore.api.javascript.JavascriptPlaceholderRequest;
 import com.bencodez.mcperks.rewardedit.VotingPluginRewardEditActivations;
 import com.bencodez.votingplugin.VotingPluginHooks;
+import com.bencodez.votingplugin.VotingPluginMain;
 import com.bencodez.votingplugin.advancedcore.api.inventory.BInventory.ClickEvent;
 import com.bencodez.votingplugin.advancedcore.api.inventory.editgui.EditGUIButton;
 import com.bencodez.votingplugin.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueInventory;
@@ -27,7 +28,7 @@ public class VotingPluginHook {
 
 			@Override
 			public Object getObject(OfflinePlayer player) {
-				return com.bencodez.votingplugin.user.UserManager.getInstance().getVotingPluginUser(player);
+				return VotingPluginMain.plugin.getVotingPluginUserManager().getVotingPluginUser(player);
 			}
 		});
 
