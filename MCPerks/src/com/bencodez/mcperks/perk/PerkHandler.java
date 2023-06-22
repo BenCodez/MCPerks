@@ -24,6 +24,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -66,7 +67,7 @@ public class PerkHandler {
 	public HashMap<MCPerksUser, Perk> que = new HashMap<MCPerksUser, Perk>();
 
 	@Getter
-	private List<Perk> activePerks = Collections.synchronizedList(new ArrayList<Perk>());
+	private CopyOnWriteArrayList<Perk> activePerks = new CopyOnWriteArrayList<Perk>();
 
 	private Logger activationLog;
 
@@ -81,7 +82,6 @@ public class PerkHandler {
 			}
 		}
 		loadEnabledPerks(true);
-
 		if (plugin.getConfigFile().getLogActivation()) {
 			activationLog = new Logger(plugin, new File(plugin.getDataFolder(), "ActivationLog.txt"));
 		}
