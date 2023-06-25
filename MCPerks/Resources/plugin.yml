@@ -1,7 +1,7 @@
 name: ${project.name}
 description: Some EULA friendly perks.
 author: BenCodez
-version: ${project.version}
+version: "${project.version}"
 main: com.bencodez.mcperks.MCPerksMain
 softdepend:
 - VotingPlugin
