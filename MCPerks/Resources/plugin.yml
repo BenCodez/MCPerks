@@ -5,6 +5,7 @@ version: "${project.version}"
 main: com.bencodez.mcperks.MCPerksMain
 softdepend:
 - VotingPlugin
+- Vault
 api-version: 1.13
 libraries:
 - org.openjdk.nashorn:nashorn-core:15.3
