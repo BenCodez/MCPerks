@@ -40,6 +40,7 @@ import com.bencodez.mcperks.perk.EffectHandler;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.perk.PerkHandler;
 import com.bencodez.mcperks.perk.PerkSystemType;
+import com.bencodez.mcperks.placeholder.MCPerksExpansion;
 import com.bencodez.mcperks.rewardedit.MCPerksRewardEditActivations;
 import com.bencodez.mcperks.userapi.UserManager;
 
@@ -248,7 +249,10 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	}
 
 	public void loadPlaceholders() {
-
+		if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+			new MCPerksExpansion(this).register();
+			getLogger().info("Loading PlaceholderAPI expansion");
+		}
 		addPlacehlder(new PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser>("ActivePerks") {
 
 			@Override
@@ -428,6 +432,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		mcperksServerData = new ServerData(this);
 	}
 
+	@SuppressWarnings("deprecation")
 	public void updateHook() {
 		setConfigData(configFile.getData());
 	}
