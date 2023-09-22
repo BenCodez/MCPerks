@@ -29,7 +29,6 @@ import com.bencodez.advancedcore.api.item.ItemBuilder;
 import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
-import com.bencodez.advancedcore.scheduler.BukkitScheduler;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.commands.executers.CommandAliases;
 import com.bencodez.mcperks.commands.executers.CommandPerkAliases;
@@ -147,27 +146,28 @@ public class CommandLoader {
 		plugin.setCommands(new ArrayList<CommandHandler>());
 		commands = new HashMap<String, CommandHandler>();
 
-		plugin.getCommands().add(
-				new CommandHandler(plugin, new String[] { "ToggleBossBar" }, "MCPerks.ToggleBossBar", "Toggle BossBar", false) {
-
-					@Override
-					public void execute(CommandSender sender, String[] args) {
-						MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser((Player) sender);
-						boolean setTo = !user.isUseBossBar();
-						user.setUseBossBar(setTo);
-						user.sendMessage("&cSetting using bossbar to " + setTo);
-					}
-				});
-
-		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "Reload" }, "MCPerks.Reload", "Reloads the plugin") {
+		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "ToggleBossBar" }, "MCPerks.ToggleBossBar",
+				"Toggle BossBar", false) {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
-				plugin.reload();
-				sender.sendMessage(StringParser.getInstance().colorize(
-						"&c" + plugin.getName() + " v" + plugin.getDescription().getVersion() + " reloaded!"));
+				MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser((Player) sender);
+				boolean setTo = !user.isUseBossBar();
+				user.setUseBossBar(setTo);
+				user.sendMessage("&cSetting using bossbar to " + setTo);
 			}
 		});
+
+		plugin.getCommands()
+				.add(new CommandHandler(plugin, new String[] { "Reload" }, "MCPerks.Reload", "Reloads the plugin") {
+
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						plugin.reload();
+						sender.sendMessage(StringParser.getInstance().colorize(
+								"&c" + plugin.getName() + " v" + plugin.getDescription().getVersion() + " reloaded!"));
+					}
+				});
 
 		plugin.getCommands()
 				.add(new CommandHandler(plugin, new String[] { "Version" }, "MCPerks.Version", "List version info") {
@@ -176,7 +176,7 @@ public class CommandLoader {
 					public void execute(CommandSender sender, String[] args) {
 						if (sender instanceof Player) {
 							Player player = (Player) sender;
-							BukkitScheduler.runTask(plugin, new Runnable() {
+							plugin.getBukkitScheduler().runTask(plugin, new Runnable() {
 
 								@Override
 								public void run() {
@@ -185,7 +185,7 @@ public class CommandLoader {
 							});
 
 						} else {
-							BukkitScheduler.runTask(plugin, new Runnable() {
+							plugin.getBukkitScheduler().runTask(plugin, new Runnable() {
 
 								@Override
 								public void run() {
@@ -205,25 +205,27 @@ public class CommandLoader {
 					}
 				});
 
-		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "Edit" }, "MCPerks.Edit", "Edit perks", false) {
+		plugin.getCommands()
+				.add(new CommandHandler(plugin, new String[] { "Edit" }, "MCPerks.Edit", "Edit perks", false) {
 
-			@Override
-			public void execute(CommandSender sender, String[] args) {
-				BInventory inv = new BInventory("MCPerks Perk Edit");
-				for (final String name : ConfigPerks.getInstance().getPerksNames()) {
-					inv.addButton(new BInventoryButton(new ItemBuilder(ConfigPerks.getInstance().getPerkItem(name))
-							.setAmountNone(1).setName("&c" + name)) {
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						BInventory inv = new BInventory("MCPerks Perk Edit");
+						for (final String name : ConfigPerks.getInstance().getPerksNames()) {
+							inv.addButton(
+									new BInventoryButton(new ItemBuilder(ConfigPerks.getInstance().getPerkItem(name))
+											.setAmountNone(1).setName("&c" + name)) {
 
-						@Override
-						public void onClick(ClickEvent event) {
-							openPerkEdit(event.getPlayer(), name);
+										@Override
+										public void onClick(ClickEvent event) {
+											openPerkEdit(event.getPlayer(), name);
+										}
+									});
 						}
-					});
-				}
 
-				inv.openInventory((Player) sender);
-			}
-		});
+						inv.openInventory((Player) sender);
+					}
+				});
 
 		plugin.getCommands()
 				.add(new CommandHandler(plugin, new String[] { "Perms" }, "MCPerks.Perms", "List perms from plugin") {
@@ -270,17 +272,17 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands().add(
-				new CommandHandler(plugin, new String[] { "Random" }, "MCPerks.Random", "Give yourself a random perk", false) {
+		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "Random" }, "MCPerks.Random",
+				"Give yourself a random perk", false) {
 
-					@Override
-					public void execute(CommandSender sender, String[] args) {
-						Player player = (Player) sender;
-						ArrayList<Perk> perks = (ArrayList<Perk>) plugin.getPerkHandler().getLoadedPerks().values();
-						Perk perk = perks.get(ThreadLocalRandom.current().nextInt(perks.size()));
-						perk.runPerk(plugin.getMcperksUserManager().getMCPerksUser(player));
-					}
-				});
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				Player player = (Player) sender;
+				ArrayList<Perk> perks = (ArrayList<Perk>) plugin.getPerkHandler().getLoadedPerks().values();
+				Perk perk = perks.get(ThreadLocalRandom.current().nextInt(perks.size()));
+				perk.runPerk(plugin.getMcperksUserManager().getMCPerksUser(player));
+			}
+		});
 
 		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "Random", "(player)" }, "MCPerks.Random",
 				"Give someone else a random perk") {
@@ -377,16 +379,7 @@ public class CommandLoader {
 					}
 				});
 
-		plugin.getCommands()
-				.add(new CommandHandler(plugin, new String[] {}, "MCPerks.GUI" + "|MCPerks.AllPerks", "Open Perk GUI", false) {
-
-					@Override
-					public void execute(CommandSender sender, String[] args) {
-						Commands.getInstance().openGUI(sender);
-					}
-				});
-
-		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "Perks" }, "MCPerks.GUI" + "|MCPerks.AllPerks",
+		plugin.getCommands().add(new CommandHandler(plugin, new String[] {}, "MCPerks.GUI" + "|MCPerks.AllPerks",
 				"Open Perk GUI", false) {
 
 			@Override
@@ -395,8 +388,17 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands()
-				.add(new CommandHandler(plugin, new String[] { "ClearQueue" }, "MCPerks.ClearQueue", "Clear Perk Queue") {
+		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "Perks" },
+				"MCPerks.GUI" + "|MCPerks.AllPerks", "Open Perk GUI", false) {
+
+			@Override
+			public void execute(CommandSender sender, String[] args) {
+				Commands.getInstance().openGUI(sender);
+			}
+		});
+
+		plugin.getCommands().add(
+				new CommandHandler(plugin, new String[] { "ClearQueue" }, "MCPerks.ClearQueue", "Clear Perk Queue") {
 
 					@Override
 					public void execute(CommandSender sender, String[] args) {
@@ -428,20 +430,21 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "ActivatePerk", "(player)", "(perk)", "(number)" },
-				"MCPerks.ActivatePerkLength", "Forcefully Activate Perk with a set length") {
-
-			@Override
-			public void execute(CommandSender sender, String[] args) {
-				Perk perk = plugin.getPerkHandler().getPerk(args[2]);
-				perk.forcePerk(args[1], Integer.parseInt(args[3]));
-				sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " + args[1] + " for " + args[3]
-						+ " seconds");
-			}
-		});
-
 		plugin.getCommands()
-				.add(new CommandHandler(plugin, new String[] { "ActivePerks" }, "MCPerks.ActivePerks", "See Active Perks") {
+				.add(new CommandHandler(plugin, new String[] { "ActivatePerk", "(player)", "(perk)", "(number)" },
+						"MCPerks.ActivatePerkLength", "Forcefully Activate Perk with a set length") {
+
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						Perk perk = plugin.getPerkHandler().getPerk(args[2]);
+						perk.forcePerk(args[1], Integer.parseInt(args[3]));
+						sender.sendMessage("Forcefly activated perk " + perk.getPerk() + " for " + args[1] + " for "
+								+ args[3] + " seconds");
+					}
+				});
+
+		plugin.getCommands().add(
+				new CommandHandler(plugin, new String[] { "ActivePerks" }, "MCPerks.ActivePerks", "See Active Perks") {
 
 					@Override
 					public void execute(CommandSender sender, String[] args) {
@@ -456,8 +459,8 @@ public class CommandLoader {
 					}
 				});
 
-		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "ActivePerks", "(player)" }, "MCPerks.ActivePerks",
-				"See Active Perks per player") {
+		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "ActivePerks", "(player)" },
+				"MCPerks.ActivePerks", "See Active Perks per player") {
 
 			@Override
 			public void execute(CommandSender sender, String[] args) {
@@ -628,19 +631,20 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "RemoveActivations", "(player)", "(number)" },
-				"MCPerks.RemoveActivations.Perk", "Remove amount of activations") {
+		plugin.getCommands()
+				.add(new CommandHandler(plugin, new String[] { "RemoveActivations", "(player)", "(number)" },
+						"MCPerks.RemoveActivations.Perk", "Remove amount of activations") {
 
-			@Override
-			public void execute(CommandSender sender, String[] args) {
-				MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-				user.addActivation(-Integer.parseInt(args[2]));
-				if (user.getActivations() < 0) {
-					user.setActivations(0);
-				}
-				sendMessage(sender, "&cSet activations to " + user.getActivations());
-			}
-		});
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
+						user.addActivation(-Integer.parseInt(args[2]));
+						if (user.getActivations() < 0) {
+							user.setActivations(0);
+						}
+						sendMessage(sender, "&cSet activations to " + user.getActivations());
+					}
+				});
 
 		plugin.getCommands()
 				.add(new CommandHandler(plugin, new String[] { "SetPerkActivations", "(player)", "(Perk)", "(number)" },
@@ -679,7 +683,8 @@ public class CommandLoader {
 				});
 
 		plugin.getCommands()
-				.add(new CommandHandler(plugin, new String[] { "RemovePerkActivations", "(player)", "(Perk)", "(number)" },
+				.add(new CommandHandler(plugin,
+						new String[] { "RemovePerkActivations", "(player)", "(Perk)", "(number)" },
 						"MCPerks.RemoveActivations.Perk", "Remove amount of activations") {
 
 					@Override
