@@ -29,6 +29,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -347,6 +348,50 @@ public class EffectListeners implements Listener {
 
 	@EventHandler(ignoreCancelled = true)
 	public void onPlayerJoin(AdvancedCoreLoginEvent event) {
+		Player player = event.getPlayer();
+		if (player != null) {
+			if (plugin.getPerkHandler().getActivePerks().size() != 0) {
+				for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
+					boolean giveEffect = false;
+					if (perk.getPerkType().equals(PerkSystemType.ALL)) {
+						perk.addEffectedPlayer(player.getUniqueId().toString());
+						giveEffect = true;
+					} else if (perk.getPerkType().equals(PerkSystemType.PERMISSION)) {
+						if (player.hasPermission(perk.getPerkType().getPermissionRequired())) {
+							perk.addEffectedPlayer(player.getUniqueId().toString());
+							giveEffect = true;
+						}
+					}
+					if (perk.getEffectedPlayers().contains(player.getUniqueId().toString())) {
+						giveEffect = true;
+					}
+
+					if (giveEffect && !perk.isOnlyGiveOnce()) {
+						perk.giveEffect(player);
+						BossBar bar = perk.getBossBar();
+						if (bar != null) {
+							if (plugin.getMcperksUserManager().getMCPerksUser(player).isUseBossBar()) {
+								bar.addPlayer(player, plugin.getConfigFile().getBossBarHideInDelay());
+								plugin.debug("adding player to bossbar");
+							}
+						}
+					}
+				}
+			}
+
+			if (plugin.getEffectHandler().getOfflineEffects().containsKey(player.getUniqueId().toString())) {
+				for (Entry<Effect, Perk> entry : plugin.getEffectHandler().getOfflineEffects()
+						.get(player.getUniqueId().toString()).entrySet()) {
+					entry.getKey().removeEffect(entry.getValue(),
+							ArrayUtils.getInstance().convert(new String[] { player.getUniqueId().toString() }));
+				}
+			}
+		}
+
+	}
+	
+	@EventHandler(ignoreCancelled = true)
+	public void onPlayerRespawn(PlayerRespawnEvent event) {
 		Player player = event.getPlayer();
 		if (player != null) {
 			if (plugin.getPerkHandler().getActivePerks().size() != 0) {

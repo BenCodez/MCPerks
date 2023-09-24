@@ -10,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
@@ -46,7 +47,7 @@ public class IncreaseMiningArea {
 		boolean xdirection = false;
 		boolean vertical = false;
 		float pitch = p.getLocation().getPitch();
-		if (pitch>60 || pitch <-60) {
+		if (pitch > 60 || pitch < -60) {
 			vertical = true;
 		}
 		if (!vertical) {
@@ -158,22 +159,24 @@ public class IncreaseMiningArea {
 			}
 		}
 
-		ItemMeta meta = itemInHand.getItemMeta();
-		if (meta instanceof Damageable) {
-			Damageable dMeta = (Damageable) meta;
-			int level = itemInHand.getEnchantmentLevel(Enchantment.DURABILITY);
-			int chance = (100 / (level + 1));
-			int addedDamage = 0;
-			for (int i = 0; i < numberOfBlocks; i++) {
-				if (chance == 100 || ThreadLocalRandom.current().nextInt(100) < chance) {
-					addedDamage++;
+		if (EnchantmentTarget.TOOL.includes(itemInHand)) {
+			ItemMeta meta = itemInHand.getItemMeta();
+			if (meta instanceof Damageable) {
+				Damageable dMeta = (Damageable) meta;
+				int level = itemInHand.getEnchantmentLevel(Enchantment.DURABILITY);
+				int chance = (100 / (level + 1));
+				int addedDamage = 0;
+				for (int i = 0; i < numberOfBlocks; i++) {
+					if (chance == 100 || ThreadLocalRandom.current().nextInt(100) < chance) {
+						addedDamage++;
+					}
 				}
-			}
-			if (addedDamage > 0) {
-				dMeta.setDamage(dMeta.getDamage() + addedDamage);
-				itemInHand.setItemMeta(dMeta);
-				if (dMeta.getDamage() > (int) (itemInHand.getType().getMaxDurability())) {
-					p.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+				if (addedDamage > 0) {
+					dMeta.setDamage(dMeta.getDamage() + addedDamage);
+					itemInHand.setItemMeta(dMeta);
+					if (dMeta.getDamage() > (int) (itemInHand.getType().getMaxDurability())) {
+						p.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
+					}
 				}
 			}
 		}
