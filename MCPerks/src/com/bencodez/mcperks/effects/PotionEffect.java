@@ -10,6 +10,7 @@ import com.bencodez.mcperks.MCPerksMain;
 
 public class PotionEffect {
 
+	@SuppressWarnings("deprecation")
 	public void giveEffect(String potion, int duration, int amplifier, ArrayList<Player> players) {
 		try {
 			PotionEffectType potionEffect = PotionEffectType.getByName(potion);

@@ -108,6 +108,7 @@ public enum Effect {
 		return null;
 	}
 
+	@SuppressWarnings("deprecation")
 	public void removeEffect(Perk perk, ArrayList<String> players1) {
 		ArrayList<Player> players = new ArrayList<Player>();
 		for (String uuid : players1) {
