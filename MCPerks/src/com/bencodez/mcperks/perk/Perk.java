@@ -132,7 +132,7 @@ public class Perk {
 
 	@Getter
 	private boolean onlyGiveOnce;
-	
+
 	@Getter
 	private boolean clearModifiers;
 
@@ -217,7 +217,7 @@ public class Perk {
 
 		for (String effectLine : ConfigPerks.getInstance().getPerkEffects(perk)) {
 			String[] data = effectLine.split(":");
-			Effect effect = Effect.valueOf(data[0]);
+			Effect effect = Effect.fromString(data[0]);
 			if (data.length > 1) {
 				if (StringParser.getInstance().isDouble(data[1])) {
 					effect.setModifier(Double.valueOf(data[1]));
@@ -561,7 +561,7 @@ public class Perk {
 			coolDownTime = MCPerksMain.plugin.getMcperksServerData().getData().getLong(getPerk() + ".CoolDown");
 		}
 		long cooldown = coolDownTime - Calendar.getInstance().getTime().getTime();
-		
+
 		Duration dur = Duration.of(cooldown, ChronoUnit.MILLIS);
 		int coolDownHours = (int) dur.toHours();
 		int coolDownMin = (int) dur.toMinutes() - coolDownHours * 60;

@@ -1,0 +1,9 @@
+Enabled: true
+TimeLasts: 60
+CoolDown: 86400
+Name: 'Automaticlly smelt items'
+Description: 'Smelt blocks as you break them'
+Effects:
+- 'InstantSmelt'
+Item:
+  Material: 'FURNACE'

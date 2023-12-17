@@ -97,7 +97,9 @@ public enum Effect {
 
 	TreeHarvest,
 
-	AutoPlant;
+	AutoPlant,
+	
+	InstantSmelt;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {

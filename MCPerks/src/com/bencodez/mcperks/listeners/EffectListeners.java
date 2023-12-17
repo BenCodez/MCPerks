@@ -1,6 +1,8 @@
 package com.bencodez.mcperks.listeners;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map.Entry;
 
 import org.bukkit.Bukkit;
@@ -10,6 +12,7 @@ import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -31,7 +34,9 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
+import org.bukkit.inventory.FurnaceRecipe;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
 import org.bukkit.metadata.FixedMetadataValue;
 
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
@@ -150,6 +155,54 @@ public class EffectListeners implements Listener {
 			plugin.getMcperksUserManager().getMCPerksUser(player)
 					.giveItems(ArrayUtils.getInstance().convertItems(event.getItems()));
 		}
+		if (plugin.getPerkHandler().effectActive(Effect.InstantSmelt, player.getUniqueId().toString(),
+				player.getWorld().getName())) {
+			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
+				if (active.getEffects().contains(Effect.InstantSmelt)) {
+					ArrayList<Item> toRemove = new ArrayList<Item>();
+					for (Item item : event.getItems()) {
+						ItemStack smeltedItem = null;
+						Iterator<Recipe> recipeIterator = plugin.getServer().recipeIterator();
+						while (recipeIterator.hasNext()) {
+							Recipe recipe = recipeIterator.next();
+							if (recipe instanceof FurnaceRecipe) {
+								FurnaceRecipe cookingRecipe = (FurnaceRecipe) recipe;
+								if (cookingRecipe.getInputChoice().test(item.getItemStack())) {
+									smeltedItem = cookingRecipe.getResult();
+									int stackAmount = item.getItemStack().getAmount();
+									smeltedItem.setAmount(stackAmount);
+									toRemove.add(item);
+									player.giveExp(getExperienceAmount(cookingRecipe, stackAmount));
+									final ItemStack toDrop = smeltedItem;
+									event.getPlayer().getWorld().dropItemNaturally(event.getBlock().getLocation(),
+											toDrop);
+
+								}
+							}
+						}
+					}
+					for (Item item : toRemove) {
+						event.getItems().remove(item);
+					}
+
+				}
+			}
+		}
+	}
+
+	private int getExperienceAmount(FurnaceRecipe recipe, int stackAmount) {
+		float experience = recipe.getExperience();
+
+		int count = 1;
+		int experienceAmount = 0;
+		while (count <= stackAmount) {
+			double rand = Math.random();
+			if (rand <= (double) experience) {
+				experienceAmount += (int) Math.ceil(experience);
+			}
+			count++;
+		}
+		return experienceAmount;
 	}
 
 	@SuppressWarnings("deprecation")
@@ -389,7 +442,7 @@ public class EffectListeners implements Listener {
 		}
 
 	}
-	
+
 	@EventHandler(ignoreCancelled = true)
 	public void onPlayerRespawn(PlayerRespawnEvent event) {
 		Player player = event.getPlayer();
