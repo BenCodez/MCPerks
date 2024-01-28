@@ -3,11 +3,13 @@
  */
 package com.bencodez.mcperks.effects;
 
+import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
@@ -24,6 +26,7 @@ import com.bencodez.mcperks.perk.Perk;
 
 public class AutoPlant {
 
+	@SuppressWarnings("deprecation")
 	public AutoPlant(MCPerksMain plugin, Player player, Block block, Perk perk, BlockBreakEvent event) {
 		if (!isFarmable(block)) {
 			return;
@@ -32,6 +35,14 @@ public class AutoPlant {
 		if (!perk.getWhitelistedTools().isEmpty()) {
 			if (!perk.getWhitelistedTools().contains(itemInHand.getType())) {
 				return;
+			}
+		}
+		if (perk.getRequiredEnchants().size() > 0) {
+			for (Entry<String, Integer> enchants : perk.getRequiredEnchants().entrySet()) {
+				if (itemInHand.getEnchantmentLevel(
+						Enchantment.getByKey(NamespacedKey.minecraft(enchants.getKey()))) != enchants.getValue()) {
+					return;
+				}
 			}
 		}
 		if (!perk.getWhitelistedBlocks().isEmpty()) {

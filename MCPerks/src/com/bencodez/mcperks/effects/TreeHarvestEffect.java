@@ -3,11 +3,13 @@
  */
 package com.bencodez.mcperks.effects;
 
+import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -25,11 +27,20 @@ import com.bencodez.mcperks.perk.Perk;
 
 public class TreeHarvestEffect {
 
+	@SuppressWarnings("deprecation")
 	public TreeHarvestEffect(MCPerksMain plugin, Player player, Block block, Perk perk) {
 		ItemStack itemInHand = player.getInventory().getItemInMainHand();
 		if (!perk.getWhitelistedTools().isEmpty()) {
 			if (!perk.getWhitelistedTools().contains(itemInHand.getType())) {
 				return;
+			}
+		}
+		if (perk.getRequiredEnchants().size() > 0) {
+			for (Entry<String, Integer> enchants : perk.getRequiredEnchants().entrySet()) {
+				if (itemInHand.getEnchantmentLevel(
+						Enchantment.getByKey(NamespacedKey.minecraft(enchants.getKey()))) != enchants.getValue()) {
+					return;
+				}
 			}
 		}
 		if (!perk.getWhitelistedBlocks().isEmpty()) {
@@ -55,7 +66,7 @@ public class TreeHarvestEffect {
 			if (addedDamage > 0) {
 				dMeta.setDamage(dMeta.getDamage() + addedDamage);
 				itemInHand.setItemMeta(dMeta);
-				if (dMeta.getDamage() > (int)(itemInHand.getType().getMaxDurability())) {
+				if (dMeta.getDamage() > (int) (itemInHand.getType().getMaxDurability())) {
 					player.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
 				}
 			}

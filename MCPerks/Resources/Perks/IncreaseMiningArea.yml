@@ -10,3 +10,6 @@ Item:
 WhitelistedTools: []
 WhitelistedBlocks: []
 BlacklistedBlocks: []
+# Required enchants on tools
+#RequiredEnchants:
+#  unbreaking: 3

@@ -183,7 +183,7 @@ public class ConfigPerks {
 	public boolean getPerkEnabled(String perk) {
 		return getData(perk).getBoolean("Enabled");
 	}
-	
+
 	public boolean getPerkClearModifiers(String perk) {
 		return getData(perk).getBoolean("ClearModifiers");
 	}
@@ -265,6 +265,22 @@ public class ConfigPerks {
 
 	public int getPerkPotionDuraton(String perk, String potion) {
 		return getData(perk).getInt("Potions." + potion + ".Duration");
+	}
+
+	public int getPerkRequiredEnchantsLevel(String perk, String potion) {
+		return getData(perk).getInt("RequiredEnchants." + potion);
+	}
+
+	public Set<String> getPerkRequiredEnchants(String perk) {
+		try {
+			Set<String> set = getData(perk).getConfigurationSection("RequiredEnchants").getKeys(false);
+			if (set != null) {
+				return set;
+			}
+			return new HashSet<String>();
+		} catch (Exception ex) {
+			return new HashSet<String>();
+		}
 	}
 
 	public Set<String> getPerkPotions(String perk) {

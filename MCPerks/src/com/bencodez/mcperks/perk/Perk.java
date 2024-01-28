@@ -81,6 +81,9 @@ public class Perk {
 
 	@Getter
 	private ArrayList<Material> whitelistedTools;
+	
+	@Getter
+	private HashMap<String,Integer> requiredEnchants;
 
 	@Getter
 	private ArrayList<Material> whitelistedBlocks;
@@ -172,6 +175,7 @@ public class Perk {
 		disableCommands = perk.disableCommands;
 		reActivateEffectsTimer = perk.reActivateEffectsTimer;
 		clearModifiers = perk.clearModifiers;
+		requiredEnchants = perk.requiredEnchants;
 	}
 
 	/**
@@ -246,6 +250,10 @@ public class Perk {
 
 		reActivateEffectsTimer = ConfigPerks.getInstance().getPerkReActivateEffectsTimer(perk);
 		clearModifiers = ConfigPerks.getInstance().getPerkClearModifiers(perk);
+		requiredEnchants = new HashMap<String,Integer>();
+		for (String enchant : ConfigPerks.getInstance().getPerkRequiredEnchants(perk)) {
+			requiredEnchants.put(enchant, ConfigPerks.getInstance().getPerkRequiredEnchantsLevel(perk, enchant));
+		}
 	}
 
 	/**

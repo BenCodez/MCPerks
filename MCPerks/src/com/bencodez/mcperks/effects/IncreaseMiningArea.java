@@ -3,10 +3,12 @@
  */
 package com.bencodez.mcperks.effects;
 
+import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.enchantments.Enchantment;
@@ -28,12 +30,21 @@ import com.bencodez.mcperks.perk.Perk;
  */
 public class IncreaseMiningArea {
 
+	@SuppressWarnings("deprecation")
 	public IncreaseMiningArea(MCPerksMain plugin, BlockBreakEvent event, Perk perk, Player p, double range,
 			BlockFace face) {
 		ItemStack itemInHand = p.getInventory().getItemInMainHand();
 		if (!perk.getWhitelistedTools().isEmpty()) {
 			if (!perk.getWhitelistedTools().contains(itemInHand.getType())) {
 				return;
+			}
+		}
+		if (perk.getRequiredEnchants().size() > 0) {
+			for (Entry<String, Integer> enchants : perk.getRequiredEnchants().entrySet()) {
+				if (itemInHand.getEnchantmentLevel(
+						Enchantment.getByKey(NamespacedKey.minecraft(enchants.getKey()))) != enchants.getValue()) {
+					return;
+				}
 			}
 		}
 		if (!perk.getWhitelistedBlocks().isEmpty()) {
