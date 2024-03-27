@@ -98,8 +98,10 @@ public enum Effect {
 	TreeHarvest,
 
 	AutoPlant,
-	
-	InstantSmelt;
+
+	InstantSmelt,
+
+	GlobalCommands;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {
@@ -320,6 +322,11 @@ public enum Effect {
 				placeholders.put("player", p.getName());
 				MiscUtils.getInstance().executeConsoleCommands(p, perk.getCommands(), placeholders);
 			}
+			break;
+		case GlobalCommands:
+			HashMap<String, String> placeholders = new HashMap<String, String>();
+			placeholders.put("player", perk.getActivater().getPlayerName());
+			MiscUtils.getInstance().executeConsoleCommands(perk.getGlobalCommands(), placeholders);
 			break;
 		case IncreaseMaxHealth:
 			if (perk.isClearModifiers()) {

@@ -81,9 +81,9 @@ public class Perk {
 
 	@Getter
 	private ArrayList<Material> whitelistedTools;
-	
+
 	@Getter
-	private HashMap<String,Integer> requiredEnchants;
+	private HashMap<String, Integer> requiredEnchants;
 
 	@Getter
 	private ArrayList<Material> whitelistedBlocks;
@@ -113,6 +113,9 @@ public class Perk {
 	private PerkSystemType perkType;
 
 	private ArrayList<String> commands;
+
+	@Getter
+	private ArrayList<String> globalCommands;
 
 	@Getter
 	private ArrayList<String> disableCommands;
@@ -176,6 +179,7 @@ public class Perk {
 		reActivateEffectsTimer = perk.reActivateEffectsTimer;
 		clearModifiers = perk.clearModifiers;
 		requiredEnchants = perk.requiredEnchants;
+		globalCommands = perk.globalCommands;
 	}
 
 	/**
@@ -250,10 +254,11 @@ public class Perk {
 
 		reActivateEffectsTimer = ConfigPerks.getInstance().getPerkReActivateEffectsTimer(perk);
 		clearModifiers = ConfigPerks.getInstance().getPerkClearModifiers(perk);
-		requiredEnchants = new HashMap<String,Integer>();
+		requiredEnchants = new HashMap<String, Integer>();
 		for (String enchant : ConfigPerks.getInstance().getPerkRequiredEnchants(perk)) {
 			requiredEnchants.put(enchant, ConfigPerks.getInstance().getPerkRequiredEnchantsLevel(perk, enchant));
 		}
+		globalCommands = ConfigPerks.getInstance().getGlobalCommands(perk);
 	}
 
 	/**

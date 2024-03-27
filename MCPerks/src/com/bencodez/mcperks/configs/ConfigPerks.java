@@ -61,6 +61,11 @@ public class ConfigPerks {
 	}
 
 	@SuppressWarnings("unchecked")
+	public ArrayList<String> getGlobalCommands(String perk) {
+		return (ArrayList<String>) getData(perk).getList("GlobalCommands", new ArrayList<String>());
+	}
+
+	@SuppressWarnings("unchecked")
 	public ArrayList<String> getDisableCommands(String perk) {
 		return (ArrayList<String>) getData(perk).getList("DisableCommands", new ArrayList<String>());
 	}
