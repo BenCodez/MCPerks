@@ -4,7 +4,6 @@
 package com.bencodez.mcperks.effects;
 
 import java.util.Map.Entry;
-import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -16,10 +15,9 @@ import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.Damageable;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
+import com.bencodez.advancedcore.api.misc.PlayerUtils;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
@@ -171,25 +169,8 @@ public class IncreaseMiningArea {
 		}
 
 		if (EnchantmentTarget.TOOL.includes(itemInHand)) {
-			ItemMeta meta = itemInHand.getItemMeta();
-			if (meta instanceof Damageable) {
-				Damageable dMeta = (Damageable) meta;
-				int level = itemInHand.getEnchantmentLevel(Enchantment.DURABILITY);
-				int chance = (100 / (level + 1));
-				int addedDamage = 0;
-				for (int i = 0; i < numberOfBlocks; i++) {
-					if (chance == 100 || ThreadLocalRandom.current().nextInt(100) < chance) {
-						addedDamage++;
-					}
-				}
-				if (addedDamage > 0) {
-					dMeta.setDamage(dMeta.getDamage() + addedDamage);
-					itemInHand.setItemMeta(dMeta);
-					if (dMeta.getDamage() > (int) (itemInHand.getType().getMaxDurability())) {
-						p.getInventory().setItemInMainHand(new ItemStack(Material.AIR));
-					}
-				}
-			}
+			PlayerUtils.getInstance().damageItemInHand(p, numberOfBlocks);
+
 		}
 	}
 

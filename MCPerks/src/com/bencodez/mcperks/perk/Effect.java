@@ -265,24 +265,24 @@ public enum Effect {
 					player.removePotionEffect(PotionEffectType.BLINDNESS);
 				}
 
-				if (player.hasPotionEffect(PotionEffectType.CONFUSION)) {
-					player.removePotionEffect(PotionEffectType.CONFUSION);
+				if (player.hasPotionEffect(MiscUtils.getInstance().getPotionType("NAUSEA", "CONFUSION"))) {
+					player.removePotionEffect(MiscUtils.getInstance().getPotionType("NAUSEA", "CONFUSION"));
 				}
 
-				if (player.hasPotionEffect(PotionEffectType.HARM)) {
-					player.removePotionEffect(PotionEffectType.HARM);
+				if (player.hasPotionEffect(MiscUtils.getInstance().getPotionType("INSTANT_DAMAGE", "HARM"))) {
+					player.removePotionEffect(MiscUtils.getInstance().getPotionType("INSTANT_DAMAGE", "HARM"));
 				}
 
 				if (player.hasPotionEffect(PotionEffectType.POISON)) {
 					player.removePotionEffect(PotionEffectType.POISON);
 				}
 
-				if (player.hasPotionEffect(PotionEffectType.SLOW)) {
-					player.removePotionEffect(PotionEffectType.SLOW);
+				if (player.hasPotionEffect(MiscUtils.getInstance().getPotionType("SLOWNESS", "SLOW"))) {
+					player.removePotionEffect(MiscUtils.getInstance().getPotionType("SLOWNESS", "SLOW"));
 				}
 
-				if (player.hasPotionEffect(PotionEffectType.SLOW_DIGGING)) {
-					player.removePotionEffect(PotionEffectType.SLOW_DIGGING);
+				if (player.hasPotionEffect(MiscUtils.getInstance().getPotionType("MINING_FATIGUE", "SLOW_DIGGING"))) {
+					player.removePotionEffect(MiscUtils.getInstance().getPotionType("MINING_FATIGUE", "SLOW_DIGGING"));
 				}
 
 				if (player.hasPotionEffect(PotionEffectType.WEAKNESS)) {
