@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import com.bencodez.advancedcore.api.command.CommandHandler;
 import com.bencodez.advancedcore.api.inventory.BInventory;
 import com.bencodez.advancedcore.api.inventory.BInventory.ClickEvent;
+import com.bencodez.advancedcore.api.inventory.BInventoryButton;
 import com.bencodez.advancedcore.api.inventory.UpdatingBInventoryButton;
 import com.bencodez.advancedcore.api.item.ItemBuilder;
 import com.bencodez.advancedcore.api.messages.StringParser;
@@ -68,7 +69,16 @@ public class Commands {
 			}
 			inv.addPlaceholder("Activations", "" + user.getActivations());
 			inv.addData("MCPerksUser", user);
-			int slot = 0;
+			for (String item : plugin.getConfigFile().getPerkGUIExtraItems()) {
+				inv.addButton(
+						new BInventoryButton(new ItemBuilder(plugin.getConfigFile().getPerkGUIExtraItemsItem(item))) {
+
+							@Override
+							public void onClick(ClickEvent arg0) {
+
+							}
+						});
+			}
 			for (final Integer num : plugin.getPerkHandler().invPerks.keySet()) {
 
 				Perk perk = plugin.getPerkHandler().invPerks.get(num);
@@ -77,7 +87,7 @@ public class Commands {
 						|| !plugin.getConfigFile().getRequirePermToView()) {
 					inv.addPlaceholder("Activations_" + perk.getPerk(), "" + user.getActivations(perk.getPerk()));
 
-					inv.addButton(slot, new UpdatingBInventoryButton(plugin, perk.getItem(user).setAmountNone(1)
+					inv.addButton(new UpdatingBInventoryButton(plugin, perk.getItem(user).setAmountNone(1)
 							.addPlaceholder("PerkActivations", "" + user.getActivations(perk.getPerk())), 1000, 1000) {
 
 						@Override
@@ -106,7 +116,7 @@ public class Commands {
 									"" + user.getActivations(perk.getPerk()));
 						}
 					});
-					slot++;
+
 				}
 
 			}

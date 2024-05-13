@@ -73,6 +73,21 @@ ForceClearModifiers: false
 # Per perk options available
 DisabledWorlds: []
 
+#PerkGUIExtraItems:
+#  Item1: 
+#    Material: STONE
+#    Amount: 1
+#    FillSlots:
+#    - 0
+#    - 1
+#    - 2
+#    - 3
+#    - 4
+#    - 5
+#    - 6
+#    - 7
+#    - 8
+
 # Global perk options
 # Add the following in any perk fine to override these
 

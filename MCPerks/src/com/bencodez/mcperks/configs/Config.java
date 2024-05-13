@@ -136,6 +136,18 @@ public class Config extends YMLFile {
 		return getData().getConfigurationSection("MySQL");
 	}
 
+	public Set<String> getPerkGUIExtraItems() {
+		if (getData().isConfigurationSection("PerkGUIExtraItems")) {
+			return getData().getConfigurationSection("PerkGUIExtraItems").getKeys(false);
+		} else {
+			return new HashSet<String>();
+		}
+	}
+
+	public ConfigurationSection getPerkGUIExtraItemsItem(String item) {
+		return getData().getConfigurationSection("PerkGUIExtraItems." + item);
+	}
+
 	/**
 	 * Gets the perk description.
 	 *
