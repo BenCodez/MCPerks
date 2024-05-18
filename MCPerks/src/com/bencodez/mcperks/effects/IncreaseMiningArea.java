@@ -168,10 +168,7 @@ public class IncreaseMiningArea {
 			}
 		}
 
-		if (EnchantmentTarget.TOOL.includes(itemInHand)) {
-			PlayerUtils.getInstance().damageItemInHand(p, numberOfBlocks);
-
-		}
+		PlayerUtils.getInstance().damageItemInHand(p, numberOfBlocks);
 	}
 
 	public boolean canBreakBlock(Player p, Block b) {
