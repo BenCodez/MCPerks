@@ -23,8 +23,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import com.bencodez.advancedcore.api.item.ItemBuilder;
-import com.bencodez.advancedcore.api.messages.StringParser;
-import com.bencodez.advancedcore.api.misc.ArrayUtils;
+import com.bencodez.advancedcore.api.messages.PlaceholderUtils;
 import com.bencodez.advancedcore.api.misc.MiscUtils;
 import com.bencodez.advancedcore.api.misc.effects.BossBar;
 import com.bencodez.advancedcore.api.rewards.RewardBuilder;
@@ -32,6 +31,7 @@ import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.ConfigPerks;
 import com.bencodez.mcperks.configs.Lang;
 import com.bencodez.mcperks.userapi.MCPerksUser;
+import com.bencodez.simpleapi.array.ArrayUtils;
 import com.bencodez.simpleapi.messages.MessageAPI;
 
 import lombok.Getter;
@@ -314,8 +314,8 @@ public class Perk {
 				placeholders.put("TimeLasts", "" + length);
 				placeholders.put("TimeLastsMin", "" + length / 60);
 				placeholders.put("TimeLastsHour", "" + length / 60 / 60);
-				msg = StringParser.getInstance()
-						.replacePlaceHolder(ConfigPerks.getInstance().getPerkActivatedTimed(getPerk()), placeholders);
+				msg = PlaceholderUtils.replacePlaceHolder(ConfigPerks.getInstance().getPerkActivatedTimed(getPerk()),
+						placeholders);
 				if (!msg.isEmpty()) {
 					for (Player p : players) {
 						p.sendMessage(MessageAPI.colorize(msg));
@@ -383,8 +383,8 @@ public class Perk {
 		setExperation(user, 0);
 		setActive(false);
 		// Main.plugin.getEffectHandler().deactivate(this);
-		MCPerksMain.plugin.debug("Perk '" + getPerk() + "' deactivated for "
-				+ ArrayUtils.getInstance().makeStringList(getEffectedPlayers()));
+		MCPerksMain.plugin
+				.debug("Perk '" + getPerk() + "' deactivated for " + ArrayUtils.makeStringList(getEffectedPlayers()));
 		for (Effect effect : getEffects()) {
 			effect.removeEffect(this, getEffectedPlayers());
 		}
@@ -607,8 +607,8 @@ public class Perk {
 		placeholders.put("CoolDown", "" + cooldownHour + " Hours " + cooldownMin + " Minutes");
 		// lore = Utils.getInstance().replacePlaceStringList(lore, "", "");
 
-		lore = ArrayUtils.getInstance().replacePlaceHolder(lore, placeholders);
-		return ArrayUtils.getInstance().convert(lore);
+		lore = PlaceholderUtils.replacePlaceHolder(lore, placeholders);
+		return ArrayUtils.convert(lore);
 	}
 
 	public String getItemName() {

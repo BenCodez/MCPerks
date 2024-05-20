@@ -39,7 +39,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.metadata.FixedMetadataValue;
 
-import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.misc.effects.BossBar;
 import com.bencodez.advancedcore.listeners.AdvancedCoreLoginEvent;
 import com.bencodez.mcperks.MCPerksMain;
@@ -59,6 +58,7 @@ import com.bencodez.mcperks.effects.UnderWaterFloristEffect;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.perk.PerkSystemType;
+import com.bencodez.simpleapi.array.ArrayUtils;
 import com.bencodez.simpleapi.player.PlayerUtils;
 
 public class EffectListeners implements Listener {
@@ -153,7 +153,7 @@ public class EffectListeners implements Listener {
 				player.getWorld().getName())) {
 			event.setCancelled(true);
 			plugin.getMcperksUserManager().getMCPerksUser(player)
-					.giveItems(ArrayUtils.getInstance().convertItems(event.getItems()));
+					.giveItems(ArrayUtils.convertItems(event.getItems()));
 		}
 		if (plugin.getPerkHandler().effectActive(Effect.InstantSmelt, player.getUniqueId().toString(),
 				player.getWorld().getName())) {
@@ -436,7 +436,7 @@ public class EffectListeners implements Listener {
 				for (Entry<Effect, Perk> entry : plugin.getEffectHandler().getOfflineEffects()
 						.get(player.getUniqueId().toString()).entrySet()) {
 					entry.getKey().removeEffect(entry.getValue(),
-							ArrayUtils.getInstance().convert(new String[] { player.getUniqueId().toString() }));
+							ArrayUtils.convert(new String[] { player.getUniqueId().toString() }));
 				}
 			}
 		}
@@ -480,7 +480,7 @@ public class EffectListeners implements Listener {
 				for (Entry<Effect, Perk> entry : plugin.getEffectHandler().getOfflineEffects()
 						.get(player.getUniqueId().toString()).entrySet()) {
 					entry.getKey().removeEffect(entry.getValue(),
-							ArrayUtils.getInstance().convert(new String[] { player.getUniqueId().toString() }));
+							ArrayUtils.convert(new String[] { player.getUniqueId().toString() }));
 				}
 			}
 		}

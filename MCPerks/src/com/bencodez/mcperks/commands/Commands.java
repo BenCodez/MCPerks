@@ -14,7 +14,7 @@ import com.bencodez.advancedcore.api.inventory.BInventory.ClickEvent;
 import com.bencodez.advancedcore.api.inventory.BInventoryButton;
 import com.bencodez.advancedcore.api.inventory.UpdatingBInventoryButton;
 import com.bencodez.advancedcore.api.item.ItemBuilder;
-import com.bencodez.advancedcore.api.messages.StringParser;
+import com.bencodez.advancedcore.api.messages.PlaceholderUtils;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.Lang;
 import com.bencodez.mcperks.perk.Perk;
@@ -62,7 +62,7 @@ public class Commands {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
 			MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(player);
-			String title = StringParser.getInstance().replacePlaceHolder(Lang.getInstance().getGUIName(), "Activations",
+			String title = PlaceholderUtils.replacePlaceHolder(Lang.getInstance().getGUIName(), "Activations",
 					"" + user.getActivations());
 			BInventory inv = new BInventory(title);
 			if (plugin.getConfigFile().getKeepGUIOpen()) {

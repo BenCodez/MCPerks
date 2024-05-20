@@ -17,11 +17,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
-import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.misc.PlayerManager;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
+import com.bencodez.simpleapi.array.ArrayUtils;
 
 public class TreeHarvestEffect {
 
@@ -103,7 +103,7 @@ public class TreeHarvestEffect {
 						if (canBreakBlock(player, orgBlock)) {
 							if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems,
 									player.getUniqueId().toString(), player.getWorld().getName())) {
-								plugin.getMcperksUserManager().getMCPerksUser(player).giveItems(ArrayUtils.getInstance()
+								plugin.getMcperksUserManager().getMCPerksUser(player).giveItems(ArrayUtils
 										.convertItems(block.getDrops(player.getInventory().getItemInMainHand())));
 								block.setType(Material.AIR);
 							} else {

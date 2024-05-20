@@ -9,8 +9,8 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
 import com.bencodez.advancedcore.api.command.CommandHandler;
-import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.mcperks.MCPerksMain;
+import com.bencodez.simpleapi.array.ArrayUtils;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -50,7 +50,7 @@ public class CommandAliases implements CommandExecutor {
 			argsNew.add(arg);
 		}
 		plugin.debug("Attempting cmd...");
-		plugin.debug("Inputed args: " + ArrayUtils.getInstance().makeStringList(argsNew));
+		plugin.debug("Inputed args: " + ArrayUtils.makeStringList(argsNew));
 
 		ArrayList<CommandHandler> cmdHandlers = new ArrayList<CommandHandler>();
 		cmdHandlers.addAll(plugin.getCommands());
@@ -59,7 +59,7 @@ public class CommandAliases implements CommandExecutor {
 				for (String arg : cmdHandle.getArgs()[0].split("&")) {
 					Set<String> perks = plugin.getPerkHandler().getLoadedPerks().keySet();
 					if (cmd.getName().equalsIgnoreCase("mcperks" + arg)
-							|| ArrayUtils.getInstance().containsIgnoreCase(perks, arg)) {
+							|| ArrayUtils.containsIgnoreCase(perks, arg)) {
 						argsNew.set(0, arg);
 
 						boolean argsMatch = true;
@@ -73,7 +73,7 @@ public class CommandAliases implements CommandExecutor {
 						}
 
 						if (argsMatch) {
-							if (cmdHandle.runCommand(sender, ArrayUtils.getInstance().convert(argsNew))) {
+							if (cmdHandle.runCommand(sender, ArrayUtils.convert(argsNew))) {
 								plugin.debug("cmd found, ran cmd");
 								return true;
 							}

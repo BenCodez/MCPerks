@@ -12,8 +12,8 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import com.bencodez.advancedcore.api.command.CommandHandler;
-import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.mcperks.MCPerksMain;
+import com.bencodez.simpleapi.array.ArrayUtils;
 import com.bencodez.simpleapi.messages.MessageAPI;
 
 /**
@@ -106,7 +106,7 @@ public class AliasesTabCompleter implements TabCompleter {
 			msgArray.add(arg);
 		}
 
-		String[] args = ArrayUtils.getInstance().convert(msgArray);
+		String[] args = ArrayUtils.convert(msgArray);
 
 		ArrayList<String> tab = new ArrayList<String>();
 
@@ -119,7 +119,7 @@ public class AliasesTabCompleter implements TabCompleter {
 				for (String arg : cmdHandle.getArgs()[0].split("&")) {
 					Set<String> perks = plugin.getPerkHandler().getLoadedPerks().keySet();
 					if (cmd.getName().equalsIgnoreCase("mcperks" + arg)
-							|| ArrayUtils.getInstance().containsIgnoreCase(perks, arg)) {
+							|| ArrayUtils.containsIgnoreCase(perks, arg)) {
 						// plugin.debug("Found cmd... attempting to get tab
 						// complete");
 						args[0] = arg;

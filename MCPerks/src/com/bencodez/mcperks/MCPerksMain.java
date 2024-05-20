@@ -18,8 +18,7 @@ import com.bencodez.advancedcore.api.inventory.BInventory.ClickEvent;
 import com.bencodez.advancedcore.api.inventory.editgui.EditGUIButton;
 import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueInventory;
 import com.bencodez.advancedcore.api.javascript.JavascriptPlaceholderRequest;
-import com.bencodez.advancedcore.api.messages.StringParser;
-import com.bencodez.advancedcore.api.misc.ArrayUtils;
+import com.bencodez.advancedcore.api.messages.PlaceholderUtils;
 import com.bencodez.advancedcore.api.misc.MiscUtils;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
 import com.bencodez.advancedcore.api.rewards.Reward;
@@ -41,6 +40,7 @@ import com.bencodez.mcperks.perk.PerkSystemType;
 import com.bencodez.mcperks.placeholder.MCPerksExpansion;
 import com.bencodez.mcperks.rewardedit.MCPerksRewardEditActivations;
 import com.bencodez.mcperks.userapi.UserManager;
+import com.bencodez.simpleapi.array.ArrayUtils;
 import com.bencodez.simpleapi.metrics.BStatsMetrics;
 import com.bencodez.simpleapi.updater.Updater;
 
@@ -266,7 +266,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 					}
 
 				}
-				return ArrayUtils.getInstance().makeStringList(list);
+				return ArrayUtils.makeStringList(list);
 			}
 		});
 
@@ -396,7 +396,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	}
 
 	public String placeHolder(OfflinePlayer p, String identifier) {
-		identifier = StringParser.getInstance().replaceJavascript(p, identifier);
+		identifier = PlaceholderUtils.replaceJavascript(p, identifier);
 		com.bencodez.mcperks.userapi.MCPerksUser user = getMcperksUserManager().getMCPerksUser(p);
 
 		for (PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser> placeholder : placeholders) {

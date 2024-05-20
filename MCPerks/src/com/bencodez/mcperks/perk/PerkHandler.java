@@ -32,8 +32,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import com.bencodez.advancedcore.AdvancedCorePlugin;
-import com.bencodez.advancedcore.api.messages.StringParser;
-import com.bencodez.advancedcore.api.misc.ArrayUtils;
+import com.bencodez.advancedcore.api.messages.PlaceholderUtils;
 import com.bencodez.advancedcore.api.misc.effects.BossBar;
 import com.bencodez.advancedcore.api.rewards.RewardBuilder;
 import com.bencodez.advancedcore.api.user.AdvancedCoreUser;
@@ -42,6 +41,7 @@ import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.ConfigPerks;
 import com.bencodez.mcperks.configs.Lang;
 import com.bencodez.mcperks.userapi.MCPerksUser;
+import com.bencodez.simpleapi.array.ArrayUtils;
 import com.bencodez.simpleapi.messages.MessageAPI;
 import com.massivecraft.factions.entity.MPlayer;
 import com.palmergames.bukkit.towny.Towny;
@@ -243,11 +243,9 @@ public class PerkHandler {
 
 		if (plugin.getConfigFile().getBossBarEnabled() && clone.isTimed() && !clone.isLastForever()) {
 			final BossBar bossBar = new BossBar(
-					StringParser.getInstance()
-							.replacePlaceHolder(
-									StringParser.getInstance().replacePlaceHolder(
-											plugin.getConfigFile().getBossBarMessage(), "perk", clone.getName()),
-									"seconds", "" + (length)),
+					PlaceholderUtils.replacePlaceHolder(PlaceholderUtils
+							.replacePlaceHolder(plugin.getConfigFile().getBossBarMessage(), "perk", clone.getName()),
+							"seconds", "" + (length)),
 					plugin.getConfigFile().getBossBarColor(), plugin.getConfigFile().getBossBarStyle(), 1);
 			clone.setBossBar(bossBar);
 
@@ -279,7 +277,7 @@ public class PerkHandler {
 							placeholders.put("minutes", "" + minutes);
 							int hours = minutes / 24;
 							placeholders.put("hours", "" + hours);
-							bossBar.setTitle(StringParser.getInstance()
+							bossBar.setTitle(PlaceholderUtils
 									.replacePlaceHolder(plugin.getConfigFile().getBossBarMessage(), placeholders));
 
 							// process time for progress bar
@@ -307,9 +305,8 @@ public class PerkHandler {
 		clone.announcePerk(user.getPlayerName(), length);
 
 		plugin.getMcperksServerData()
-				.addPerkHistory(user.getPlayerName() + ":"
-						+ ArrayUtils.getInstance().makeStringList(clone.getEffectedPlayers()) + ":" + perk.getName()
-						+ ":" + perk.getPerkType().toString() + ":" + System.currentTimeMillis());
+				.addPerkHistory(user.getPlayerName() + ":" + ArrayUtils.makeStringList(clone.getEffectedPlayers()) + ":"
+						+ perk.getName() + ":" + perk.getPerkType().toString() + ":" + System.currentTimeMillis());
 
 		printActivePerks();
 
@@ -318,7 +315,7 @@ public class PerkHandler {
 			String str = new SimpleDateFormat("EEE, d MMM yyyy HH:mm").format(Calendar.getInstance().getTime());
 			activationLog
 					.logToFile(str + " Activated perk " + perk.getName() + " by " + clone.getActivater().getPlayerName()
-							+ ". Affected users: " + ArrayUtils.getInstance().makeStringList(clone.getEffectedPlayers())
+							+ ". Affected users: " + ArrayUtils.makeStringList(clone.getEffectedPlayers())
 							+ ". Lasted for " + length + " Perk type: " + clone.getPerkType().toString());
 		}
 	}
@@ -562,9 +559,9 @@ public class PerkHandler {
 	private void printActivePerks() {
 		ArrayList<String> str = new ArrayList<String>();
 		for (Perk active : activePerks) {
-			str.add(active.getPerk() + ":" + ArrayUtils.getInstance().makeStringList(active.getEffectedPlayers()));
+			str.add(active.getPerk() + ":" + ArrayUtils.makeStringList(active.getEffectedPlayers()));
 		}
-		plugin.debug("Active perks: " + ArrayUtils.getInstance().makeStringList(str));
+		plugin.debug("Active perks: " + ArrayUtils.makeStringList(str));
 	}
 
 	public void reload() {

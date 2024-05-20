@@ -6,8 +6,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.defaults.BukkitCommand;
 
 import com.bencodez.advancedcore.api.command.CommandHandler;
-import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.mcperks.perk.Perk;
+import com.bencodez.simpleapi.array.ArrayUtils;
 
 public class CommandPerkAliases extends BukkitCommand {
 	private CommandHandler cmdHandle;
@@ -25,7 +25,7 @@ public class CommandPerkAliases extends BukkitCommand {
 	public boolean execute(CommandSender sender, String alias, String[] args) {
 		ArrayList<String> argsNew = new ArrayList<String>();
 		argsNew.add(perk.getPerk());
-		cmdHandle.runCommand(sender, ArrayUtils.getInstance().convert(argsNew));
+		cmdHandle.runCommand(sender, ArrayUtils.convert(argsNew));
 		return true;
 	}
 }

@@ -15,9 +15,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 
-import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.PerkSystemType;
+import com.bencodez.simpleapi.array.ArrayUtils;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -316,7 +316,7 @@ public class ConfigPerks {
 	public ArrayList<String> getPerksFiles() {
 		File folder = new File(plugin.getDataFolder() + File.separator + "Perks");
 		String[] fileNames = folder.list();
-		return ArrayUtils.getInstance().convert(fileNames);
+		return ArrayUtils.convert(fileNames);
 	}
 
 	/**

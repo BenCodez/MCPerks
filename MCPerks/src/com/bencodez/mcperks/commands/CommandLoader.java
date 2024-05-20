@@ -24,7 +24,6 @@ import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueBo
 import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueList;
 import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueNumber;
 import com.bencodez.advancedcore.api.item.ItemBuilder;
-import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
 import com.bencodez.advancedcore.simpleapi.command.TabCompleteHandle;
 import com.bencodez.advancedcore.simpleapi.command.TabCompleteHandler;
@@ -36,6 +35,7 @@ import com.bencodez.mcperks.configs.ConfigPerks;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.userapi.MCPerksUser;
+import com.bencodez.simpleapi.array.ArrayUtils;
 import com.bencodez.simpleapi.messages.MessageAPI;
 
 import net.md_5.bungee.api.chat.TextComponent;
@@ -238,7 +238,7 @@ public class CommandLoader {
 						}
 						msg.add("&cMCPerks.AllPerks");
 						msg.add("&cMCPerks.Perks.BypassCoolDown");
-						sender.sendMessage(ArrayUtils.getInstance().convert(ArrayUtils.getInstance().colorize(msg)));
+						sender.sendMessage(ArrayUtils.convert(ArrayUtils.colorize(msg)));
 					}
 				});
 
@@ -310,8 +310,8 @@ public class CommandLoader {
 					}
 
 				} else {
-					sender.sendMessage(ArrayUtils.getInstance().convert(
-							ArrayUtils.getInstance().comptoString(Commands.getInstance().perksHelpText(sender))));
+					sender.sendMessage(ArrayUtils.convert(
+							ArrayUtils.comptoString(Commands.getInstance().perksHelpText(sender))));
 				}
 			}
 		});
@@ -373,7 +373,7 @@ public class CommandLoader {
 							}
 
 						} else {
-							sender.sendMessage(ArrayUtils.getInstance().convert(ArrayUtils.getInstance()
+							sender.sendMessage(ArrayUtils.convert(ArrayUtils
 									.comptoString(Commands.getInstance().perksHelpText(sender))));
 						}
 					}
@@ -452,10 +452,10 @@ public class CommandLoader {
 						msg.add("&cPerk : Activator : Effected players : Experation");
 						for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
 							msg.add("&c" + perk.getPerk() + " : " + perk.getActivater().getPlayerName() + " : "
-									+ ArrayUtils.getInstance().makeStringList(perk.getEffectedPlayers()) + " : "
+									+ ArrayUtils.makeStringList(perk.getEffectedPlayers()) + " : "
 									+ perk.getExperation(perk.getActivater()));
 						}
-						sender.sendMessage(ArrayUtils.getInstance().convert(ArrayUtils.getInstance().colorize(msg)));
+						sender.sendMessage(ArrayUtils.convert(ArrayUtils.colorize(msg)));
 					}
 				});
 
@@ -469,11 +469,11 @@ public class CommandLoader {
 				for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
 					if (perk.getActivater().getPlayerName().equalsIgnoreCase(args[1])) {
 						msg.add("&c" + perk.getPerk() + " : "
-								+ ArrayUtils.getInstance().makeStringList(perk.getEffectedPlayers()) + " : "
+								+ ArrayUtils.makeStringList(perk.getEffectedPlayers()) + " : "
 								+ perk.getExperation(perk.getActivater()));
 					}
 				}
-				sender.sendMessage(ArrayUtils.getInstance().convert(ArrayUtils.getInstance().colorize(msg)));
+				sender.sendMessage(ArrayUtils.convert(ArrayUtils.colorize(msg)));
 			}
 		});
 
@@ -765,11 +765,11 @@ public class CommandLoader {
 
 	public void loadTabComplete() {
 		TabCompleteHandler.getInstance().addTabCompleteOption(new TabCompleteHandle("(Perk)",
-				ArrayUtils.getInstance().convert(plugin.getPerkHandler().getLoadedPerks().keySet())) {
+				ArrayUtils.convert(plugin.getPerkHandler().getLoadedPerks().keySet())) {
 
 			@Override
 			public void reload() {
-				setReplace(ArrayUtils.getInstance().convert(plugin.getPerkHandler().getLoadedPerks().keySet()));
+				setReplace(ArrayUtils.convert(plugin.getPerkHandler().getLoadedPerks().keySet()));
 			}
 
 			@Override

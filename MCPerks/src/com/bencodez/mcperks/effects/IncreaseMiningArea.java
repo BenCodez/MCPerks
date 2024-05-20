@@ -16,11 +16,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
-import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.misc.PlayerManager;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
+import com.bencodez.simpleapi.array.ArrayUtils;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -102,8 +102,8 @@ public class IncreaseMiningArea {
 					if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
 						if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, p.getUniqueId().toString(),
 								p.getWorld().getName())) {
-							plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(ArrayUtils.getInstance()
-									.convertItems(b.getDrops(p.getInventory().getItemInMainHand())));
+							plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(
+									ArrayUtils.convertItems(b.getDrops(p.getInventory().getItemInMainHand())));
 							b.setType(Material.AIR);
 						} else {
 							b.breakNaturally(itemInHand);
@@ -129,8 +129,8 @@ public class IncreaseMiningArea {
 						if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
 							if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, p.getUniqueId().toString(),
 									p.getWorld().getName())) {
-								plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(ArrayUtils.getInstance()
-										.convertItems(b.getDrops(p.getInventory().getItemInMainHand())));
+								plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(
+										ArrayUtils.convertItems(b.getDrops(p.getInventory().getItemInMainHand())));
 								b.setType(Material.AIR);
 							} else {
 								b.breakNaturally(itemInHand);
@@ -155,8 +155,8 @@ public class IncreaseMiningArea {
 						if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
 							if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, p.getUniqueId().toString(),
 									p.getWorld().getName())) {
-								plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(ArrayUtils.getInstance()
-										.convertItems(b.getDrops(p.getInventory().getItemInMainHand())));
+								plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(
+										ArrayUtils.convertItems(b.getDrops(p.getInventory().getItemInMainHand())));
 								b.setType(Material.AIR);
 							} else {
 								b.breakNaturally(itemInHand);
