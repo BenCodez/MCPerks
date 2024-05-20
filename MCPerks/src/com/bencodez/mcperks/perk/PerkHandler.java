@@ -42,6 +42,7 @@ import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.ConfigPerks;
 import com.bencodez.mcperks.configs.Lang;
 import com.bencodez.mcperks.userapi.MCPerksUser;
+import com.bencodez.simpleapi.messages.MessageAPI;
 import com.massivecraft.factions.entity.MPlayer;
 import com.palmergames.bukkit.towny.Towny;
 import com.palmergames.bukkit.towny.object.Resident;
@@ -94,7 +95,7 @@ public class PerkHandler {
 		ArrayList<Integer> times = new ArrayList<Integer>();
 		if (perk.getTime() > 0) {
 			for (String str : ConfigPerks.getInstance().getCountDownTimes(perk.getPerk())) {
-				if (StringParser.getInstance().isInt(str)) {
+				if (MessageAPI.isInt(str)) {
 					int num = Integer.parseInt(str);
 					if (num > 0) {
 						times.add(length - num);

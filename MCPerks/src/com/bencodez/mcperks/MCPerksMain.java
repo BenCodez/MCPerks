@@ -19,7 +19,6 @@ import com.bencodez.advancedcore.api.inventory.editgui.EditGUIButton;
 import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueInventory;
 import com.bencodez.advancedcore.api.javascript.JavascriptPlaceholderRequest;
 import com.bencodez.advancedcore.api.messages.StringParser;
-import com.bencodez.advancedcore.api.metrics.BStatsMetrics;
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.misc.MiscUtils;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
@@ -43,6 +42,7 @@ import com.bencodez.mcperks.perk.PerkSystemType;
 import com.bencodez.mcperks.placeholder.MCPerksExpansion;
 import com.bencodez.mcperks.rewardedit.MCPerksRewardEditActivations;
 import com.bencodez.mcperks.userapi.UserManager;
+import com.bencodez.simpleapi.metrics.BStatsMetrics;
 
 import lombok.Getter;
 import lombok.Setter;

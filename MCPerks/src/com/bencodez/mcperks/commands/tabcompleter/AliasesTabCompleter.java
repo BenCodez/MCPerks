@@ -12,9 +12,9 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import com.bencodez.advancedcore.api.command.CommandHandler;
-import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.mcperks.MCPerksMain;
+import com.bencodez.simpleapi.messages.MessageAPI;
 
 /**
  * The Class AliasesTabCompleter.
@@ -143,7 +143,7 @@ public class AliasesTabCompleter implements TabCompleter {
 		}
 
 		for (int i = 0; i < cmds.size(); i++) {
-			if (StringParser.getInstance().startsWithIgnoreCase(cmds.get(i), args[argsIn.length])) {
+			if (MessageAPI.startsWithIgnoreCase(cmds.get(i), args[argsIn.length])) {
 				tab.add(cmds.get(i));
 			}
 		}

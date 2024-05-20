@@ -14,8 +14,8 @@ import org.bukkit.entity.Player;
 
 import com.bencodez.advancedcore.api.command.CommandHandler;
 import com.bencodez.advancedcore.api.command.TabCompleteHandler;
-import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.mcperks.MCPerksMain;
+import com.bencodez.simpleapi.messages.MessageAPI;
 
 /**
  * The Class AdminVoteTabCompleter.
@@ -109,7 +109,7 @@ public class MCPerksTabCompleter implements TabCompleter {
 				args.length - 1));
 
 		for (String str : cmds) {
-			if (StringParser.getInstance().startsWithIgnoreCase(str, args[args.length - 1])) {
+			if (MessageAPI.startsWithIgnoreCase(str, args[args.length - 1])) {
 				tab.add(str);
 			}
 		}

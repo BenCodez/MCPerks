@@ -32,6 +32,7 @@ import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.ConfigPerks;
 import com.bencodez.mcperks.configs.Lang;
 import com.bencodez.mcperks.userapi.MCPerksUser;
+import com.bencodez.simpleapi.messages.MessageAPI;
 
 import lombok.Getter;
 
@@ -227,7 +228,7 @@ public class Perk {
 			String[] data = effectLine.split(":");
 			Effect effect = Effect.fromString(data[0]);
 			if (data.length > 1) {
-				if (StringParser.getInstance().isDouble(data[1])) {
+				if (MessageAPI.isDouble(data[1])) {
 					effect.setModifier(Double.valueOf(data[1]));
 					if (effect.usesModifier() && effect.usesIncreasePercentage()) {
 						if (increasePercent == -1) {
@@ -304,7 +305,7 @@ public class Perk {
 
 			if (!msg.isEmpty()) {
 				for (Player p : players) {
-					p.sendMessage(StringParser.getInstance().colorize(msg));
+					p.sendMessage(MessageAPI.colorize(msg));
 				}
 			}
 
@@ -317,7 +318,7 @@ public class Perk {
 						.replacePlaceHolder(ConfigPerks.getInstance().getPerkActivatedTimed(getPerk()), placeholders);
 				if (!msg.isEmpty()) {
 					for (Player p : players) {
-						p.sendMessage(StringParser.getInstance().colorize(msg));
+						p.sendMessage(MessageAPI.colorize(msg));
 					}
 				}
 			}

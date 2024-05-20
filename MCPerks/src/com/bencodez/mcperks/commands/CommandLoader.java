@@ -26,7 +26,6 @@ import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueBo
 import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueList;
 import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueNumber;
 import com.bencodez.advancedcore.api.item.ItemBuilder;
-import com.bencodez.advancedcore.api.messages.StringParser;
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
 import com.bencodez.mcperks.MCPerksMain;
@@ -37,6 +36,7 @@ import com.bencodez.mcperks.configs.ConfigPerks;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.userapi.MCPerksUser;
+import com.bencodez.simpleapi.messages.MessageAPI;
 
 import net.md_5.bungee.api.chat.TextComponent;
 
@@ -164,7 +164,7 @@ public class CommandLoader {
 					@Override
 					public void execute(CommandSender sender, String[] args) {
 						plugin.reload();
-						sender.sendMessage(StringParser.getInstance().colorize(
+						sender.sendMessage(MessageAPI.colorize(
 								"&c" + plugin.getName() + " v" + plugin.getDescription().getVersion() + " reloaded!"));
 					}
 				});
@@ -403,7 +403,7 @@ public class CommandLoader {
 					@Override
 					public void execute(CommandSender sender, String[] args) {
 						plugin.getPerkHandler().clearQueue();
-						sender.sendMessage(StringParser.getInstance().colorize("&cPerk Queue Cleared"));
+						sender.sendMessage(MessageAPI.colorize("&cPerk Queue Cleared"));
 					}
 				});
 

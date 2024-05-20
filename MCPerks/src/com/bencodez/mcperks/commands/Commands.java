@@ -19,6 +19,7 @@ import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.Lang;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.userapi.MCPerksUser;
+import com.bencodez.simpleapi.messages.MessageAPI;
 
 import net.md_5.bungee.api.chat.TextComponent;
 
@@ -122,7 +123,7 @@ public class Commands {
 			}
 			inv.openInventory(player);
 		} else {
-			sender.sendMessage(StringParser.getInstance().colorize("Must be a player to do this"));
+			sender.sendMessage(MessageAPI.colorize("Must be a player to do this"));
 		}
 	}
 
@@ -135,7 +136,7 @@ public class Commands {
 	public ArrayList<TextComponent> perksHelpText(CommandSender sender) {
 		ArrayList<TextComponent> texts = new ArrayList<TextComponent>();
 		HashMap<String, TextComponent> unsorted = new HashMap<String, TextComponent>();
-		texts.add(StringParser.getInstance().stringToComp(Lang.getInstance().getHelpTitle()));
+		texts.add(MessageAPI.stringToComp(Lang.getInstance().getHelpTitle()));
 
 		boolean requirePerms = true;
 
@@ -162,7 +163,7 @@ public class Commands {
 		int pagesize = 10;
 		page = page - 1;
 		int maxPage = (int) (Math.ceil(help.size() / pagesize) + 1);
-		cmds.add(StringParser.getInstance().stringToComp("&3&lPage " + (page + 1) + "/" + maxPage));
+		cmds.add(MessageAPI.stringToComp("&3&lPage " + (page + 1) + "/" + maxPage));
 		for (int i = pagesize * page; (i < help.size()) && (i < ((page + 1) * pagesize)); i++) {
 			cmds.add(help.get(i));
 		}
