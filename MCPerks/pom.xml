@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.bencodez</groupId>
 	<artifactId>mcperks</artifactId>
@@ -48,14 +50,22 @@
 				<version>3.5.3</version>
 				<configuration>
 					<shadedArtifactAttached>false</shadedArtifactAttached>
+
 					<relocations>
-						<!-- Lets relocate the shaded API so we dont cause any conflicts with 
+						<!-- Lets relocate the shaded API so we dont cause any
+						conflicts with 
 							other plugins -->
+						<relocation>
+							<pattern>com.bencodez.simpleapi</pattern>
+							<shadedPattern>
+								${project.groupId}.advancedcore.simpleapi</shadedPattern>
+						</relocation>
 						<relocation>
 							<pattern>com.bencodez.advancedcore</pattern>
 							<shadedPattern>${groupId}.mcperks.advancedcore</shadedPattern>
 						</relocation>
-						<!-- Lets relocate the shaded API so we dont cause any conflicts with 
+						<!-- Lets relocate the shaded API so we dont cause any
+						conflicts with 
 							other plugins -->
 						<relocation>
 							<pattern>net.pl3x.bukkit.chatapi</pattern>
@@ -83,7 +93,8 @@
 						</goals>
 						<configuration>
 							<artifactSet>
-								<!-- Lets exclude google code, because the server already has this 
+								<!-- Lets exclude google code, because the
+								server already has this 
 									code in it (guava, etc) -->
 								<excludes>
 									<exclude>com.google.*:*</exclude>
@@ -115,7 +126,8 @@
 							<goal>copy-resources</goal>
 						</goals>
 						<configuration>
-							<outputDirectory>${user.home}/Documents/Test Server/plugins</outputDirectory>
+							<outputDirectory>${user.home}/Documents/Test
+								Server/plugins</outputDirectory>
 							<resources>
 								<resource>
 									<directory>${basedir}/target</directory>
@@ -142,7 +154,8 @@
 		</repository>
 		<repository>
 			<id>placeholderapi</id>
-			<url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
+			<url>
+				https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
 		</repository>
 	</repositories>
 	<dependencies>

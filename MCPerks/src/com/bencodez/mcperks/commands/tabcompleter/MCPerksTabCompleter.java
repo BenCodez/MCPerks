@@ -12,8 +12,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
+import com.bencodez.advancedcore.api.command.AdvancedCoreTabCompleteHandler;
 import com.bencodez.advancedcore.api.command.CommandHandler;
-import com.bencodez.advancedcore.simpleapi.command.TabCompleteHandler;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.simpleapi.messages.MessageAPI;
 
@@ -105,7 +105,7 @@ public class MCPerksTabCompleter implements TabCompleter {
 
 		Set<String> cmds = new HashSet<String>();
 
-		cmds.addAll(TabCompleteHandler.getInstance().getTabCompleteOptions(plugin.getCommands(), sender, args,
+		cmds.addAll(AdvancedCoreTabCompleteHandler.getInstance().getTabCompleteOptions(plugin.getCommands(), sender, args,
 				args.length - 1));
 
 		for (String str : cmds) {
