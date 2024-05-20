@@ -25,7 +25,6 @@ import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
 import com.bencodez.advancedcore.api.rewards.Reward;
 import com.bencodez.advancedcore.api.rewards.RewardEditData;
 import com.bencodez.advancedcore.api.rewards.injected.RewardInjectInt;
-import com.bencodez.advancedcore.api.updater.Updater;
 import com.bencodez.advancedcore.api.user.AdvancedCoreUser;
 import com.bencodez.mcperks.commands.CommandLoader;
 import com.bencodez.mcperks.commands.executers.CommandMCPerks;
@@ -43,6 +42,7 @@ import com.bencodez.mcperks.placeholder.MCPerksExpansion;
 import com.bencodez.mcperks.rewardedit.MCPerksRewardEditActivations;
 import com.bencodez.mcperks.userapi.UserManager;
 import com.bencodez.simpleapi.metrics.BStatsMetrics;
+import com.bencodez.simpleapi.updater.Updater;
 
 import lombok.Getter;
 import lombok.Setter;

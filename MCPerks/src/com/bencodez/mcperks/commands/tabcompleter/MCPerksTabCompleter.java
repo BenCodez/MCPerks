@@ -13,7 +13,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import com.bencodez.advancedcore.api.command.CommandHandler;
-import com.bencodez.advancedcore.api.command.TabCompleteHandler;
+import com.bencodez.advancedcore.simpleapi.command.TabCompleteHandler;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.simpleapi.messages.MessageAPI;
 

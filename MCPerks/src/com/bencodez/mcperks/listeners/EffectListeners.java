@@ -40,7 +40,6 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.metadata.FixedMetadataValue;
 
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
-import com.bencodez.advancedcore.api.misc.PlayerUtils;
 import com.bencodez.advancedcore.api.misc.effects.BossBar;
 import com.bencodez.advancedcore.listeners.AdvancedCoreLoginEvent;
 import com.bencodez.mcperks.MCPerksMain;
@@ -60,6 +59,7 @@ import com.bencodez.mcperks.effects.UnderWaterFloristEffect;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.perk.PerkSystemType;
+import com.bencodez.simpleapi.player.PlayerUtils;
 
 public class EffectListeners implements Listener {
 
@@ -314,7 +314,7 @@ public class EffectListeners implements Listener {
 
 					if (e != null && !found) {
 						blockBroken = event.getBlock();
-						BlockFace f = PlayerUtils.getInstance().yawToFace(player.getLocation().getYaw(), false);
+						BlockFace f = PlayerUtils.yawToFace(player.getLocation().getYaw(), false);
 						new IncreaseMiningArea(plugin, event, active, player, e.getModifier(), f);
 						found = true;
 

@@ -17,7 +17,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
-import com.bencodez.advancedcore.api.misc.PlayerUtils;
+import com.bencodez.advancedcore.api.misc.PlayerManager;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
@@ -169,7 +169,7 @@ public class IncreaseMiningArea {
 		}
 
 		if (EnchantmentTarget.TOOL.includes(itemInHand)) {
-			PlayerUtils.getInstance().damageItemInHand(p, numberOfBlocks);
+			PlayerManager.getInstance().damageItemInHand(p, numberOfBlocks);
 		}
 	}
 

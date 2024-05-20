@@ -18,7 +18,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
-import com.bencodez.advancedcore.api.misc.PlayerUtils;
+import com.bencodez.advancedcore.api.misc.PlayerManager;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.Perk;
 
@@ -71,7 +71,7 @@ public class AutoPlant {
 		}
 
 		if (EnchantmentTarget.TOOL.includes(itemInHand)) {
-			PlayerUtils.getInstance().damageItemInHand(player, 1);
+			PlayerManager.getInstance().damageItemInHand(player, 1);
 		}
 	}
 

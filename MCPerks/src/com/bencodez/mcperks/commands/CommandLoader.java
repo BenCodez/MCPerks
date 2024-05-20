@@ -16,8 +16,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.permissions.Permission;
 
 import com.bencodez.advancedcore.api.command.CommandHandler;
-import com.bencodez.advancedcore.api.command.TabCompleteHandle;
-import com.bencodez.advancedcore.api.command.TabCompleteHandler;
 import com.bencodez.advancedcore.api.inventory.BInventory;
 import com.bencodez.advancedcore.api.inventory.BInventory.ClickEvent;
 import com.bencodez.advancedcore.api.inventory.BInventoryButton;
@@ -28,6 +26,8 @@ import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueNu
 import com.bencodez.advancedcore.api.item.ItemBuilder;
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
+import com.bencodez.advancedcore.simpleapi.command.TabCompleteHandle;
+import com.bencodez.advancedcore.simpleapi.command.TabCompleteHandler;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.commands.executers.CommandAliases;
 import com.bencodez.mcperks.commands.executers.CommandPerkAliases;

@@ -18,7 +18,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
 import com.bencodez.advancedcore.api.misc.ArrayUtils;
-import com.bencodez.advancedcore.api.misc.PlayerUtils;
+import com.bencodez.advancedcore.api.misc.PlayerManager;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
@@ -50,7 +50,7 @@ public class TreeHarvestEffect {
 			return;
 		}
 		int blocksBroken = breakRelativeLogs(plugin, player, block, 2);
-		PlayerUtils.getInstance().damageItemInHand(player, blocksBroken);
+		PlayerManager.getInstance().damageItemInHand(player, blocksBroken);
 
 	}
 
