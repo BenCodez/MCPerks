@@ -58,7 +58,7 @@
 						<relocation>
 							<pattern>com.bencodez.simpleapi</pattern>
 							<shadedPattern>
-								${project.groupId}.advancedcore.simpleapi</shadedPattern>
+								${project.groupId}.mcperks.simpleapi</shadedPattern>
 						</relocation>
 						<relocation>
 							<pattern>com.bencodez.advancedcore</pattern>
@@ -173,10 +173,9 @@
 		</dependency>
 		<dependency>
 			<groupId>com.palmergames</groupId>
-			<artifactId>LlmDl</artifactId>
+			<artifactId>towny</artifactId>
 			<version>LATEST</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/Jars/Towny.jar</systemPath>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>me.clip</groupId>
@@ -191,25 +190,22 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.gmail</groupId>
-			<artifactId>nossr50</artifactId>
+			<groupId>com.gmail.nossr50</groupId>
+			<artifactId>mcmmo</artifactId>
 			<version>LATEST</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/Jars/mcMMO.jar</systemPath>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.massivecraft</groupId>
+			<groupId>com.massivecraft.factions</groupId>
 			<artifactId>factions</artifactId>
 			<version>LATEST</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/Jars/Factions.jar</systemPath>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.massivecraft</groupId>
-			<artifactId>MassiveCore</artifactId>
+			<groupId>com.massivecraft.massivecore</groupId>
+			<artifactId>massivecore</artifactId>
 			<version>LATEST</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/Jars/MassiveCore.jar</systemPath>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>

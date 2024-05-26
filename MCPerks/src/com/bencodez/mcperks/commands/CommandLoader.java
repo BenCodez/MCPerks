@@ -25,8 +25,6 @@ import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueLi
 import com.bencodez.advancedcore.api.inventory.editgui.valuetypes.EditGUIValueNumber;
 import com.bencodez.advancedcore.api.item.ItemBuilder;
 import com.bencodez.advancedcore.api.placeholder.PlaceHolder;
-import com.bencodez.advancedcore.simpleapi.command.TabCompleteHandle;
-import com.bencodez.advancedcore.simpleapi.command.TabCompleteHandler;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.commands.executers.CommandAliases;
 import com.bencodez.mcperks.commands.executers.CommandPerkAliases;
@@ -36,6 +34,8 @@ import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.userapi.MCPerksUser;
 import com.bencodez.simpleapi.array.ArrayUtils;
+import com.bencodez.simpleapi.command.TabCompleteHandle;
+import com.bencodez.simpleapi.command.TabCompleteHandler;
 import com.bencodez.simpleapi.messages.MessageAPI;
 
 import net.md_5.bungee.api.chat.TextComponent;
