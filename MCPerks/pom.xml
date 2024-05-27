@@ -173,7 +173,7 @@
 		<dependency>
 			<groupId>com.palmergames</groupId>
 			<artifactId>towny</artifactId>
-			<version>LATEST</version>
+			<version>0.91.4.0</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
