@@ -191,7 +191,7 @@
 		<dependency>
 			<groupId>com.gmail.nossr50</groupId>
 			<artifactId>mcmmo</artifactId>
-			<version>LATEST</version>
+			<version>1.5.05</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
