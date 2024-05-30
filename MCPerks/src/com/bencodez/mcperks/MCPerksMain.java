@@ -435,5 +435,6 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	@SuppressWarnings("deprecation")
 	public void updateHook() {
 		setConfigData(configFile.getData());
+		getOptions().setFormatNoPerms(Lang.getInstance().getNoPermission());
 	}
 }
