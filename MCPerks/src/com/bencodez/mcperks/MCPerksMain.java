@@ -165,10 +165,19 @@ public class MCPerksMain extends AdvancedCorePlugin {
 							timestamp = new Timestamp(timeLast);
 							timeLast = 0;
 						}
-						debug("Activating perk from shutdown " + perk + "/" + uuid + "/" + timeLast);
-						getPerkHandler().activePerk(getPerkHandler().getPerk(perk),
-								getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)), (int) timeLast,
-								timestamp);
+						boolean activate = true;
+						if (timestamp != null) {
+							if (timestamp.after(new Timestamp(Calendar.getInstance().getTime().getTime()))) {
+								// not activating
+								activate = false;
+							}
+						}
+						if (activate) {
+							debug("Activating perk from shutdown " + perk + "/" + uuid + "/" + timeLast);
+							getPerkHandler().activePerk(getPerkHandler().getPerk(perk),
+									getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)), (int) timeLast,
+									timestamp);
+						}
 
 					}
 				}
