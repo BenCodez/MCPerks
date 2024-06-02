@@ -1,10 +1,12 @@
 package com.bencodez.mcperks;
 
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -124,6 +126,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	@Override
 	public void onUnLoad() {
 		for (Perk perk : getPerkHandler().getActivePerks()) {
+			getMcperksServerData().saveOfflinePerk(perk);
 			perk.deactivatePerk(perk.getActivater());
 		}
 		HandlerList.unregisterAll(plugin);
@@ -147,6 +150,32 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		new BStatsMetrics(this, 40);
 
 		loadInjectedRewards();
+
+		if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk")) {
+			for (String uuid : getMcperksServerData().getData().getConfigurationSection("OfflinePerk").getKeys(false)) {
+				if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk." + uuid)) {
+					for (String perk : getMcperksServerData().getData().getConfigurationSection("OfflinePerk." + uuid)
+							.getKeys(false)) {
+
+						long timeLast = getMcperksServerData().getData()
+								.getLong("OfflinePerk." + uuid + "." + perk + ".Experiaton");
+						debug(uuid + "/" + perk + "/" + timeLast);
+						Timestamp timestamp = null;
+						if (timeLast > 0) {
+							timestamp = new Timestamp(timeLast);
+							timeLast = 0;
+						}
+						debug("Activating perk from shutdown " + perk + "/" + uuid + "/" + timeLast);
+						getPerkHandler().activePerk(getPerkHandler().getPerk(perk),
+								getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)), (int) timeLast,
+								timestamp);
+
+					}
+				}
+			}
+		}
+		getMcperksServerData().getData().set("OfflinePerk", null);
+		getMcperksServerData().saveData();
 
 		getJavascriptEngineRequests().add(new JavascriptPlaceholderRequest("MCPerks") {
 

@@ -58,4 +58,13 @@ public class ServerData {
 		saveData();
 	}
 
+	public void saveOfflinePerk(Perk perk) {
+		if (perk.isLastForever()) {
+			getData().set("OfflinePerk." + perk.getActivater().getUUID() + "." + perk.getPerk() + ".Experiaton", -1);
+		} else {
+			getData().set("OfflinePerk." + perk.getActivater().getUUID() + "." + perk.getPerk() + ".Experiaton",
+					perk.getExperation(perk.getActivater()));
+		}
+	}
+
 }

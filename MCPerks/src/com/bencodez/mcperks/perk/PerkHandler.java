@@ -88,7 +88,7 @@ public class PerkHandler {
 		}
 	}
 
-	public void activePerk(Perk perk, MCPerksUser user, int length) {
+	public void activePerk(Perk perk, MCPerksUser user, int length, Timestamp timestamp) {
 		final Perk clone = perk.clone();
 		clone.setActivater(user);
 		clone.getEffectedPlayers().clear();
@@ -201,8 +201,11 @@ public class PerkHandler {
 		if (clone.isTimed()) {
 			clone.setActive(true);
 			if (!clone.isLastForever()) {
-
 				Timestamp exp = new Timestamp(Calendar.getInstance().getTime().getTime() + 1000 * length);
+				if (timestamp !=null) {
+					exp = timestamp;
+				}
+				
 				clone.setExperation(user, exp.getTime());
 
 				clone.scheduleDeactivation(user);

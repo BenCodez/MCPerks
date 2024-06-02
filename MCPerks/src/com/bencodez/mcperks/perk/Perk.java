@@ -270,7 +270,7 @@ public class Perk {
 	 */
 	public void activatePerk(MCPerksUser user, int length) {
 		activater = user;
-		plugin.getPerkHandler().activePerk(this, user, length);
+		plugin.getPerkHandler().activePerk(this, user, length,null);
 	}
 
 	public void addEffectedPlayer(String uuid) {
