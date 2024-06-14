@@ -42,8 +42,12 @@ import com.bencodez.mcperks.perk.PerkSystemType;
 import com.bencodez.mcperks.placeholder.MCPerksExpansion;
 import com.bencodez.mcperks.rewardedit.MCPerksRewardEditActivations;
 import com.bencodez.mcperks.userapi.UserManager;
+import com.bencodez.mcperks.version.Post121VersionHandle;
+import com.bencodez.mcperks.version.Pre121VersionHandle;
+import com.bencodez.mcperks.version.VersionHandle;
 import com.bencodez.simpleapi.array.ArrayUtils;
 import com.bencodez.simpleapi.metrics.BStatsMetrics;
+import com.bencodez.simpleapi.nms.NMSManager;
 import com.bencodez.simpleapi.updater.Updater;
 
 import lombok.Getter;
@@ -86,6 +90,9 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	@Getter
 	private CommandLoader commandLoader;
+
+	@Getter
+	private VersionHandle versionHandle;
 
 	public void addPlacehlder(PlaceHolder<com.bencodez.mcperks.userapi.MCPerksUser> placeholder) {
 		placeholders.add(placeholder);
@@ -150,6 +157,11 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		new BStatsMetrics(this, 40);
 
 		loadInjectedRewards();
+		if (NMSManager.getInstance().isVersion("1.13", "1.14", "1.15", "1.16", "1.17", "1.18", "1.19", "1.20")) {
+			versionHandle = new Pre121VersionHandle();
+		} else {
+			versionHandle = new Post121VersionHandle();
+		}
 
 		if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk")) {
 			for (String uuid : getMcperksServerData().getData().getConfigurationSection("OfflinePerk").getKeys(false)) {

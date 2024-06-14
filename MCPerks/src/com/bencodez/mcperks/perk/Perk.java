@@ -270,7 +270,7 @@ public class Perk {
 	 */
 	public void activatePerk(MCPerksUser user, int length) {
 		activater = user;
-		plugin.getPerkHandler().activePerk(this, user, length,null);
+		plugin.getPerkHandler().activePerk(this, user, length, null);
 	}
 
 	public void addEffectedPlayer(String uuid) {
@@ -386,7 +386,7 @@ public class Perk {
 		MCPerksMain.plugin
 				.debug("Perk '" + getPerk() + "' deactivated for " + ArrayUtils.makeStringList(getEffectedPlayers()));
 		for (Effect effect : getEffects()) {
-			effect.removeEffect(this, getEffectedPlayers());
+			effect.removeEffect(plugin, this, getEffectedPlayers());
 		}
 
 		String msg = ConfigPerks.getInstance().getPerkDeactivated(perk).replace("%Perk%", getName());
@@ -686,7 +686,7 @@ public class Perk {
 		for (Effect effect : getEffects()) {
 			ArrayList<String> uuids = new ArrayList<String>();
 			uuids.add(player.getUniqueId().toString());
-			effect.runEffect(this, null, uuids);
+			effect.runEffect(plugin, this, null, uuids);
 		}
 	}
 

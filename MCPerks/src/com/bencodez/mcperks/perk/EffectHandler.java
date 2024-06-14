@@ -6,12 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.userapi.MCPerksUser;
+import com.bencodez.mcperks.version.Pre121VersionHandle;
 
 import lombok.Getter;
 
@@ -45,7 +47,7 @@ public class EffectHandler implements Listener {
 
 	public void activate(Perk perk, MCPerksUser user) {
 		for (Effect effect : perk.getEffects()) {
-			effect.runEffect(perk, user, perk.getEffectedPlayers());
+			effect.runEffect(plugin, perk, user, perk.getEffectedPlayers());
 		}
 		if (!perk.isTimed() && !perk.isLastForever()) {
 			// deactivate(perk);
@@ -69,12 +71,18 @@ public class EffectHandler implements Listener {
 		activeAttributes.add(u.toString());
 	}
 
-	public boolean isActive(UUID string) {
+	@SuppressWarnings("deprecation")
+	public boolean isActive(AttributeModifier attribute) {
 		if (plugin.getConfigFile().getForceClearModifiers()) {
 			return true;
 		}
-		if (activeAttributes.contains(string.toString())) {
+		if (plugin.getVersionHandle().isAttribute(plugin, attribute)) {
 			return true;
+		}
+		if (plugin.getVersionHandle() instanceof Pre121VersionHandle) {
+			if (activeAttributes.contains(attribute.getUniqueId().toString())) {
+				return true;
+			}
 		}
 		return false;
 	}

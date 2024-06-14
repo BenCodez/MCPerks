@@ -152,8 +152,7 @@ public class EffectListeners implements Listener {
 		if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, player.getUniqueId().toString(),
 				player.getWorld().getName())) {
 			event.setCancelled(true);
-			plugin.getMcperksUserManager().getMCPerksUser(player)
-					.giveItems(ArrayUtils.convertItems(event.getItems()));
+			plugin.getMcperksUserManager().getMCPerksUser(player).giveItems(ArrayUtils.convertItems(event.getItems()));
 		}
 		if (plugin.getPerkHandler().effectActive(Effect.InstantSmelt, player.getUniqueId().toString(),
 				player.getWorld().getName())) {
@@ -435,7 +434,7 @@ public class EffectListeners implements Listener {
 			if (plugin.getEffectHandler().getOfflineEffects().containsKey(player.getUniqueId().toString())) {
 				for (Entry<Effect, Perk> entry : plugin.getEffectHandler().getOfflineEffects()
 						.get(player.getUniqueId().toString()).entrySet()) {
-					entry.getKey().removeEffect(entry.getValue(),
+					entry.getKey().removeEffect(plugin, entry.getValue(),
 							ArrayUtils.convert(new String[] { player.getUniqueId().toString() }));
 				}
 			}
@@ -479,7 +478,7 @@ public class EffectListeners implements Listener {
 			if (plugin.getEffectHandler().getOfflineEffects().containsKey(player.getUniqueId().toString())) {
 				for (Entry<Effect, Perk> entry : plugin.getEffectHandler().getOfflineEffects()
 						.get(player.getUniqueId().toString()).entrySet()) {
-					entry.getKey().removeEffect(entry.getValue(),
+					entry.getKey().removeEffect(plugin, entry.getValue(),
 							ArrayUtils.convert(new String[] { player.getUniqueId().toString() }));
 				}
 			}
