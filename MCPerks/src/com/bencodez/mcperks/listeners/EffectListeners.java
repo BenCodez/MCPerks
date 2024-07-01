@@ -362,38 +362,82 @@ public class EffectListeners implements Listener {
 	@SuppressWarnings("unchecked")
 	@EventHandler(ignoreCancelled = true)
 	public void onEntityDeath(EntityDeathEvent event) {
-
 		if (!(event.getEntity() instanceof Player) && !event.getEntityType().equals(EntityType.ARMOR_STAND)) {
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 				if (active.getEffects().contains(Effect.IncreaseMobDrops)) {
-					MobDropEffect effect = new MobDropEffect(active);
-					event.getDrops()
-							.addAll((Collection<? extends ItemStack>) effect.doubleCommonDrop(event.getDrops()));
-					event.getDrops().addAll(effect.insertCustomItems());
-					event.getDrops().addAll(effect.insertRareItems(event.getEntity()));
+					boolean giveEffects = false;
+					if (active.getPerkType().equals(PerkSystemType.ALL)) {
+						giveEffects = true;
+					} else {
+						if (event.getDamageSource().getCausingEntity() instanceof Player) {
+							ArrayList<String> activePlayers = active.getEffectedPlayers();
+							if (activePlayers
+									.contains(event.getDamageSource().getCausingEntity().getUniqueId().toString())) {
+								giveEffects = true;
+							}
+						}
+
+					}
+					if (giveEffects) {
+						MobDropEffect effect = new MobDropEffect(active);
+						event.getDrops()
+								.addAll((Collection<? extends ItemStack>) effect.doubleCommonDrop(event.getDrops()));
+						event.getDrops().addAll(effect.insertCustomItems());
+						event.getDrops().addAll(effect.insertRareItems(event.getEntity()));
+					}
 				}
 
 			}
 
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 				if (active.getEffects().contains(Effect.DoubleExperience)) {
-					DoubleExperienceEffect effect1 = new DoubleExperienceEffect(active);
-					event.setDroppedExp(effect1.increaseExperience(event.getDroppedExp()));
+					boolean giveEffects = false;
+					if (active.getPerkType().equals(PerkSystemType.ALL)) {
+						giveEffects = true;
+					} else {
+						if (event.getDamageSource().getCausingEntity() instanceof Player) {
+							ArrayList<String> activePlayers = active.getEffectedPlayers();
+							if (activePlayers
+									.contains(event.getDamageSource().getCausingEntity().getUniqueId().toString())) {
+								giveEffects = true;
+							}
+						}
+
+					}
+					if (giveEffects) {
+						DoubleExperienceEffect effect1 = new DoubleExperienceEffect(active);
+						event.setDroppedExp(effect1.increaseExperience(event.getDroppedExp()));
+					}
 				}
 			}
 
-		}
+			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
+				if (active.getEffects().contains(Effect.HeadDropper)) {
+					if (!active.getBlackedListedMobs().contains(event.getEntity().getType())) {
+						boolean giveEffects = false;
+						if (active.getPerkType().equals(PerkSystemType.ALL)) {
+							giveEffects = true;
+						} else {
+							if (event.getDamageSource().getCausingEntity() instanceof Player) {
+								ArrayList<String> activePlayers = active.getEffectedPlayers();
+								if (activePlayers.contains(
+										event.getDamageSource().getCausingEntity().getUniqueId().toString())) {
+									giveEffects = true;
+								}
+							}
 
-		for (Perk active : plugin.getPerkHandler().getActivePerks()) {
-			if (active.getEffects().contains(Effect.HeadDropper)) {
-				if (!active.getBlackedListedMobs().contains(event.getEntity().getType())) {
-					HeadDropperEffect effect2 = new HeadDropperEffect(active, event.getEntity());
-					event.getDrops().addAll(effect2.addExtraSkulls());
+						}
+						if (giveEffects) {
+							HeadDropperEffect effect2 = new HeadDropperEffect(active, event.getEntity());
+							event.getDrops().addAll(effect2.addExtraSkulls());
+						}
+
+					}
 				} else {
 					plugin.debug(event.getEntity().getType() + " is black listed for headdropper");
 				}
-
 			}
+
 		}
 
 	}
