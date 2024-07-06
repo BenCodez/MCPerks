@@ -177,8 +177,8 @@ public class IncreaseMiningArea {
 	public boolean canBreakBlock(Player p, Block b, MCPerksMain plugin) {
 		BlockBreakEvent block = new BlockBreakEvent(b, p);
 		MCPerksMain.plugin.getEffectHandler().getBlockBreakEvents().add(block);
-		Bukkit.getPluginManager().callEvent(block);
 		b.setMetadata("blockbreakevent-ignore", new FixedMetadataValue(plugin, true));
+		Bukkit.getPluginManager().callEvent(block);
 		if (!block.isCancelled()) {
 			return true;
 		}
