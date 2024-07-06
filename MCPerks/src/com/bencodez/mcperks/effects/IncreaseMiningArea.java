@@ -15,6 +15,7 @@ import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.metadata.FixedMetadataValue;
 
 import com.bencodez.advancedcore.api.misc.PlayerManager;
 import com.bencodez.mcperks.MCPerksMain;
@@ -99,7 +100,7 @@ public class IncreaseMiningArea {
 					if (perk.getBlacklistedBlocks().contains(b.getType())) {
 						canBreak = false;
 					}
-					if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
+					if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b, plugin)) {
 						if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, p.getUniqueId().toString(),
 								p.getWorld().getName())) {
 							plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(
@@ -126,7 +127,7 @@ public class IncreaseMiningArea {
 						if (perk.getBlacklistedBlocks().contains(b.getType())) {
 							canBreak = false;
 						}
-						if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
+						if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b, plugin)) {
 							if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, p.getUniqueId().toString(),
 									p.getWorld().getName())) {
 								plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(
@@ -152,7 +153,7 @@ public class IncreaseMiningArea {
 						if (perk.getBlacklistedBlocks().contains(b.getType())) {
 							canBreak = false;
 						}
-						if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b)) {
+						if (canBreak && !b.getType().equals(Material.BEDROCK) && canBreakBlock(p, b, plugin)) {
 							if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, p.getUniqueId().toString(),
 									p.getWorld().getName())) {
 								plugin.getMcperksUserManager().getMCPerksUser(p).giveItems(
@@ -173,13 +174,15 @@ public class IncreaseMiningArea {
 		}
 	}
 
-	public boolean canBreakBlock(Player p, Block b) {
+	public boolean canBreakBlock(Player p, Block b, MCPerksMain plugin) {
 		BlockBreakEvent block = new BlockBreakEvent(b, p);
 		MCPerksMain.plugin.getEffectHandler().getBlockBreakEvents().add(block);
 		Bukkit.getPluginManager().callEvent(block);
+		b.setMetadata("blockbreakevent-ignore", new FixedMetadataValue(plugin, true));
 		if (!block.isCancelled()) {
 			return true;
 		}
+		b.removeMetadata("blockbreakevent-ignore", plugin);
 		return false;
 	}
 
