@@ -179,10 +179,11 @@ public class IncreaseMiningArea {
 		MCPerksMain.plugin.getEffectHandler().getBlockBreakEvents().add(block);
 		b.setMetadata("blockbreakevent-ignore", new FixedMetadataValue(plugin, true));
 		Bukkit.getPluginManager().callEvent(block);
+		b.removeMetadata("blockbreakevent-ignore", plugin);
 		if (!block.isCancelled()) {
 			return true;
 		}
-		b.removeMetadata("blockbreakevent-ignore", plugin);
+
 		return false;
 	}
 
