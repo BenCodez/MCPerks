@@ -369,12 +369,16 @@ public class EffectListeners implements Listener {
 					if (active.getPerkType().equals(PerkSystemType.ALL)) {
 						giveEffects = true;
 					} else {
-						if (event.getDamageSource().getCausingEntity() instanceof Player) {
-							ArrayList<String> activePlayers = active.getEffectedPlayers();
-							if (activePlayers
-									.contains(event.getDamageSource().getCausingEntity().getUniqueId().toString())) {
-								giveEffects = true;
+						if (plugin.getVersionHandle().hasDamageSourceMethod()) {
+							if (plugin.getVersionHandle().getCausingEntity(event) instanceof Player) {
+								ArrayList<String> activePlayers = active.getEffectedPlayers();
+								if (activePlayers.contains(
+										plugin.getVersionHandle().getCausingEntity(event).getUniqueId().toString())) {
+									giveEffects = true;
+								}
 							}
+						} else {
+							giveEffects = true;
 						}
 
 					}
@@ -395,12 +399,16 @@ public class EffectListeners implements Listener {
 					if (active.getPerkType().equals(PerkSystemType.ALL)) {
 						giveEffects = true;
 					} else {
-						if (event.getDamageSource().getCausingEntity() instanceof Player) {
-							ArrayList<String> activePlayers = active.getEffectedPlayers();
-							if (activePlayers
-									.contains(event.getDamageSource().getCausingEntity().getUniqueId().toString())) {
-								giveEffects = true;
+						if (plugin.getVersionHandle().hasDamageSourceMethod()) {
+							if (plugin.getVersionHandle().getCausingEntity(event) instanceof Player) {
+								ArrayList<String> activePlayers = active.getEffectedPlayers();
+								if (activePlayers.contains(
+										plugin.getVersionHandle().getCausingEntity(event).getUniqueId().toString())) {
+									giveEffects = true;
+								}
 							}
+						} else {
+							giveEffects = true;
 						}
 
 					}
@@ -418,12 +426,16 @@ public class EffectListeners implements Listener {
 						if (active.getPerkType().equals(PerkSystemType.ALL)) {
 							giveEffects = true;
 						} else {
-							if (event.getDamageSource().getCausingEntity() instanceof Player) {
-								ArrayList<String> activePlayers = active.getEffectedPlayers();
-								if (activePlayers.contains(
-										event.getDamageSource().getCausingEntity().getUniqueId().toString())) {
-									giveEffects = true;
+							if (plugin.getVersionHandle().hasDamageSourceMethod()) {
+								if (plugin.getVersionHandle().getCausingEntity(event) instanceof Player) {
+									ArrayList<String> activePlayers = active.getEffectedPlayers();
+									if (activePlayers.contains(plugin.getVersionHandle().getCausingEntity(event)
+											.getUniqueId().toString())) {
+										giveEffects = true;
+									}
 								}
+							} else {
+								giveEffects = true;
 							}
 
 						}
