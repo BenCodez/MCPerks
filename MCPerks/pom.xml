@@ -56,6 +56,11 @@
 						conflicts with 
 							other plugins -->
 						<relocation>
+							<pattern>com.tcoded.folialib</pattern>
+							<shadedPattern>
+								${project.groupId}.votingplugin.simpleapi.folialib</shadedPattern>
+						</relocation>
+						<relocation>
 							<pattern>com.bencodez.simpleapi</pattern>
 							<shadedPattern>
 								${project.groupId}.mcperks.simpleapi</shadedPattern>
