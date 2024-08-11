@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Statistic;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.enchantments.Enchantment;
@@ -108,6 +109,7 @@ public class IncreaseMiningArea {
 							b.setType(Material.AIR);
 						} else {
 							b.breakNaturally(itemInHand);
+
 						}
 						numberOfBlocks++;
 					}
@@ -161,12 +163,17 @@ public class IncreaseMiningArea {
 								b.setType(Material.AIR);
 							} else {
 								b.breakNaturally(itemInHand);
+
 							}
 							numberOfBlocks++;
 						}
 					}
 				}
 			}
+		}
+
+		if (numberOfBlocks > 0) {
+			p.setStatistic(Statistic.MINE_BLOCK, p.getStatistic(Statistic.MINE_BLOCK) + numberOfBlocks);
 		}
 
 		if (EnchantmentTarget.TOOL.includes(itemInHand)) {
