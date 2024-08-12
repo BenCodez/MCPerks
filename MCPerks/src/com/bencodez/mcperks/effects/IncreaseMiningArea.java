@@ -173,7 +173,8 @@ public class IncreaseMiningArea {
 		}
 
 		if (numberOfBlocks > 0) {
-			p.setStatistic(Statistic.MINE_BLOCK, p.getStatistic(Statistic.MINE_BLOCK) + numberOfBlocks);
+			p.setStatistic(Statistic.MINE_BLOCK, event.getBlock().getType(),
+					p.getStatistic(Statistic.MINE_BLOCK, event.getBlock().getType()) + numberOfBlocks);
 		}
 
 		if (EnchantmentTarget.TOOL.includes(itemInHand)) {
