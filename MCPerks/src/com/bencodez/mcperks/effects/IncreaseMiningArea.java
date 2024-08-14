@@ -88,6 +88,8 @@ public class IncreaseMiningArea {
 
 		int numberOfBlocks = 0;
 
+		Material type = event.getBlock().getType();
+
 		if (vertical) {
 			for (int x = (int) (event.getBlock().getX() - range); x <= event.getBlock().getX() + range; x++) {
 				for (int z = (int) (event.getBlock().getZ() - range); z <= event.getBlock().getZ() + range; z++) {
@@ -173,12 +175,9 @@ public class IncreaseMiningArea {
 		}
 
 		if (numberOfBlocks > 0) {
-			plugin.debug("Adding stats " + event.getBlock().getType() + " "
-					+ p.getStatistic(Statistic.MINE_BLOCK, event.getBlock().getType()));
-			p.setStatistic(Statistic.MINE_BLOCK, event.getBlock().getType(),
-					p.getStatistic(Statistic.MINE_BLOCK, event.getBlock().getType()) + numberOfBlocks);
-			plugin.debug("New stats " + event.getBlock().getType() + " "
-					+ p.getStatistic(Statistic.MINE_BLOCK, event.getBlock().getType()));
+			plugin.debug("Adding stats " + type + " " + p.getStatistic(Statistic.MINE_BLOCK, type));
+			p.setStatistic(Statistic.MINE_BLOCK, type, p.getStatistic(Statistic.MINE_BLOCK, type) + numberOfBlocks);
+			plugin.debug("New stats " + type + " " + p.getStatistic(Statistic.MINE_BLOCK, type));
 		}
 
 		if (EnchantmentTarget.TOOL.includes(itemInHand)) {
