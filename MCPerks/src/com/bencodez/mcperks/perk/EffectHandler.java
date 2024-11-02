@@ -71,7 +71,7 @@ public class EffectHandler implements Listener {
 		activeAttributes.add(u.toString());
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings("removal")
 	public boolean isActive(AttributeModifier attribute) {
 		if (plugin.getConfigFile().getForceClearModifiers()) {
 			return true;

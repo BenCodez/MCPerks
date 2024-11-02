@@ -1,5 +1,6 @@
 package com.bencodez.mcperks.version;
 
+import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.attribute.AttributeModifier.Operation;
 import org.bukkit.entity.Entity;
@@ -11,8 +12,10 @@ public interface VersionHandle {
 	public AttributeModifier getModifier(double amount, Operation operation);
 
 	public boolean isAttribute(MCPerksMain plugin, AttributeModifier attri);
-	
+
 	public boolean hasDamageSourceMethod();
-	
+
 	public Entity getCausingEntity(EntityDeathEvent event);
+
+	public Attribute getAttribute(String... attributes);
 }

@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.attribute.AttributeModifier.Operation;
 import org.bukkit.entity.Player;
@@ -113,7 +112,7 @@ public enum Effect {
 		return null;
 	}
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({ "deprecation", "removal" })
 	public void removeEffect(MCPerksMain plugin, Perk perk, ArrayList<String> players1) {
 		ArrayList<Player> players = new ArrayList<Player>();
 		for (String uuid : players1) {
@@ -131,9 +130,12 @@ public enum Effect {
 			break;
 		case IncreaseMaxHealth:
 			for (Player p : players) {
-				for (AttributeModifier modifier : p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers()) {
+				for (AttributeModifier modifier : p
+						.getAttribute(plugin.getVersionHandle().getAttribute("MAX_HEALTH", "GENERIC_MAX_HEALTH"))
+						.getModifiers()) {
 					if (MCPerksMain.plugin.getEffectHandler().isActive(modifier)) {
-						p.getAttribute(Attribute.GENERIC_MAX_HEALTH).removeModifier(modifier);
+						p.getAttribute(plugin.getVersionHandle().getAttribute("MAX_HEALTH", "GENERIC_MAX_HEALTH"))
+								.removeModifier(modifier);
 						if (plugin.getVersionHandle() instanceof Pre121VersionHandle) {
 							MCPerksMain.plugin.getEffectHandler().remove(modifier.getUniqueId());
 						}
@@ -143,9 +145,12 @@ public enum Effect {
 			break;
 		case IncreaseStrength:
 			for (Player p : players) {
-				for (AttributeModifier modifier : p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getModifiers()) {
+				for (AttributeModifier modifier : p
+						.getAttribute(plugin.getVersionHandle().getAttribute("ATTACK_DAMAGE", "GENERIC_ATTACK_DAMAGE"))
+						.getModifiers()) {
 					if (MCPerksMain.plugin.getEffectHandler().isActive(modifier)) {
-						p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).removeModifier(modifier);
+						p.getAttribute(plugin.getVersionHandle().getAttribute("ATTACK_DAMAGE", "GENERIC_ATTACK_DAMAGE"))
+								.removeModifier(modifier);
 						if (plugin.getVersionHandle() instanceof Pre121VersionHandle) {
 							MCPerksMain.plugin.getEffectHandler().remove(modifier.getUniqueId());
 						}
@@ -155,9 +160,11 @@ public enum Effect {
 			break;
 		case IncreaseLuck:
 			for (Player p : players) {
-				for (AttributeModifier modifier : p.getAttribute(Attribute.GENERIC_LUCK).getModifiers()) {
+				for (AttributeModifier modifier : p
+						.getAttribute(plugin.getVersionHandle().getAttribute("LUCK", "GENERIC_LUCK")).getModifiers()) {
 					if (MCPerksMain.plugin.getEffectHandler().isActive(modifier)) {
-						p.getAttribute(Attribute.GENERIC_LUCK).removeModifier(modifier);
+						p.getAttribute(plugin.getVersionHandle().getAttribute("LUCK", "GENERIC_LUCK"))
+								.removeModifier(modifier);
 						if (plugin.getVersionHandle() instanceof Pre121VersionHandle) {
 							MCPerksMain.plugin.getEffectHandler().remove(modifier.getUniqueId());
 						}
@@ -167,9 +174,14 @@ public enum Effect {
 			break;
 		case MoveSpeed:
 			for (Player p : players) {
-				for (AttributeModifier modifier : p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getModifiers()) {
+				for (AttributeModifier modifier : p
+						.getAttribute(
+								plugin.getVersionHandle().getAttribute("MOVEMENT_SPEED", "GENERIC_MOVEMENT_SPEED"))
+						.getModifiers()) {
 					if (MCPerksMain.plugin.getEffectHandler().isActive(modifier)) {
-						p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).removeModifier(modifier);
+						p.getAttribute(
+								plugin.getVersionHandle().getAttribute("MOVEMENT_SPEED", "GENERIC_MOVEMENT_SPEED"))
+								.removeModifier(modifier);
 						if (plugin.getVersionHandle() instanceof Pre121VersionHandle) {
 							MCPerksMain.plugin.getEffectHandler().remove(modifier.getUniqueId());
 						}
@@ -226,7 +238,7 @@ public enum Effect {
 	@Setter
 	private String permission = "";
 
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings("removal")
 	public void runEffect(MCPerksMain plugin, Perk perk, MCPerksUser user, ArrayList<String> uuids) {
 		ArrayList<Player> players = new ArrayList<Player>();
 		for (String uuid : uuids) {
@@ -264,7 +276,10 @@ public enum Effect {
 				@Override
 				public void run() {
 					for (Player player : players) {
-						player.setHealth(player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
+						player.setHealth(player
+								.getAttribute(
+										plugin.getVersionHandle().getAttribute("MAX_HEALTH", "GENERIC_MAX_HEALTH"))
+								.getValue());
 					}
 				}
 			});
@@ -341,8 +356,11 @@ public enum Effect {
 		case IncreaseMaxHealth:
 			if (perk.isClearModifiers()) {
 				for (Player p : players) {
-					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers()) {
-						p.getAttribute(Attribute.GENERIC_MAX_HEALTH).removeModifier(m);
+					for (AttributeModifier m : p
+							.getAttribute(plugin.getVersionHandle().getAttribute("MAX_HEALTH", "GENERIC_MAX_HEALTH"))
+							.getModifiers()) {
+						p.getAttribute(plugin.getVersionHandle().getAttribute("MAX_HEALTH", "GENERIC_MAX_HEALTH"))
+								.removeModifier(m);
 					}
 				}
 			}
@@ -352,14 +370,19 @@ public enum Effect {
 				if (plugin.getVersionHandle() instanceof Pre121VersionHandle) {
 					MCPerksMain.plugin.getEffectHandler().add(m.getUniqueId());
 				}
-				p.getAttribute(Attribute.GENERIC_MAX_HEALTH).addModifier(m);
+				p.getAttribute(plugin.getVersionHandle().getAttribute("MAX_HEALTH", "GENERIC_MAX_HEALTH"))
+						.addModifier(m);
 			}
 			break;
 		case IncreaseStrength:
 			if (perk.isClearModifiers()) {
 				for (Player p : players) {
-					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getModifiers()) {
-						p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).removeModifier(m);
+					for (AttributeModifier m : p
+							.getAttribute(
+									plugin.getVersionHandle().getAttribute("ATTACK_DAMAGE", "GENERIC_ATTACK_DAMAGE"))
+							.getModifiers()) {
+						p.getAttribute(plugin.getVersionHandle().getAttribute("ATTACK_DAMAGE", "GENERIC_ATTACK_DAMAGE"))
+								.removeModifier(m);
 					}
 				}
 			}
@@ -368,14 +391,18 @@ public enum Effect {
 				if (plugin.getVersionHandle() instanceof Pre121VersionHandle) {
 					MCPerksMain.plugin.getEffectHandler().add(m.getUniqueId());
 				}
-				p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).addModifier(m);
+				p.getAttribute(plugin.getVersionHandle().getAttribute("ATTACK_DAMAGE", "GENERIC_ATTACK_DAMAGE"))
+						.addModifier(m);
 			}
 			break;
 		case IncreaseLuck:
 			if (perk.isClearModifiers()) {
 				for (Player p : players) {
-					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_LUCK).getModifiers()) {
-						p.getAttribute(Attribute.GENERIC_LUCK).removeModifier(m);
+					for (AttributeModifier m : p
+							.getAttribute(plugin.getVersionHandle().getAttribute("LUCK", "GENERIC_LUCK"))
+							.getModifiers()) {
+						p.getAttribute(plugin.getVersionHandle().getAttribute("LUCK", "GENERIC_LUCK"))
+								.removeModifier(m);
 					}
 				}
 			}
@@ -384,14 +411,19 @@ public enum Effect {
 				if (plugin.getVersionHandle() instanceof Pre121VersionHandle) {
 					MCPerksMain.plugin.getEffectHandler().add(m.getUniqueId());
 				}
-				p.getAttribute(Attribute.GENERIC_LUCK).addModifier(m);
+				p.getAttribute(plugin.getVersionHandle().getAttribute("LUCK", "GENERIC_LUCK")).addModifier(m);
 			}
 			break;
 		case MoveSpeed:
 			if (perk.isClearModifiers()) {
 				for (Player p : players) {
-					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getModifiers()) {
-						p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).removeModifier(m);
+					for (AttributeModifier m : p
+							.getAttribute(
+									plugin.getVersionHandle().getAttribute("MOVEMENT_SPEED", "GENERIC_MOVEMENT_SPEED"))
+							.getModifiers()) {
+						p.getAttribute(
+								plugin.getVersionHandle().getAttribute("MOVEMENT_SPEED", "GENERIC_MOVEMENT_SPEED"))
+								.removeModifier(m);
 					}
 				}
 			}
@@ -400,7 +432,8 @@ public enum Effect {
 				if (plugin.getVersionHandle() instanceof Pre121VersionHandle) {
 					MCPerksMain.plugin.getEffectHandler().add(m.getUniqueId());
 				}
-				p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).addModifier(m);
+				p.getAttribute(plugin.getVersionHandle().getAttribute("MOVEMENT_SPEED", "GENERIC_MOVEMENT_SPEED"))
+						.addModifier(m);
 			}
 			break;
 		case TempPermission:

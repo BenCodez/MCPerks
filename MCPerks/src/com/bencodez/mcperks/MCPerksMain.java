@@ -42,7 +42,8 @@ import com.bencodez.mcperks.perk.PerkSystemType;
 import com.bencodez.mcperks.placeholder.MCPerksExpansion;
 import com.bencodez.mcperks.rewardedit.MCPerksRewardEditActivations;
 import com.bencodez.mcperks.userapi.UserManager;
-import com.bencodez.mcperks.version.Post121VersionHandle;
+import com.bencodez.mcperks.version.Only121VersionHandle;
+import com.bencodez.mcperks.version.Post123VersionHandle;
 import com.bencodez.mcperks.version.Pre121VersionHandle;
 import com.bencodez.mcperks.version.VersionHandle;
 import com.bencodez.simpleapi.array.ArrayUtils;
@@ -159,8 +160,10 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		loadInjectedRewards();
 		if (NMSManager.getInstance().isVersion("1.13", "1.14", "1.15", "1.16", "1.17", "1.18", "1.19", "1.20")) {
 			versionHandle = new Pre121VersionHandle();
+		} else if (NMSManager.getInstance().isVersion("1.21.1")){
+			versionHandle = new Only121VersionHandle();
 		} else {
-			versionHandle = new Post121VersionHandle();
+			versionHandle = new Post123VersionHandle();
 		}
 
 		if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk")) {

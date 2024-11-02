@@ -1,6 +1,8 @@
 package com.bencodez.mcperks.version;
 
 import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.attribute.AttributeModifier.Operation;
 import org.bukkit.entity.Entity;
@@ -9,7 +11,7 @@ import org.bukkit.inventory.EquipmentSlotGroup;
 
 import com.bencodez.mcperks.MCPerksMain;
 
-public class Post121VersionHandle implements VersionHandle {
+public class Post123VersionHandle implements VersionHandle {
 
 	@Override
 	public AttributeModifier getModifier(double amount, Operation operation) {
@@ -30,6 +32,21 @@ public class Post121VersionHandle implements VersionHandle {
 	@Override
 	public Entity getCausingEntity(EntityDeathEvent event) {
 		return event.getDamageSource().getCausingEntity();
+	}
+
+	@Override
+	public Attribute getAttribute(String... attributes) {
+		for (String str : attributes) {
+			try {
+				Attribute att = Registry.ATTRIBUTE.get(NamespacedKey.fromString(str));
+				if (att != null) {
+					return att;
+				}
+			} catch (Exception e) {
+
+			}
+		}
+		return null;
 	}
 
 }

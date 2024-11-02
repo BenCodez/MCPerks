@@ -8,7 +8,6 @@ import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
@@ -310,8 +309,8 @@ public class CommandLoader {
 					}
 
 				} else {
-					sender.sendMessage(ArrayUtils.convert(
-							ArrayUtils.comptoString(Commands.getInstance().perksHelpText(sender))));
+					sender.sendMessage(
+							ArrayUtils.convert(ArrayUtils.comptoString(Commands.getInstance().perksHelpText(sender))));
 				}
 			}
 		});
@@ -373,8 +372,8 @@ public class CommandLoader {
 							}
 
 						} else {
-							sender.sendMessage(ArrayUtils.convert(ArrayUtils
-									.comptoString(Commands.getInstance().perksHelpText(sender))));
+							sender.sendMessage(ArrayUtils
+									.convert(ArrayUtils.comptoString(Commands.getInstance().perksHelpText(sender))));
 						}
 					}
 				});
@@ -468,9 +467,8 @@ public class CommandLoader {
 				msg.add("&cPerk : Effected players : Experation");
 				for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
 					if (perk.getActivater().getPlayerName().equalsIgnoreCase(args[1])) {
-						msg.add("&c" + perk.getPerk() + " : "
-								+ ArrayUtils.makeStringList(perk.getEffectedPlayers()) + " : "
-								+ perk.getExperation(perk.getActivater()));
+						msg.add("&c" + perk.getPerk() + " : " + ArrayUtils.makeStringList(perk.getEffectedPlayers())
+								+ " : " + perk.getExperation(perk.getActivater()));
 					}
 				}
 				sender.sendMessage(ArrayUtils.convert(ArrayUtils.colorize(msg)));
@@ -499,20 +497,35 @@ public class CommandLoader {
 				Player p = Bukkit.getPlayer(args[1]);
 
 				if (p != null) {
-					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers()) {
-						p.getAttribute(Attribute.GENERIC_MAX_HEALTH).removeModifier(m);
+					for (AttributeModifier m : p
+							.getAttribute(plugin.getVersionHandle().getAttribute("MAX_HEALTH", "GENERIC_MAX_HEALTH"))
+							.getModifiers()) {
+						p.getAttribute(plugin.getVersionHandle().getAttribute("MAX_HEALTH", "GENERIC_MAX_HEALTH"))
+								.removeModifier(m);
 					}
 
-					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getModifiers()) {
-						p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).removeModifier(m);
+					for (AttributeModifier m : p
+							.getAttribute(
+									plugin.getVersionHandle().getAttribute("ATTACK_DAMAGE", "GENERIC_ATTACK_DAMAGE"))
+							.getModifiers()) {
+						p.getAttribute(plugin.getVersionHandle().getAttribute("ATTACK_DAMAGE", "GENERIC_ATTACK_DAMAGE"))
+								.removeModifier(m);
 					}
 
-					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_LUCK).getModifiers()) {
-						p.getAttribute(Attribute.GENERIC_LUCK).removeModifier(m);
+					for (AttributeModifier m : p
+							.getAttribute(plugin.getVersionHandle().getAttribute("LUCK", "GENERIC_LUCK"))
+							.getModifiers()) {
+						p.getAttribute(plugin.getVersionHandle().getAttribute("LUCK", "GENERIC_LUCK"))
+								.removeModifier(m);
 					}
 
-					for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getModifiers()) {
-						p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).removeModifier(m);
+					for (AttributeModifier m : p
+							.getAttribute(
+									plugin.getVersionHandle().getAttribute("MOVEMENT_SPEED", "GENERIC_MOVEMENT_SPEED"))
+							.getModifiers()) {
+						p.getAttribute(
+								plugin.getVersionHandle().getAttribute("MOVEMENT_SPEED", "GENERIC_MOVEMENT_SPEED"))
+								.removeModifier(m);
 					}
 
 					sendMessage(sender, "&cAttributes cleared");
@@ -530,20 +543,35 @@ public class CommandLoader {
 				for (Player p : Bukkit.getOnlinePlayers()) {
 
 					if (p != null) {
-						for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getModifiers()) {
-							p.getAttribute(Attribute.GENERIC_MAX_HEALTH).removeModifier(m);
+						for (AttributeModifier m : p
+								.getAttribute(
+										plugin.getVersionHandle().getAttribute("MAX_HEALTH", "GENERIC_MAX_HEALTH"))
+								.getModifiers()) {
+							p.getAttribute(plugin.getVersionHandle().getAttribute("MAX_HEALTH", "GENERIC_MAX_HEALTH"))
+									.removeModifier(m);
 						}
 
-						for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getModifiers()) {
-							p.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).removeModifier(m);
+						for (AttributeModifier m : p.getAttribute(
+								plugin.getVersionHandle().getAttribute("ATTACK_DAMAGE", "GENERIC_ATTACK_DAMAGE"))
+								.getModifiers()) {
+							p.getAttribute(
+									plugin.getVersionHandle().getAttribute("ATTACK_DAMAGE", "GENERIC_ATTACK_DAMAGE"))
+									.removeModifier(m);
 						}
 
-						for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_LUCK).getModifiers()) {
-							p.getAttribute(Attribute.GENERIC_LUCK).removeModifier(m);
+						for (AttributeModifier m : p
+								.getAttribute(plugin.getVersionHandle().getAttribute("LUCK", "GENERIC_LUCK"))
+								.getModifiers()) {
+							p.getAttribute(plugin.getVersionHandle().getAttribute("LUCK", "GENERIC_LUCK"))
+									.removeModifier(m);
 						}
 
-						for (AttributeModifier m : p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).getModifiers()) {
-							p.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).removeModifier(m);
+						for (AttributeModifier m : p.getAttribute(
+								plugin.getVersionHandle().getAttribute("MOVEMENT_SPEED", "GENERIC_MOVEMENT_SPEED"))
+								.getModifiers()) {
+							p.getAttribute(
+									plugin.getVersionHandle().getAttribute("MOVEMENT_SPEED", "GENERIC_MOVEMENT_SPEED"))
+									.removeModifier(m);
 						}
 
 						sendMessage(sender, "&cAttributes cleared");
@@ -764,19 +792,19 @@ public class CommandLoader {
 	}
 
 	public void loadTabComplete() {
-		TabCompleteHandler.getInstance().addTabCompleteOption(new TabCompleteHandle("(Perk)",
-				ArrayUtils.convert(plugin.getPerkHandler().getLoadedPerks().keySet())) {
+		TabCompleteHandler.getInstance().addTabCompleteOption(
+				new TabCompleteHandle("(Perk)", ArrayUtils.convert(plugin.getPerkHandler().getLoadedPerks().keySet())) {
 
-			@Override
-			public void reload() {
-				setReplace(ArrayUtils.convert(plugin.getPerkHandler().getLoadedPerks().keySet()));
-			}
+					@Override
+					public void reload() {
+						setReplace(ArrayUtils.convert(plugin.getPerkHandler().getLoadedPerks().keySet()));
+					}
 
-			@Override
-			public void updateReplacements() {
+					@Override
+					public void updateReplacements() {
 
-			}
-		});
+					}
+				});
 
 	}
 
