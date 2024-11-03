@@ -38,7 +38,8 @@ public class Post123VersionHandle implements VersionHandle {
 	public Attribute getAttribute(String... attributes) {
 		for (String str : attributes) {
 			try {
-				Attribute att = Registry.ATTRIBUTE.get(NamespacedKey.fromString(str));
+				Attribute att = Registry.ATTRIBUTE
+						.get(NamespacedKey.fromString(str.toLowerCase()));
 				if (att != null) {
 					return att;
 				}
