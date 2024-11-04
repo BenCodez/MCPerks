@@ -12,9 +12,9 @@ import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 
-import com.bencodez.advancedcore.api.yml.YMLFile;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.perk.PerkSystemType;
+import com.bencodez.simpleapi.file.YMLFile;
 
 // TODO: Auto-generated Javadoc
 /**
