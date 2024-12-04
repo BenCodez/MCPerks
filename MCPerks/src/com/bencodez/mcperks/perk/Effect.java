@@ -221,7 +221,7 @@ public enum Effect {
 			for (Player p : players) {
 				HashMap<String, String> placeholders = new HashMap<String, String>();
 				placeholders.put("player", p.getName());
-				MiscUtils.getInstance().executeConsoleCommands(p, perk.getDisableCommands(), placeholders);
+				MiscUtils.getInstance().executeConsoleCommands(p, perk.getDisableCommands(), placeholders, false);
 			}
 			break;
 		default:
@@ -345,13 +345,13 @@ public enum Effect {
 			for (Player p : players) {
 				HashMap<String, String> placeholders = new HashMap<String, String>();
 				placeholders.put("player", p.getName());
-				MiscUtils.getInstance().executeConsoleCommands(p, perk.getCommands(), placeholders);
+				MiscUtils.getInstance().executeConsoleCommands(p, perk.getCommands(), placeholders, false);
 			}
 			break;
 		case GlobalCommands:
 			HashMap<String, String> placeholders = new HashMap<String, String>();
 			placeholders.put("player", perk.getActivater().getPlayerName());
-			MiscUtils.getInstance().executeConsoleCommands(perk.getGlobalCommands(), placeholders);
+			MiscUtils.getInstance().executeConsoleCommands(perk.getGlobalCommands(), placeholders, false);
 			break;
 		case IncreaseMaxHealth:
 			if (perk.isClearModifiers()) {
