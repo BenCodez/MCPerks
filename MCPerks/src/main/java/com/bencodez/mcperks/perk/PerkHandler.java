@@ -40,6 +40,7 @@ import com.bencodez.advancedcore.logger.Logger;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.ConfigPerks;
 import com.bencodez.mcperks.configs.Lang;
+import com.bencodez.mcperks.effects.RepairEffect;
 import com.bencodez.mcperks.userapi.MCPerksUser;
 import com.bencodez.simpleapi.array.ArrayUtils;
 import com.bencodez.simpleapi.messages.MessageAPI;
@@ -202,10 +203,10 @@ public class PerkHandler {
 			clone.setActive(true);
 			if (!clone.isLastForever()) {
 				Timestamp exp = new Timestamp(Calendar.getInstance().getTime().getTime() + 1000 * length);
-				if (timestamp !=null) {
+				if (timestamp != null) {
 					exp = timestamp;
 				}
-				
+
 				clone.setExperation(user, exp.getTime());
 
 				clone.scheduleDeactivation(user);
@@ -229,6 +230,25 @@ public class PerkHandler {
 
 				}
 			}, clone.getReActivateEffectsTimer() * 1000, clone.getReActivateEffectsTimer() * 1000);
+		}
+
+		if (perk.getEffects().contains(Effect.AutoRepair)) {
+			final Perk clonedFinal = clone;
+			timer.scheduleAtFixedRate(new TimerTask() {
+
+				@Override
+				public void run() {
+					RepairEffect repairEffect = new RepairEffect();
+					if (clonedFinal.isActive() && clonedFinal.getEffects().contains(Effect.AutoRepair)) {
+						for (String uuid : clonedFinal.getEffectedPlayers()) {
+							repairEffect.repairRandomTool(Bukkit.getPlayer(UUID.fromString(uuid)));
+						}
+					} else {
+						cancel();
+					}
+
+				}
+			}, 1000, 1000);
 		}
 
 		boolean perkRewards = plugin.getRewardHandler().hasRewards(ConfigPerks.getInstance().getData(perk.getPerk()),
@@ -313,7 +333,9 @@ public class PerkHandler {
 
 		printActivePerks();
 
-		if (plugin.getConfigFile().getLogActivation() && activationLog != null) {
+		if (plugin.getConfigFile().getLogActivation() && activationLog != null)
+
+		{
 
 			String str = new SimpleDateFormat("EEE, d MMM yyyy HH:mm").format(Calendar.getInstance().getTime());
 			activationLog

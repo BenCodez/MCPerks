@@ -101,7 +101,9 @@ public enum Effect {
 
 	InstantSmelt,
 
-	GlobalCommands;
+	GlobalCommands,
+	
+	AutoRepair;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {
