@@ -40,6 +40,25 @@ public class RepairEffect {
 		}
 	}
 
+	public void repairTools(Player player) {
+		if (player == null) {
+			return;
+		}
+
+		// Collect damaged tools from the player's inventory
+		for (ItemStack item : player.getInventory().getContents()) {
+			if (item != null && isTool(item) && isDamaged(item)) {
+				Damageable meta = (Damageable) item.getItemMeta();
+				if (meta != null) {
+					int currentDamage = meta.getDamage();
+					meta.setDamage(Math.max(0, currentDamage - 1)); // Reduce damage by 1
+					item.setItemMeta(meta);
+				}
+			}
+		}
+
+	}
+
 	private boolean isTool(ItemStack item) {
 		// Check if the item is a tool (e.g., pickaxe, axe, shovel, etc.)
 		Material type = item.getType();

@@ -232,14 +232,15 @@ public class PerkHandler {
 			}, clone.getReActivateEffectsTimer() * 1000, clone.getReActivateEffectsTimer() * 1000);
 		}
 
-		if (perk.getEffects().contains(Effect.AutoRepair)) {
+		if (perk.getEffects().contains(Effect.RandomRepair)) {
 			final Perk clonedFinal = clone;
+			double timing = clonedFinal.getIncreasePercent(Effect.RandomRepair);
 			timer.scheduleAtFixedRate(new TimerTask() {
 
 				@Override
 				public void run() {
 					RepairEffect repairEffect = new RepairEffect();
-					if (clonedFinal.isActive() && clonedFinal.getEffects().contains(Effect.AutoRepair)) {
+					if (clonedFinal.isActive() && clonedFinal.getEffects().contains(Effect.RandomRepair)) {
 						for (String uuid : clonedFinal.getEffectedPlayers()) {
 							repairEffect.repairRandomTool(Bukkit.getPlayer(UUID.fromString(uuid)));
 						}
@@ -248,7 +249,27 @@ public class PerkHandler {
 					}
 
 				}
-			}, 1000, 1000);
+			}, 1000, (long) timing);
+		}
+
+		if (perk.getEffects().contains(Effect.ToolRepair)) {
+			final Perk clonedFinal = clone;
+			double timing = clonedFinal.getIncreasePercent(Effect.ToolRepair);
+			timer.scheduleAtFixedRate(new TimerTask() {
+
+				@Override
+				public void run() {
+					RepairEffect repairEffect = new RepairEffect();
+					if (clonedFinal.isActive() && clonedFinal.getEffects().contains(Effect.ToolRepair)) {
+						for (String uuid : clonedFinal.getEffectedPlayers()) {
+							repairEffect.repairTools(Bukkit.getPlayer(UUID.fromString(uuid)));
+						}
+					} else {
+						cancel();
+					}
+
+				}
+			}, 1000, (long) timing);
 		}
 
 		boolean perkRewards = plugin.getRewardHandler().hasRewards(ConfigPerks.getInstance().getData(perk.getPerk()),

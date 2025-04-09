@@ -1,0 +1,12 @@
+Enabled: true
+CoolDown: 86400
+TimeLasts: 60
+Name: 'ToolRepair'
+Description: 'Slowly repair tools in inventory'
+# 1000 is time in milliseconds to try a repair attempt (1000ms = 1 sec)
+Effects:
+- 'ToolRepair:1000' 
+Item:
+  Material: 'ENCHANTED_BOOK'
+  Enchantments:
+    mending: 1 

@@ -102,8 +102,10 @@ public enum Effect {
 	InstantSmelt,
 
 	GlobalCommands,
-	
-	AutoRepair;
+
+	RandomRepair,
+
+	ToolRepair;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {
@@ -459,7 +461,7 @@ public enum Effect {
 	public boolean usesModifier() {
 		return isEffect(Effect.IncreaseMobDrops, Effect.DoubleExperience, Effect.Farmer, Effect.Fortune, Effect.McmmoXP,
 				Effect.HeadDropper, Effect.IncreaseStrength, Effect.Florist, Effect.UnderWaterFlorist,
-				Effect.IncreaseMiningArea);
+				Effect.IncreaseMiningArea, Effect.RandomRepair, Effect.ToolRepair);
 	}
 
 	public boolean isEffect(Effect... effects) {
