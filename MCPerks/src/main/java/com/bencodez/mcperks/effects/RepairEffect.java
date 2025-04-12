@@ -74,4 +74,99 @@ public class RepairEffect {
 		}
 		return false;
 	}
+
+	public void repairArmour(Player player) {
+		if (player == null) {
+			return;
+		}
+
+		// Collect damaged armor pieces from the player's inventory
+		for (ItemStack item : player.getInventory().getArmorContents()) {
+			if (item != null && isArmour(item) && isDamaged(item)) {
+				Damageable meta = (Damageable) item.getItemMeta();
+				if (meta != null) {
+					int currentDamage = meta.getDamage();
+					meta.setDamage(Math.max(0, currentDamage - 1)); // Reduce damage by 1
+					item.setItemMeta(meta);
+				}
+			}
+		}
+	}
+
+	private boolean isArmour(ItemStack item) {
+		// Check if the item is an armor piece (e.g., helmet, chestplate, leggings,
+		// boots)
+		Material type = item.getType();
+		return type.name().endsWith("_HELMET") || type.name().endsWith("_CHESTPLATE")
+				|| type.name().endsWith("_LEGGINGS") || type.name().endsWith("_BOOTS");
+	}
+
+	public void repairRandomArmour(Player player) {
+		if (player == null) {
+			return;
+		}
+
+		List<ItemStack> damagedArmour = new ArrayList<>();
+
+		// Collect damaged armor pieces from the player's inventory
+		for (ItemStack item : player.getInventory().getArmorContents()) {
+			if (item != null && isArmour(item) && isDamaged(item)) {
+				damagedArmour.add(item);
+			}
+		}
+
+		// If there are no damaged armor pieces, exit
+		if (damagedArmour.isEmpty()) {
+			return;
+		}
+
+		// Pick a random armor piece from the list
+		ItemStack armourToRepair = damagedArmour.get(ThreadLocalRandom.current().nextInt(damagedArmour.size()));
+
+		// Repair the armor piece by reducing its damage
+		Damageable meta = (Damageable) armourToRepair.getItemMeta();
+		if (meta != null) {
+			int currentDamage = meta.getDamage();
+			meta.setDamage(Math.max(0, currentDamage - 1)); // Reduce damage by 1
+			armourToRepair.setItemMeta(meta);
+		}
+	}
+
+	public void repairRandomItem(Player player) {
+		if (player == null) {
+			return;
+		}
+
+		List<ItemStack> damagedItems = new ArrayList<>();
+
+		// Collect damaged armor pieces
+		for (ItemStack item : player.getInventory().getArmorContents()) {
+			if (item != null && isArmour(item) && isDamaged(item)) {
+				damagedItems.add(item);
+			}
+		}
+
+		// Collect damaged tools
+		for (ItemStack item : player.getInventory().getContents()) {
+			if (item != null && isTool(item) && isDamaged(item)) {
+				damagedItems.add(item);
+			}
+		}
+
+		// If there are no damaged items, exit
+		if (damagedItems.isEmpty()) {
+			return;
+		}
+
+		// Pick a random item from the list
+		ItemStack itemToRepair = damagedItems.get(ThreadLocalRandom.current().nextInt(damagedItems.size()));
+
+		// Repair the item by reducing its damage
+		Damageable meta = (Damageable) itemToRepair.getItemMeta();
+		if (meta != null) {
+			int currentDamage = meta.getDamage();
+			meta.setDamage(Math.max(0, currentDamage - 1)); // Reduce damage by 1
+			itemToRepair.setItemMeta(meta);
+		}
+	}
 }
