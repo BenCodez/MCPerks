@@ -160,46 +160,54 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		loadInjectedRewards();
 		if (NMSManager.getInstance().isVersion("1.13", "1.14", "1.15", "1.16", "1.17", "1.18", "1.19", "1.20")) {
 			versionHandle = new Pre121VersionHandle();
-		} else if (NMSManager.getInstance().isVersion("1.21.1")){
+		} else if (NMSManager.getInstance().isVersion("1.21.1")) {
 			versionHandle = new Only121VersionHandle();
 		} else {
 			versionHandle = new Post123VersionHandle();
 		}
 
-		if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk")) {
-			for (String uuid : getMcperksServerData().getData().getConfigurationSection("OfflinePerk").getKeys(false)) {
-				if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk." + uuid)) {
-					for (String perk : getMcperksServerData().getData().getConfigurationSection("OfflinePerk." + uuid)
-							.getKeys(false)) {
+		getBukkitScheduler().runTaskAsynchronously(this, new Runnable() {
 
-						long timeLast = getMcperksServerData().getData()
-								.getLong("OfflinePerk." + uuid + "." + perk + ".Experiaton");
-						debug(uuid + "/" + perk + "/" + timeLast);
-						Timestamp timestamp = null;
-						if (timeLast > 0) {
-							timestamp = new Timestamp(timeLast);
-							timeLast = 0;
-						}
-						boolean activate = true;
-						if (timestamp != null) {
-							if (timestamp.after(new Timestamp(Calendar.getInstance().getTime().getTime()))) {
-								// not activating
-								activate = false;
+			@Override
+			public void run() {
+				if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk")) {
+					for (String uuid : getMcperksServerData().getData().getConfigurationSection("OfflinePerk")
+							.getKeys(false)) {
+						if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk." + uuid)) {
+							for (String perk : getMcperksServerData().getData()
+									.getConfigurationSection("OfflinePerk." + uuid).getKeys(false)) {
+
+								long timeLast = getMcperksServerData().getData()
+										.getLong("OfflinePerk." + uuid + "." + perk + ".Experiaton");
+								debug(uuid + "/" + perk + "/" + timeLast);
+								Timestamp timestamp = null;
+								if (timeLast > 0) {
+									timestamp = new Timestamp(timeLast);
+									timeLast = 0;
+								}
+								boolean activate = true;
+								if (timestamp != null) {
+									if (timestamp.after(new Timestamp(Calendar.getInstance().getTime().getTime()))) {
+										// not activating
+										activate = false;
+									}
+								}
+								if (activate) {
+									debug("Activating perk from shutdown " + perk + "/" + uuid + "/" + timeLast);
+									getPerkHandler().activePerk(getPerkHandler().getPerk(perk),
+											getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)),
+											(int) timeLast, timestamp);
+								}
+
 							}
 						}
-						if (activate) {
-							debug("Activating perk from shutdown " + perk + "/" + uuid + "/" + timeLast);
-							getPerkHandler().activePerk(getPerkHandler().getPerk(perk),
-									getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)), (int) timeLast,
-									timestamp);
-						}
-
 					}
 				}
+
+				getMcperksServerData().getData().set("OfflinePerk", null);
+				getMcperksServerData().saveData();
 			}
-		}
-		getMcperksServerData().getData().set("OfflinePerk", null);
-		getMcperksServerData().saveData();
+		});
 
 		getJavascriptEngineRequests().add(new JavascriptPlaceholderRequest("MCPerks") {
 
