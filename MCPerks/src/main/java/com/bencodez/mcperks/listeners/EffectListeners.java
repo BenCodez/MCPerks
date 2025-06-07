@@ -153,8 +153,7 @@ public class EffectListeners implements Listener {
 				player.getWorld().getName())) {
 			event.setCancelled(true);
 			plugin.getMcperksUserManager().getMCPerksUser(player).giveItems(ArrayUtils.convertItems(event.getItems()));
-		}
-		if (plugin.getPerkHandler().effectActive(Effect.InstantSmelt, player.getUniqueId().toString(),
+		} else if (plugin.getPerkHandler().effectActive(Effect.InstantSmelt, player.getUniqueId().toString(),
 				player.getWorld().getName())) {
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 				if (active.getEffects().contains(Effect.InstantSmelt)) {
