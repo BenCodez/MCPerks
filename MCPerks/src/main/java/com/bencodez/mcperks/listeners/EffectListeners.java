@@ -149,11 +149,8 @@ public class EffectListeners implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onBlockDropItem(BlockDropItemEvent event) {
 		Player player = event.getPlayer();
-		if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, player.getUniqueId().toString(),
-				player.getWorld().getName())) {
-			event.setCancelled(true);
-			plugin.getMcperksUserManager().getMCPerksUser(player).giveItems(ArrayUtils.convertItems(event.getItems()));
-		} else if (plugin.getPerkHandler().effectActive(Effect.InstantSmelt, player.getUniqueId().toString(),
+
+		if (plugin.getPerkHandler().effectActive(Effect.InstantSmelt, player.getUniqueId().toString(),
 				player.getWorld().getName())) {
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 				if (active.getEffects().contains(Effect.InstantSmelt)) {
@@ -172,8 +169,13 @@ public class EffectListeners implements Listener {
 									toRemove.add(item);
 									player.giveExp(getExperienceAmount(cookingRecipe, stackAmount));
 									final ItemStack toDrop = smeltedItem;
-									event.getPlayer().getWorld().dropItemNaturally(event.getBlock().getLocation(),
-											toDrop);
+									if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems,
+											player.getUniqueId().toString(), player.getWorld().getName())) {
+										plugin.getMcperksUserManager().getMCPerksUser(player).giveItems(toDrop);
+									} else {
+										event.getPlayer().getWorld().dropItemNaturally(event.getBlock().getLocation(),
+												toDrop);
+									}
 
 								}
 							}
@@ -185,6 +187,10 @@ public class EffectListeners implements Listener {
 
 				}
 			}
+		} else if (plugin.getPerkHandler().effectActive(Effect.AutoPickupItems, player.getUniqueId().toString(),
+				player.getWorld().getName())) {
+			event.setCancelled(true);
+			plugin.getMcperksUserManager().getMCPerksUser(player).giveItems(ArrayUtils.convertItems(event.getItems()));
 		}
 	}
 
