@@ -5,7 +5,7 @@ Name: 'RandomRepair'
 Description: 'Randomly repair tools in inventory'
 # 1000 is time in milliseconds to try a repair attempt (1000ms = 1 sec)
 Effects:
-- 'RandomRepair:1000' 
+- 'RandomAllRepair:1000' 
 Item:
   Material: 'ENCHANTED_BOOK'
   Enchantments:
