@@ -70,6 +70,7 @@ DeactivateOnLogout: false
 ForceClearModifiers: false
 
 # List of disabled worlds on a global level
+# Does not work on all effects
 # Per perk options available
 DisabledWorlds: []
 

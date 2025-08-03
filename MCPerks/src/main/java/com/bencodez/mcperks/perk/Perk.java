@@ -737,7 +737,7 @@ public class Perk {
 	}
 
 	public boolean isNotInDisabledWorld(String world) {
-		if (world != null && world.isEmpty()) {
+		if (world != null && !world.isEmpty()) {
 			for (String str : disabledWorlds) {
 				if (str.equalsIgnoreCase(world)) {
 					return false;
