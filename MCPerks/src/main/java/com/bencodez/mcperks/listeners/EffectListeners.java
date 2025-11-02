@@ -389,8 +389,11 @@ public class EffectListeners implements Listener {
 					}
 					if (giveEffects) {
 						MobDropEffect effect = new MobDropEffect(active);
-						event.getDrops()
-								.addAll((Collection<? extends ItemStack>) effect.doubleCommonDrop(event.getDrops()));
+						Collection<? extends ItemStack> doubled = (Collection<? extends ItemStack>) effect
+								.doubleCommonDrop(event.getDrops());
+						Collection<ItemStack> toAdd = new ArrayList<>(doubled);
+						event.getDrops().addAll(toAdd);
+
 						event.getDrops().addAll(effect.insertCustomItems());
 						event.getDrops().addAll(effect.insertRareItems(event.getEntity()));
 					}
