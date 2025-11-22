@@ -226,6 +226,10 @@
 			<url>
 				https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
 		</repository>
+		    <repository>
+        <id>rosewood-repo</id>
+        <url>https://repo.rosewooddev.io/repository/public/</url>
+    </repository>
 	</repositories>
 	<dependencies>
 		<dependency>
@@ -282,5 +286,11 @@
 			<version>1.18.42</version>
 			<scope>provided</scope>
 		</dependency>
+		    <dependency>
+        <groupId>dev.rosewood</groupId>
+        <artifactId>rosestacker</artifactId>
+        <version>1.5.37</version>
+        <scope>provided</scope>
+    </dependency>
 	</dependencies>
 </project>

@@ -6,6 +6,7 @@ main: com.bencodez.mcperks.MCPerksMain
 softdepend:
 - VotingPlugin
 - Vault
+- RoseStacker
 api-version: 1.13
 libraries:
 - org.openjdk.nashorn:nashorn-core:15.3

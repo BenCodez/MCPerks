@@ -35,6 +35,7 @@ import com.bencodez.mcperks.configs.Lang;
 import com.bencodez.mcperks.data.ServerData;
 import com.bencodez.mcperks.listeners.EffectListeners;
 import com.bencodez.mcperks.listeners.compatability.McMMOEvents;
+import com.bencodez.mcperks.listeners.compatability.RoseStackerListener;
 import com.bencodez.mcperks.perk.EffectHandler;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.perk.PerkHandler;
@@ -122,6 +123,11 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		if (Bukkit.getPluginManager().getPlugin("mcMMO") != null) {
 			plugin.debug("Loading mcMMO support");
 			pm.registerEvents(new McMMOEvents(this), this);
+		}
+
+		if (Bukkit.getPluginManager().getPlugin("RoseStacker") != null) {
+			plugin.debug("Loading RoseStacker support");
+			pm.registerEvents(new RoseStackerListener(this), this);
 		}
 
 	}
