@@ -5,7 +5,7 @@ import java.util.UUID;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-import com.bencodez.advancedcore.api.misc.PlayerManager;
+import com.bencodez.advancedcore.api.player.UuidLookup;
 import com.bencodez.advancedcore.api.user.usercache.UserDataManager;
 import com.bencodez.advancedcore.api.user.usercache.keys.UserDataKeyInt;
 import com.bencodez.advancedcore.api.user.usercache.keys.UserDataKeyString;
@@ -28,7 +28,7 @@ public class UserManager {
 	}
 
 	public MCPerksUser getMCPerksUser(String playerName) {
-		return getMCPerksUser(UUID.fromString(PlayerManager.getInstance().getUUID(playerName)));
+		return getMCPerksUser(UUID.fromString(UuidLookup.getInstance().getUUID(playerName)));
 	}
 
 	@SuppressWarnings("deprecation")

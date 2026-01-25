@@ -36,6 +36,7 @@ import com.bencodez.advancedcore.api.messages.PlaceholderUtils;
 import com.bencodez.advancedcore.api.misc.effects.BossBar;
 import com.bencodez.advancedcore.api.rewards.RewardBuilder;
 import com.bencodez.advancedcore.api.user.AdvancedCoreUser;
+import com.bencodez.advancedcore.api.user.UserDataFetchMode;
 import com.bencodez.advancedcore.logger.Logger;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.ConfigPerks;
@@ -594,12 +595,12 @@ public class PerkHandler {
 				ArrayList<MCPerksUser> users = new ArrayList<MCPerksUser>();
 				for (String uuid : plugin.getUserManager().getAllUUIDs()) {
 					MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid));
-					user.dontCache();
+					user.userDataFetechMode(UserDataFetchMode.NO_CACHE);
 					users.add(user);
 				}
 				for (Perk perk : getLoadedPerks().values()) {
 					for (MCPerksUser user : users) {
-						user.dontCache();
+						user.userDataFetechMode(UserDataFetchMode.NO_CACHE);
 						if (perk.getExperation(user) < 0) {
 							perk.activatePerk(user, perk.getTime());
 						} else {

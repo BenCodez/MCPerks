@@ -54,7 +54,7 @@ public class MCPerksUser extends com.bencodez.advancedcore.api.user.AdvancedCore
 
 	public long getPerkCoolDown(Perk perk) {
 		try {
-			return Long.valueOf(getUserData().getString(perk.getPerk() + "_CoolDown", isCacheData(), isWaitForCache()));
+			return Long.valueOf(getUserData().getString(perk.getPerk() + "_CoolDown"));
 		} catch (NumberFormatException ex) {
 			return 0;
 		}
@@ -62,18 +62,18 @@ public class MCPerksUser extends com.bencodez.advancedcore.api.user.AdvancedCore
 
 	public long getPerkExperation(Perk perk) {
 		try {
-			return Long.parseLong(getData().getString("Experation_" + perk.getPerk(), isCacheData(), isWaitForCache()));
+			return Long.parseLong(getData().getString("Experation_" + perk.getPerk()));
 		} catch (NumberFormatException e) {
 			return 0;
 		}
 	}
 
 	public int getPerkTimesUsed(Perk perk) {
-		return getUserData().getInt(perk.getPerk() + "_TimesUsed", isCacheData(), isWaitForCache());
+		return getUserData().getInt(perk.getPerk() + "_TimesUsed");
 	}
 
 	public boolean isUseBossBar() {
-		String str = getData().getString("UseBossBar", isCacheData(), isWaitForCache());
+		String str = getData().getString("UseBossBar");
 		if (str == null || str.isEmpty()) {
 			return true;
 		}
@@ -118,7 +118,7 @@ public class MCPerksUser extends com.bencodez.advancedcore.api.user.AdvancedCore
 	}
 
 	public int getActivations() {
-		return getData().getInt("Activations", true);
+		return getData().getInt("Activations");
 	}
 
 	public void setActivations(int value) {
@@ -134,7 +134,7 @@ public class MCPerksUser extends com.bencodez.advancedcore.api.user.AdvancedCore
 	}
 
 	public int getActivations(String perk) {
-		return getData().getInt("PerkActivations_" + perk, true);
+		return getData().getInt("PerkActivations_" + perk);
 	}
 
 	public void setActivations(String perk, int value) {
