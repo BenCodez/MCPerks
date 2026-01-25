@@ -21,7 +21,7 @@ LogActivation: false
 CreateBackups: false
 
 # Information for mysql
-MySQL:
+Database:
   Host: ''
   # Default port is 3306
   Port: 3306 
