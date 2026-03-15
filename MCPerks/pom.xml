@@ -288,7 +288,7 @@
         <dependency>
             <groupId>dev.rosewood</groupId>
             <artifactId>rosestacker</artifactId>
-            <version>1.5.37</version>
+            <version>1.5.39</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
