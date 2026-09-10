@@ -20,7 +20,7 @@ Run only safe, bounded local checks already permitted by the environment. Do not
 
 ## Establish scope
 
-Resolve the actual PR base, base SHA, merge base, review HEAD SHA, commit list, changed paths, complete patch, and worktree state. Pin SHAs for review. Review every commit and changed file in the merge-base-to-HEAD range, not only the last commit. Disclose staged, unstaged, untracked, binary, generated, or unavailable material and whether it is included.
+Resolve the actual PR base, base SHA, merge base, review HEAD SHA, commit list, changed paths, complete patch, and worktree state. Pin SHAs for review. Review every commit and changed file in the merge-base-to-HEAD range, not only the last commit. Disclose staged, unstaged, untracked, binary, generated, or unavailable material and whether it is included. When the task explicitly includes local work, review the applicable staged, unstaged, and intended untracked content as overlays on the pinned commit and assess the effective final code; disclosure alone is not coverage.
 
 If the base is uncertain, history is incomplete, multiple merge bases exist, conflicts remain, or the patch is truncated, report the limitation instead of guessing. Recheck the snapshot before finishing.
 
