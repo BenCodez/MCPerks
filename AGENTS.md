@@ -35,6 +35,22 @@ The supported scope values are `ALL`, `PLAYER`, `TOWNY`, `FACTIONS`, and `PERMIS
 7. Reward or command integration must preserve idempotency where the caller can retry and must not grant before required state is durably recorded.
 8. Keep configuration keys, perk files, placeholders, permissions, aliases, and serialized user/server data backward compatible unless a migration is explicit and tested.
 
+## Drop-in upgrade and compatibility contract
+
+Treat compatibility as a release invariant for every new feature, refactor, fix, persistence change, configuration change, integration change, and dependency change. Unless the task explicitly says otherwise, an MCPerks upgrade must remain a **drop-in JAR replacement**: administrators replace the JAR and existing perks, timers, user/server state, configuration, commands, permissions, placeholders, and integrations continue working without manual migration steps.
+
+That default contract means:
+
+- Existing configuration and perk definition files must remain valid. New keys must be optional, use safe defaults, and preserve established behavior when absent.
+- Existing serialized user/server perk state and expiration data must remain readable. Any required migration must be automatic, idempotent, restart-safe, and preserve remaining purchased/granted time.
+- Preserve commands, permissions, placeholders, aliases, public/de-facto APIs, perk scope semantics, reward behavior, and optional integration behavior unless an explicit breaking change is authorized.
+- Do not require administrators to regenerate configuration, delete/recreate data, run one-off conversion commands/scripts, manually alter storage, or coordinate dependency upgrades merely to retain existing functionality.
+- VotingPlugin, AdvancedCore, Vault, Towny, Factions, PlaceholderAPI, RoseStacker, mcMMO, and other optional integrations must remain optional and must not become hidden synchronized-upgrade requirements.
+- Packaging changes must preserve the normal downloadable artifact and startup path without requiring extra runtime libraries unless explicitly requested.
+- When a compatibility-preserving implementation is not practical, stop and surface the compatibility impact before implementing a breaking path unless the request explicitly permits it.
+
+For compatibility-sensitive changes, add regression coverage for established configuration/state/integration behavior in addition to tests for the new feature.
+
 ## Dependencies and packaging
 
 AdvancedCore is shaded and relocated. Before changing its version, shading, or API usage, inspect the actual dependency contract and downstream artifact. Avoid unpinned `LATEST` dependencies in reproducible release paths. Check that provided optional dependencies are not accidentally bundled and relocated libraries do not leak original packages or service metadata.
