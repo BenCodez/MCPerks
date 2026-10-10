@@ -10,6 +10,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.sql.Timestamp;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -41,6 +45,9 @@ import lombok.Getter;
  * The Class Perk.
  */
 public class Perk {
+	/** Admission fence for direct starts; prevents duplicate delayed hooks. */
+	private final Map<String, Long> activationAdmissions = new LinkedHashMap<>();
+	private long activationSequence;
 
 	/** The perk. */
 	private String perk;
@@ -273,8 +280,12 @@ public class Perk {
 	 * @param length length
 	 */
 	public void activatePerk(MCPerksUser user, int length) {
+		activatePerk(user, length, null);
+	}
+
+	void activatePerk(MCPerksUser user, int length, Timestamp timestamp) {
 		activater = user;
-		plugin.getPerkHandler().activePerk(this, user, length, null);
+		plugin.getPerkHandler().activePerk(this, user, length, timestamp);
 	}
 
 	public void addEffectedPlayer(String uuid) {
@@ -441,10 +452,52 @@ public class Perk {
         if (!plugin.getMcperksServerData().isReady()) return java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("ServerData initialization unavailable"));
         if (getInteractionOptions().banked()) return plugin.getBankedPerks().grantConfirmed(user, this, length)
                 .thenCompose(ignored -> confirmCooldown(user));
-        return plugin.getMcperksServerData().confirmedActivation(() -> {
-            recordCooldown(user);
-            activatePerk(user, length);
-        }).thenCompose(ignored -> com.bencodez.mcperks.userapi.UserStorageConfirmation.confirm(plugin, user));
+        final PerkHandler ownerHandler = plugin.getPerkHandler();
+        final int lifecycle = plugin.getFeatureLifecycle();
+        long admissionExpiration = activationExpiration(length);
+        org.bukkit.entity.Player owner = user == null ? null : user.getPlayer();
+        final String admissionKey = getPerkType() == PerkSystemType.PLAYER
+                ? "PLAYER:" + user.getUUID() : getPerkType().name() + ":" + getPerk();
+        final long admission;
+        synchronized (this) {
+            if (activationAdmissions.size() >= 256) return java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("Perk activation admissions busy"));
+            if (activationAdmissions.containsKey(admissionKey)) return java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("Perk activation already pending"));
+            admission = ++activationSequence;
+            activationAdmissions.put(admissionKey, admission);
+        }
+        final long personalCooldown = MiscUtils.getInstance().addSeconds(new Date(), getCoolDown()).getTime();
+        Map<String, Long> sharedFields = new LinkedHashMap<>();
+        if (getServerWideCoolDown() > 0)
+            sharedFields.put(getPerk() + ".CoolDown", MiscUtils.getInstance().addSeconds(new Date(), getServerWideCoolDown()).getTime());
+        if (isTimed() && getPerkType() == PerkSystemType.ALL)
+            sharedFields.put("Experation." + getPerk(), admissionExpiration);
+        Runnable verifyAdmission = () -> {
+            synchronized (this) {
+                if (!Objects.equals(activationAdmissions.get(admissionKey), admission) || !plugin.isEnabled()
+                        || plugin.getFeatureLifecycle() != lifecycle || plugin.getPerkHandler() != ownerHandler)
+                    throw new IllegalStateException("Perk activation lifecycle retired");
+            }
+        };
+        var confirmed = plugin.getMcperksServerData().confirmedActivationBeforeGameplay(sharedFields, () -> {
+            verifyAdmission.run();
+            user.setPerkCoolDown(this, personalCooldown);
+            if (isTimed()) {
+                if (getPerkType() != PerkSystemType.ALL) user.setPerkExperation(this, admissionExpiration);
+                this.experation = admissionExpiration;
+            }
+            return com.bencodez.mcperks.userapi.UserStorageConfirmation.confirm(plugin, user);
+        }, () -> {
+            verifyAdmission.run();
+            activatePerk(user, length, isTimed() && !isLastForever() ? new Timestamp(admissionExpiration) : null);
+        }, owner);
+        return confirmed.whenComplete((ignored, error) -> {
+            synchronized (this) { if (Objects.equals(activationAdmissions.get(admissionKey), admission)) activationAdmissions.remove(admissionKey); }
+        });
+    }
+    private long activationExpiration(int length) {
+        if (!isTimed()) return 0;
+        if (isLastForever()) return -1;
+        return Math.addExact(System.currentTimeMillis(), Math.multiplyExact(1000L, length));
     }
     public java.util.concurrent.CompletableFuture<Void> executePublishedBank(MCPerksUser user) {
         return plugin.getMcperksServerData().confirmedActivation(() -> recordCooldown(user))

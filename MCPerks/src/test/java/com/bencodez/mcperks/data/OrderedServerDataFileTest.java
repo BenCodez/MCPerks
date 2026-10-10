@@ -64,6 +64,98 @@ class OrderedServerDataFileTest {
         return CompletableFuture.runAsync(() -> ordered.completeTimeChangeTransition(transition), calendar);
     }
     private YamlConfiguration disk() { return YamlConfiguration.loadConfiguration(directory.resolve("ServerData.yml").toFile()); }
+
+    @Test void activationAdmissionPublishesBeforeGameplayOnOwnerScheduler() throws Exception {
+        var scheduler = mock(com.bencodez.simpleapi.scheduler.BukkitScheduler.class);
+        when(plugin.getBukkitScheduler()).thenReturn(scheduler);
+        doAnswer(call -> { call.getArgument(1, Runnable.class).run(); call.getArgument(1, Runnable.class).run(); return null; })
+                .when(scheduler).runTask(eq(plugin), any(Runnable.class));
+        var gameplay = new AtomicInteger();
+        await(runtime.confirmedActivationBeforeGameplay(
+                Map.of("admission.CoolDown", 1234L),
+                () -> CompletableFuture.completedFuture(null),
+                gameplay::incrementAndGet, null));
+        assertEquals(1, gameplay.get());
+        assertEquals(1234, disk().getLong("admission.CoolDown"));
+    }
+
+    @Test void failedActivationAdmissionDoesNotRunGameplay() throws Exception {
+        var scheduler = mock(com.bencodez.simpleapi.scheduler.BukkitScheduler.class);
+        when(plugin.getBukkitScheduler()).thenReturn(scheduler);
+        doAnswer(call -> { call.getArgument(1, Runnable.class).run(); return null; })
+                .when(scheduler).runTask(eq(plugin), any(Runnable.class));
+        publication.set((staged, file) -> { throw new IOException("activation publication rejected"); });
+        var gameplay = new AtomicInteger();
+        var result = runtime.confirmedActivationBeforeGameplay(
+                Map.of("rejected.CoolDown", 5678L),
+                () -> CompletableFuture.completedFuture(null),
+                gameplay::incrementAndGet, null);
+        assertThrows(ExecutionException.class, () -> await(result));
+        assertEquals(0, gameplay.get());
+        assertEquals(0, disk().getLong("rejected.CoolDown"));
+        assertEquals(0, runtime.getServerCooldown("rejected"));
+    }
+    @Test void oversizedAdmissionFailsBeforeAnyGameplayOrUserFlush() throws Exception {
+        synchronized (runtime) { runtime.getData().set("RequiredLargePayload", "x".repeat(4_000_001)); }
+        var gameplay = new AtomicInteger(); var caller = new AtomicInteger();
+        var result = runtime.confirmedActivationBeforeGameplay(Map.of("tooLarge.CoolDown", 55L),
+                () -> { caller.incrementAndGet(); return CompletableFuture.completedFuture(null); }, gameplay::incrementAndGet, null);
+        assertThrows(ExecutionException.class, () -> await(result));
+        assertEquals(0, gameplay.get()); assertEquals(0, caller.get());
+        assertEquals(0, disk().getLong("tooLarge.CoolDown"));
+        assertEquals(0, runtime.getServerCooldown("tooLarge"));
+    }
+    @Test void userStorageFailureRetainsPublishedAdmissionButNeverSchedulesGameplay() throws Exception {
+        var scheduler = mock(com.bencodez.simpleapi.scheduler.BukkitScheduler.class);
+        when(plugin.getBukkitScheduler()).thenReturn(scheduler);
+        doAnswer(call -> { call.getArgument(1, Runnable.class).run(); return null; })
+                .when(scheduler).runTask(eq(plugin), any(Runnable.class));
+        var gameplay = new AtomicInteger();
+        var result = runtime.confirmedActivationBeforeGameplay(Map.of("userFailure.CoolDown", 66L),
+                () -> CompletableFuture.failedFuture(new IOException("user flush failed")), gameplay::incrementAndGet, null);
+        assertThrows(ExecutionException.class, () -> await(result));
+        assertEquals(0, gameplay.get()); assertEquals(66, disk().getLong("userFailure.CoolDown"));
+        verify(scheduler, times(1)).runTask(eq(plugin), any(Runnable.class));
+    }
+    private void immediateOwnerScheduler() {
+        var scheduler = mock(com.bencodez.simpleapi.scheduler.BukkitScheduler.class);
+        when(plugin.getBukkitScheduler()).thenReturn(scheduler);
+        doAnswer(call -> { call.getArgument(1, Runnable.class).run(); return null; })
+                .when(scheduler).runTask(eq(plugin), any(Runnable.class));
+    }
+    @Test void failedStagedAdmissionCannotLeakIntoQueuedOrdinarySnapshot() throws Exception {
+        immediateOwnerScheduler(); CompletableFuture<Void> admission;
+        var caller = new AtomicInteger();
+        try (Gate gate = new Gate(true)) {
+            admission = runtime.confirmedActivationBeforeGameplay(Map.of("staged.CoolDown", 50L, "Experation.staged", 60L),
+                    () -> { caller.incrementAndGet(); return CompletableFuture.completedFuture(null); }, () -> fail("gameplay"), null);
+            gate.entered(); assertEquals(0, runtime.getServerCooldown("staged"));
+            synchronized (runtime) { assertNull(runtime.getData().get("Experation.staged")); }
+            runtime.saveData();
+        }
+        assertThrows(ExecutionException.class, () -> await(admission)); await(state.runtimeStorage(() -> null));
+        assertEquals(0, caller.get()); assertNull(disk().get("staged.CoolDown")); assertNull(disk().get("Experation.staged"));
+        assertEquals(0, runtime.getServerCooldown("staged"));
+    }
+    @Test void confirmedAdmissionRebasesCalendarAndOrdinarySnapshotsWithoutLosingNewerSameValueEdit() throws Exception {
+        immediateOwnerScheduler(); CompletableFuture<Void> admission; CompletableFuture<TimeChangeTransitionState> calendarWrite;
+        try (Gate gate = new Gate(false)) {
+            admission = runtime.confirmedActivationBeforeGameplay(Map.of("staged.CoolDown", 50L, "Experation.staged", 60L),
+                    () -> CompletableFuture.completedFuture(null), () -> {}, null);
+            gate.entered();
+            synchronized (runtime) { assertNull(runtime.getData().get("Experation.staged")); }
+            // Explicitly setting the old zero is still a newer update, not an absent edit.
+            ordered.setData("staged.CoolDown", 0L);
+            ordered.setData("TimedPermissions.new-owner", List.of("permission.test%line%12345"));
+            calendarWrite = begin(); runtime.saveData();
+        }
+        await(admission); await(calendarWrite); await(state.runtimeStorage(() -> null));
+        assertEquals(0, disk().getLong("staged.CoolDown")); assertEquals(60, disk().getLong("Experation.staged"));
+        assertEquals(0, runtime.getServerCooldown("staged"));
+        synchronized (runtime) { assertEquals(60, runtime.getData().getLong("Experation.staged")); }
+        assertTrue(disk().getBoolean("TimeTransitions.DAY.Pending"));
+        assertEquals(List.of("permission.test%line%12345"), disk().getStringList("TimedPermissions.new-owner"));
+    }
     private CompletableFuture<Void> ownerSnapshot(long expiration) throws Exception {
         // Waiting for this outer future checks monitor responsiveness, without waiting for storage.
         return await(CompletableFuture.supplyAsync(() -> runtime.confirmedActivation(() -> {

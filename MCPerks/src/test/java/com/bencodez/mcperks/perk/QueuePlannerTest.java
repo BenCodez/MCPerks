@@ -45,7 +45,7 @@ class QueuePlannerTest {
             doAnswer(i -> { Map<String, com.bencodez.simpleapi.sql.data.DataValue> values = i.getArgument(0); personal.set(values.get("PerkActivations_vein").getInt()); afterDebit.run(); return null; }).when(transaction).writeValues(anyMap());
             SqlUserStorage.TransactionWork<?> work = invocation.getArgument(3); return work.run(transaction);
         });
-        perk = mock(Perk.class); when(perk.getInteractionOptions()).thenReturn(new InteractionOptions(false,false,16,8,List.of(),List.of(),List.of(),List.of())); when(perk.getPerk()).thenReturn("vein"); when(perk.getTime()).thenReturn(10); when(perk.isNotInDisabledWorld("world")).thenReturn(true);
+        perk = mock(Perk.class); when(perk.getInteractionOptions()).thenReturn(new InteractionOptions(false,false,16,8,List.of(),List.of(),List.of(),List.of())); when(perk.getPerk()).thenReturn("vein"); when(perk.getPerkType()).thenReturn(PerkSystemType.PLAYER); when(perk.getTime()).thenReturn(10); when(perk.isNotInDisabledWorld("world")).thenReturn(true);
         when(perk.executeConfirmed(user,10)).thenAnswer(i -> { activated.incrementAndGet(); return CompletableFuture.completedFuture(null); });
         handler = mock(PerkHandler.class); when(handler.isRestorationReady()).thenReturn(true); handler.que = new HashMap<>(); when(plugin.getPerkHandler()).thenReturn(handler); when(handler.getPerk("vein")).thenReturn(perk); when(handler.getActivePerks()).thenReturn(new CopyOnWriteArrayList<>());
         scheduler = new OwnerTaskHarness(plugin, player);
@@ -265,7 +265,9 @@ class QueuePlannerTest {
         when(checker.getTime()).thenReturn(java.time.LocalDateTime.of(2026,10,8,12,0)); when(plugin.getTimeChecker()).thenReturn(checker);
         when(plugin.getMcperksServerData()).thenReturn(new ServerData(plugin));
         var field=Perk.class.getDeclaredField("plugin"); field.setAccessible(true); field.set(perk,plugin);
+        var admissions=Perk.class.getDeclaredField("activationAdmissions"); admissions.setAccessible(true); admissions.set(perk,new LinkedHashMap<String,Long>());
         doCallRealMethod().when(perk).executeConfirmed(user,10);
+        doAnswer(call -> { scheduler.tasks.add(call.getArgument(1, Runnable.class)); return null; }).when(scheduler.scheduler).runTask(eq(plugin), any(Runnable.class));
         return nativeFile;
     }
     @Test void queuedPersonalStartRetainsFenceUntilActualUserFlushCallback() throws Exception {
@@ -273,12 +275,12 @@ class QueuePlannerTest {
         var cache = dataManager.getCache(owner); var callback = new CompletableFuture<Runnable>();
         doAnswer(i -> { assertEquals("MCPerks-feature-store", Thread.currentThread().getName()); callback.complete(i.getArgument(0)); return null; })
                 .when(cache).flushChangesAndRun(any(Runnable.class));
-        doAnswer(i -> { activated.incrementAndGet(); user.setPerkExperation(perk, 123456); return null; }).when(perk).activatePerk(user,10);
-        planner.enqueue(user,perk); next().run(); next().run(); next().run();
+        doAnswer(i -> { activated.incrementAndGet(); user.setPerkExperation(perk, 123456); return null; }).when(perk).activatePerk(eq(user),eq(10),nullable(Timestamp.class));
+        planner.enqueue(user,perk); drainUntil(callback::isDone);
         Runnable completed = callback.get(5,TimeUnit.SECONDS);
-        assertEquals(0, personal.get()); assertEquals(1, activated.get());
+        assertEquals(0, personal.get()); assertEquals(0, activated.get());
         assertEquals(FeatureState.Stage.STARTING, state.queue().getFirst().stage());
-        completed.run(); drainUntil(() -> state.queue().isEmpty());
+        completed.run(); drainUntil(() -> state.queue().isEmpty()); assertEquals(1, activated.get());
         verify(user).setPerkExperation(perk,123456); verify(user).setPerkCoolDown(eq(perk),anyLong());
         completed.run(); planner.check(); assertEquals(1, activated.get());
     }
@@ -286,10 +288,10 @@ class QueuePlannerTest {
         runtimeFile(); when(perk.getPerkType()).thenReturn(PerkSystemType.PLAYER);
         var failedCache = dataManager.getCache(owner);
         doThrow(new IllegalStateException("SQL flush failed")).when(failedCache).flushChangesAndRun(any(Runnable.class));
-        doAnswer(i -> { activated.incrementAndGet(); user.setPerkExperation(perk,123456); return null; }).when(perk).activatePerk(user,10);
+        doAnswer(i -> { activated.incrementAndGet(); user.setPerkExperation(perk,123456); return null; }).when(perk).activatePerk(eq(user),eq(10),nullable(Timestamp.class));
         planner.enqueue(user,perk); drainUntil(() -> !state.queue().isEmpty() && state.queue().getFirst().stage()==FeatureState.Stage.UNCERTAIN);
         assertTrue(Files.isRegularFile(directory.resolve("ServerData.yml"))); assertEquals(0,personal.get());
-        planner.check(); assertEquals(1,activated.get());
+        planner.check(); assertEquals(0,activated.get());
         state.close(); try (var recovered = new FeatureState(directory.resolve("features.dat"))) {
             recovered.ready().get(5,TimeUnit.SECONDS); assertEquals(FeatureState.Stage.UNCERTAIN,recovered.queue().getFirst().stage());
         }
@@ -331,7 +333,7 @@ class QueuePlannerTest {
             eligibilityThread.set(Thread.currentThread()); eligibilityEntered.countDown();
             assertTrue(releaseEligibility.await(5,TimeUnit.SECONDS)); return 0L;
         });
-        doAnswer(call->{ activated.incrementAndGet(); runtime.setPerkExperation(perk,123456); return null; }).when(perk).activatePerk(user,10);
+        doAnswer(call->{ activated.incrementAndGet(); runtime.setPerkExperation(perk,123456); return null; }).when(perk).activatePerk(eq(user),eq(10),nullable(Timestamp.class));
         planner.enqueue(user,perk); next().run(); next().run(); assertTrue(eligibilityEntered.await(5,TimeUnit.SECONDS));
         var blockedByCalendar=new java.util.concurrent.atomic.AtomicBoolean();
         var live=(org.bukkit.configuration.file.YamlConfiguration)nativeFile.getData();
@@ -399,6 +401,19 @@ class QueuePlannerTest {
     }
     @Test void actualQueuedLegacyActivationKeepsStartingUntilImmutableYamlAndCapturedLogPublish() throws Exception {
         var nativeFile=runtimeFile(); when(perk.getPerkType()).thenReturn(PerkSystemType.ALL);
+        CountDownLatch entered=new CountDownLatch(1), release=new CountDownLatch(1);
+        AtomicInteger publications=new AtomicInteger();
+        var constructor=ServerData.class.getDeclaredConstructor(MCPerksMain.class,DurableFeatureFiles.Publisher.class);
+        constructor.setAccessible(true);
+        DurableFeatureFiles.Publisher publisher=(staged,file)->{
+            if(publications.getAndIncrement()==0) {
+                entered.countDown();
+                try { if(!release.await(5,TimeUnit.SECONDS)) throw new IllegalStateException("timeout"); }
+                catch(InterruptedException error) { Thread.currentThread().interrupt(); throw new IllegalStateException(error); }
+            }
+            DurableFeatureFiles.publish(staged,file);
+        };
+        when(plugin.getMcperksServerData()).thenReturn(constructor.newInstance(plugin,publisher));
         var nativeEffects=new AtomicInteger(); var logThread=new java.util.concurrent.atomic.AtomicReference<String>();
         doAnswer(i->{
             assertNotEquals("MCPerks-feature-store",Thread.currentThread().getName());
@@ -406,14 +421,16 @@ class QueuePlannerTest {
             plugin.getMcperksServerData().addPerkHistory("actual queued start");
             plugin.getMcperksServerData().activationLog(()->logThread.set(Thread.currentThread().getName()));
             return null;
-        }).when(perk).activatePerk(user,10);
-        planner.enqueue(user,perk); next().run(); next().run(); Runnable execute=next();
-        CountDownLatch entered=new CountDownLatch(1), release=new CountDownLatch(1);
-        state.storage(()->{ entered.countDown(); try { if(!release.await(5,TimeUnit.SECONDS)) throw new IllegalStateException("timeout"); }
-            catch(InterruptedException e) { throw new RuntimeException(e); } return null; });
+        }).when(perk).activatePerk(eq(user),eq(10),nullable(Timestamp.class));
+        planner.enqueue(user,perk);
         try {
-            assertTrue(entered.await(5,TimeUnit.SECONDS)); execute.run(); execute.run();
-            assertEquals(1,nativeEffects.get()); assertEquals(0,personal.get());
+            long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(5);
+            while(entered.getCount()!=0 && System.nanoTime()<deadline) {
+                Runnable task=scheduler.tasks.poll(20,TimeUnit.MILLISECONDS);
+                if(task!=null) { task.run(); task.run(); }
+            }
+            assertTrue(entered.await(100,TimeUnit.MILLISECONDS));
+            assertEquals(0,nativeEffects.get()); assertEquals(0,personal.get());
             assertEquals(FeatureState.Stage.STARTING,state.queue().getFirst().stage());
             verify(nativeFile,never()).saveData(); verify((org.bukkit.configuration.file.YamlConfiguration)nativeFile.getData(),never()).save(any(java.io.File.class));
             // A later calendar snapshot must retain the perk fields and run after the captured activation snapshot.
@@ -432,9 +449,9 @@ class QueuePlannerTest {
     }
     @Test void failedQueuedLegacyYamlPublicationKeepsUncertainFenceWithoutReplayingEffectOrDebit() throws Exception {
         runtimeFile(); Files.createDirectory(directory.resolve("ServerData.yml"));
-        doAnswer(i->{ activated.incrementAndGet(); plugin.getMcperksServerData().setPerkExperation(perk,123456); plugin.getMcperksServerData().addPerkHistory("failed publish"); return null; }).when(perk).activatePerk(user,10);
+        doAnswer(i->{ activated.incrementAndGet(); plugin.getMcperksServerData().setPerkExperation(perk,123456); plugin.getMcperksServerData().addPerkHistory("failed publish"); return null; }).when(perk).activatePerk(eq(user),eq(10),nullable(Timestamp.class));
         planner.enqueue(user,perk); drainUntil(()->!state.queue().isEmpty() && state.queue().getFirst().stage()==FeatureState.Stage.UNCERTAIN);
-        planner.check(); state.storage(()->null).get(); assertEquals(1,activated.get()); assertEquals(0,personal.get());
+        planner.check(); state.storage(()->null).get(); assertEquals(0,activated.get()); assertEquals(0,personal.get());
         verify(dataManager,times(1)).withAtomicUserTransaction(any(),any(),anyMap(),any());
     }
 
@@ -446,7 +463,7 @@ class QueuePlannerTest {
         when(clone.getPerkType()).thenReturn(PerkSystemType.ALL); when(clone.getPerk()).thenReturn("vein");
         when(clone.getEffectedPlayers()).thenReturn(new ArrayList<>()); when(clone.getEffects()).thenReturn(new ArrayList<>());
         when(clone.getActivater()).thenReturn(user); when(clone.isTimed()).thenReturn(true); when(user.getPlayerName()).thenReturn("requester");
-        doCallRealMethod().when(clone).setExperation(eq(user),anyLong()); doCallRealMethod().when(perk).activatePerk(user,10);
+        doCallRealMethod().when(clone).setExperation(eq(user),anyLong()); doCallRealMethod().when(perk).activatePerk(eq(user),eq(10),nullable(Timestamp.class));
         var effects=mock(EffectHandler.class); when(plugin.getEffectHandler()).thenReturn(effects);
         doAnswer(i->{ assertNotEquals("MCPerks-feature-store",Thread.currentThread().getName()); activated.incrementAndGet(); return null; }).when(effects).activate(clone,user);
         when(plugin.getRewardHandler()).thenReturn(mock(com.bencodez.advancedcore.api.rewards.RewardHandler.class));
@@ -644,7 +661,7 @@ class QueuePlannerTest {
         var tasks = new LinkedBlockingQueue<Runnable>(); var legacy = permanent(); var actual = restorer(tasks, legacy);
         when(actual.getPerk("permanent")).thenReturn(legacy);
         doAnswer(i -> { actual.getActivePerks().add(legacy); return null; }).when(actual)
-                .activePerk(eq(legacy), eq(user), eq(0), any(Timestamp.class));
+                .activePerk(eq(legacy), eq(user), eq(0), nullable(Timestamp.class));
         var shutdown = MCPerksMain.class.getDeclaredMethod("restoreOfflinePerks"); shutdown.setAccessible(true);
         shutdown.invoke(plugin);
         verify(actual).activePerk(eq(legacy), eq(user), eq(0), argThat(value -> value != null && value.getTime() == future));

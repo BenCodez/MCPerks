@@ -62,6 +62,7 @@ public class ServerData {
     private static final List<String> CALENDAR_PATHS = calendarPaths();
     private final long[] calendarEdits = new long[CALENDAR_PATHS.size()];
     synchronized void calendarEdited(String path) {
+        activationEdited(path);
         for (int i = 0; i < CALENDAR_PATHS.size(); i++)
             if (path.isEmpty() || CALENDAR_PATHS.get(i).equals(path) || CALENDAR_PATHS.get(i).startsWith(path + ".")) calendarEdits[i]++;
     }
@@ -352,7 +353,7 @@ public class ServerData {
     }
     public FileConfiguration getData() { return plugin.getServerDataFile().getData(); }
     public synchronized long getPerkExperation(Perk perk) { return getData().getLong("Experation." + perk.getPerk()); }
-    public synchronized void setServerCooldown(String perk, long time) { getData().set(perk + ".CoolDown", time); }
+    public synchronized void setServerCooldown(String perk, long time) { activationEdited(perk + ".CoolDown"); getData().set(perk + ".CoolDown", time); }
     public synchronized long getServerCooldown(String perk) { return getData().getLong(perk + ".CoolDown", 0); }
     /** The caller drains the feature worker before reloading the legacy file. */
     public synchronized void reloadData() { plugin.getServerDataFile().reloadData(); }
@@ -399,6 +400,77 @@ public class ServerData {
         try { gameplay.run(); return persistSnapshot(List.copyOf(writes)); }
         catch (Throwable error) { return CompletableFuture.failedFuture(error); }
         finally { activationWrites.remove(); }
+    }
+
+    /**
+     * Publishes activation admission before running any effect, reward, or command hook.
+     * The gameplay callback is returned to the Bukkit/Folia owner after storage has
+     * acknowledged both the shared snapshot and any caller-owned state.
+     */
+    private final List<ActivationUpdate> pendingActivations = new ArrayList<>();
+    private static final class ActivationUpdate {
+        private final Map<String, Long> values;
+        private final Map<String, Object> before;
+        private final Set<String> edited = new HashSet<>();
+        private volatile boolean published;
+        private ActivationUpdate(Map<String, Long> values, FileConfiguration live) {
+            this.values = Map.copyOf(values);
+            this.before = new HashMap<>();
+            values.keySet().forEach(path -> before.put(path, live.get(path)));
+        }
+        private void apply(FileConfiguration target, Set<String> capturedEdits) {
+            values.forEach((path, value) -> {
+                if (!capturedEdits.contains(path) && Objects.equals(target.get(path), before.get(path)))
+                    target.set(path, value);
+            });
+        }
+    }
+    private record ActivationView(ActivationUpdate update, Set<String> edits) {}
+    private void activationEdited(String path) {
+        for (ActivationUpdate update : pendingActivations)
+            for (String field : update.values.keySet())
+                if (path.isEmpty() || field.equals(path) || field.startsWith(path + ".")) update.edited.add(field);
+    }
+    private List<ActivationView> activationViews() {
+        return pendingActivations.stream().map(update -> new ActivationView(update, Set.copyOf(update.edited))).toList();
+    }
+    public synchronized CompletableFuture<Void> confirmedActivationBeforeGameplay(Map<String, Long> fields,
+            java.util.function.Supplier<CompletableFuture<Void>> callerStorage, Runnable gameplay,
+            org.bukkit.entity.Entity owner) {
+        if (!isReady()) return CompletableFuture.failedFuture(new IllegalStateException("ServerData initialization unavailable"));
+        if (pendingActivations.size() >= 256 || fields.size() > 2)
+            return CompletableFuture.failedFuture(new IllegalStateException("Activation staging capacity exceeded"));
+        final ActivationUpdate update;
+        final CompletableFuture<Void> published;
+        try {
+            update = new ActivationUpdate(fields, getData());
+            // Validate size on a private copy. A rejected admission changes neither live store.
+            var copy = parse(getData().saveToString()); update.apply(copy, Set.of()); snapshotBytes(copy);
+            byte[] snapshot = snapshotBytes(getData());
+            pendingActivations.add(update);
+            published = publishSnapshot(snapshot, List.of(), pendingCalendar,
+                    calendarEdits.clone(), null, update);
+        } catch (Throwable error) { return CompletableFuture.failedFuture(error); }
+        return published.thenCompose(ignored -> ownerStep(owner, callerStorage))
+                .thenCompose(ignored -> ownerStep(owner, () -> confirmedActivation(gameplay))).orTimeout(30, TimeUnit.SECONDS);
+    }
+    /** Each phase runs once on its owner; retired or timed-out callbacks cannot execute later. */
+    private CompletableFuture<Void> ownerStep(org.bukkit.entity.Entity owner,
+            java.util.function.Supplier<CompletableFuture<Void>> work) {
+        var completed = new CompletableFuture<Void>();
+        var invoked = new java.util.concurrent.atomic.AtomicBoolean();
+        Runnable run = () -> {
+            if (!invoked.compareAndSet(false, true) || completed.isDone()) return;
+            try { work.get().whenComplete((value, error) -> {
+                if (error == null) completed.complete(null); else completed.completeExceptionally(error);
+            }); }
+            catch (Throwable error) { completed.completeExceptionally(error); }
+        };
+        try {
+            if (owner == null) plugin.getBukkitScheduler().runTask(plugin, run);
+            else plugin.getBukkitScheduler().runTask(plugin, run, owner);
+        } catch (Throwable error) { completed.completeExceptionally(error); }
+        return completed.orTimeout(30, TimeUnit.SECONDS);
     }
     /** The callback must contain only an already captured log message and its file writer. */
     public synchronized void activationLog(Runnable write) {
@@ -464,6 +536,12 @@ public class ServerData {
         catch (RuntimeException error) { return CompletableFuture.failedFuture(error); }
     }
     private CompletableFuture<Void> publishSnapshot(byte[] snapshot, List<Runnable> writes, CalendarUpdate overlay, long[] edits, CalendarUpdate commit) {
+        return publishSnapshot(snapshot, writes, overlay, edits, commit, null);
+    }
+    private CompletableFuture<Void> publishSnapshot(byte[] snapshot, List<Runnable> writes, CalendarUpdate overlay,
+            long[] edits, CalendarUpdate commit, ActivationUpdate activation) {
+        List<ActivationView> activations = activationViews();
+
         Path file = plugin.getServerDataFile().getdFile().toPath();
         pendingSnapshots.incrementAndGet();
         return plugin.getFeatureState().<Void>runtimeStorage(() -> {
@@ -477,6 +555,15 @@ public class ServerData {
                     var copy = parse(new String(snapshot, StandardCharsets.UTF_8)); overlay.apply(copy, edits);
                     confirmed = snapshotBytes(copy);
                 }
+                if (!activations.isEmpty()) {
+                    var copy = parse(new String(confirmed, StandardCharsets.UTF_8));
+                    for (ActivationView view : activations) {
+                        // The worker is serial: a following snapshot observes the prior publication result.
+                        if (view.update() == activation || view.update().published)
+                            view.update().apply(copy, view.edits());
+                    }
+                    confirmed = snapshotBytes(copy);
+                }
                 Files.createDirectories(file.toAbsolutePath().getParent());
                 if (Files.isSymbolicLink(file)) throw new IOException("ServerData is a symlink");
                 staged = Files.createTempFile(file.toAbsolutePath().getParent(), ".server-data-", ".tmp");
@@ -485,16 +572,22 @@ public class ServerData {
                     commit.apply(getData(), calendarEdits); commit.published = true;
                     if (pendingCalendar == commit) pendingCalendar = null;
                 }
+                if (activation != null) synchronized (ServerData.this) {
+                    activation.apply(getData(), activation.edited);
+                    activation.published = true;
+                }
                 for (Runnable write : writes) write.run();
                 return null;
             } catch (IOException | org.bukkit.configuration.InvalidConfigurationException error) { throw new CompletionException(error); }
             finally { if (staged != null) try { Files.deleteIfExists(staged); } catch (IOException ignored) {} }
         }).whenComplete((ignored, error) -> {
             pendingSnapshots.decrementAndGet();
+            if (activation != null) synchronized (ServerData.this) { pendingActivations.remove(activation); }
             if (commit != null) synchronized (ServerData.this) { if (pendingCalendar == commit) pendingCalendar = null; }
         });
     }
     public synchronized void setPerkExperation(Perk perk, long time) {
+        activationEdited("Experation." + perk.getPerk());
         getData().set("Experation." + perk.getPerk(), time); saveData();
     }
     public synchronized void clearOfflinePerks() { getData().set("OfflinePerk", null); }

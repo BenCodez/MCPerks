@@ -61,6 +61,7 @@ import lombok.Setter;
  */
 public class MCPerksMain extends AdvancedCorePlugin {
     private volatile int featureLifecycle;
+    public int getFeatureLifecycle() { return featureLifecycle; }
     private final com.bencodez.mcperks.data.LocalStatistics localStatistics = new com.bencodez.mcperks.data.LocalStatistics();
     public com.bencodez.mcperks.data.LocalStatistics getLocalStatistics() { return localStatistics; }
     private com.bencodez.mcperks.perk.BankedPerks bankedPerks;
