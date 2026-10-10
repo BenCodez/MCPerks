@@ -95,7 +95,7 @@ class PerkActivationAdmissionTest {
         }
     }
 
-    @Test void directLimitedActivationRejectsDuplicateBeforeDebitingAnotherCredit() throws Exception {
+    @Test void directLimitedActivationKeepsPerkAdmissionThroughDurablePlannerCompletion() throws Exception {
         Fixture f = fixture(false);
         var config = mock(com.bencodez.mcperks.configs.Config.class);
         var features = mock(com.bencodez.mcperks.data.FeatureState.class);
@@ -109,21 +109,15 @@ class PerkActivationAdmissionTest {
         doReturn(true).when(f.perk()).checkTimesUsed(f.user());
         doReturn(true).when(f.perk()).checkCoolDown(f.user());
         doReturn(true).when(f.perk()).checkServerWideCoolDown(f.user());
-        var credits = new java.util.concurrent.atomic.AtomicInteger(2);
-        when(f.user().getActivations("admission")).thenAnswer(call -> credits.get());
-        doAnswer(call -> { credits.addAndGet(call.getArgument(1)); return null; })
-                .when(f.user()).addActivation(eq("admission"), anyInt());
-        try (MockedStatic<UserStorageConfirmation> confirmation = mockStatic(UserStorageConfirmation.class)) {
-            confirmation.when(() -> UserStorageConfirmation.confirm(f.plugin(), f.user())).thenReturn(f.callerStorage());
-            f.perk().runPerk(f.user());
-            assertEquals(1, credits.get());
-            f.perk().runPerk(f.user());
-            assertEquals(1, credits.get(), "a rejected pending activation must not consume a second credit");
-            verify(f.user(), times(1)).addActivation("admission", -1);
-            verify(f.data(), times(1)).confirmedActivationBeforeGameplay(any(), any(), any(), isNull());
-            f.published().complete(null); f.callerStorage().complete(null);
-            verify(f.handler(), times(1)).activePerk(eq(f.perk()), eq(f.user()), eq(30), isNull());
-        }
+        var planner = mock(QueuePlanner.class); when(f.plugin().getQueuePlanner()).thenReturn(planner);
+        var completed = new CompletableFuture<Void>();
+        when(planner.startDirect(eq(f.user()), eq(f.perk()), any(), any())).thenReturn(completed);
+        f.perk().runPerk(f.user()); f.perk().runPerk(f.user());
+        verify(planner, times(1)).startDirect(eq(f.user()), eq(f.perk()), any(), any());
+        verify(f.user(), never()).addActivation(anyInt()); verify(f.user(), never()).addActivation(anyString(), anyInt());
+        verify(f.user()).sendMessage(contains("still being confirmed"));
+        completed.complete(null); f.perk().runPerk(f.user());
+        verify(planner, times(2)).startDirect(eq(f.user()), eq(f.perk()), any(), any());
     }
 
     @Test void differentPersonalOwnersDoNotShareAnAdmissionFence() {

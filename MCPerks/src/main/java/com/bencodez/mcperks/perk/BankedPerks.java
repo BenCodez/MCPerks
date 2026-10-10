@@ -29,6 +29,13 @@ public final class BankedPerks implements Listener {
         return !retired && directAdmissions.size() < 256 && directAdmissions.add(perk.getPerk());
     }
     public void finishDirect(Perk perk) { directAdmissions.remove(perk.getPerk()); }
+    private String directKey(MCPerksUser user, Perk perk) {
+        return perk.getServerWideCoolDown() > 0 ? perk.getPerk() : "PLAYER:" + user.getUUID() + ":" + perk.getPerk();
+    }
+    public synchronized boolean beginDirect(MCPerksUser user, Perk perk) {
+        return !retired && directAdmissions.size() < 256 && directAdmissions.add(directKey(user, perk));
+    }
+    public void finishDirect(MCPerksUser user, Perk perk) { directAdmissions.remove(directKey(user, perk)); }
     public boolean hasEntitlement(UUID owner, Perk perk) {
         var bank = state.banks().get(new BankKey(owner, perk.getPerk()));
         return bank != null && bank.milliseconds() > 0;

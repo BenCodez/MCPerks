@@ -51,6 +51,95 @@ public final class QueuePlanner {
     private final Set<UUID> admissions = java.util.concurrent.ConcurrentHashMap.newKeySet();
     private synchronized boolean admit(UUID owner) { return !retired && admissions.size() < 256 && admissions.add(owner); }
     public boolean hasAdmissions() { return !admissions.isEmpty(); }
+    /** A limited direct start uses the same durable identity and atomic debit as a queued start. */
+    public java.util.concurrent.CompletableFuture<Void> startDirect(MCPerksUser user, Perk perk,
+            Runnable verifyAdmission,
+            java.util.function.Function<java.util.function.Supplier<java.util.concurrent.CompletableFuture<Void>>,
+                    java.util.concurrent.CompletableFuture<Void>> execute) {
+        UUID owner = UUID.fromString(user.getUUID());
+        Player player = Bukkit.getPlayer(owner);
+        boolean bypass = player != null && player.hasPermission("MCPerks.Perks.BypassCoolDown");
+        int version = generation;
+        if (!admit(owner)) return java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("Activation admission busy"));
+        var work = state.storage(() -> {
+            verifyAdmission.run();
+            if (!plugin.getUserManager().getDataManager().hasSharedRuntime())
+                throw new IllegalStateException("Transactional activation ownership unavailable before debit");
+            if (retired || suspended || version != generation || !storedEligible(user, perk, bypass, System.currentTimeMillis()))
+                throw new IllegalStateException("Activation eligibility changed");
+            int personal = user.getActivations(perk.getPerk());
+            if (personal > state.reserved(owner, "PerkActivations_" + perk.getPerk())) return new Credit("PerkActivations_" + perk.getPerk(), personal);
+            return new Credit("Activations", user.getActivations());
+        }).thenCompose(credit -> state.startDirect(owner, perk.getPerk(), credit.key(), credit.available()))
+                .thenCompose(entry -> {
+                    var completed = new java.util.concurrent.CompletableFuture<Void>();
+                    AtomicBoolean debitAttempted = new AtomicBoolean(), executed = new AtomicBoolean();
+                    var consumption = new java.util.concurrent.atomic.AtomicReference<java.util.concurrent.CompletableFuture<Void>>();
+                    AtomicBoolean executionSettled = new AtomicBoolean();
+                    java.util.function.BiConsumer<Void, Throwable> finish = (ignored, error) -> {
+                        final java.util.concurrent.CompletableFuture<Void> accepted;
+                        synchronized (consumption) {
+                            if (!executionSettled.compareAndSet(false, true)) return;
+                            accepted = consumption.get();
+                        }
+                        var settled = accepted == null ? java.util.concurrent.CompletableFuture.<Void>completedFuture(null) : accepted;
+                        settled.whenComplete((value, debitError) -> {
+                            Throwable outcome = error == null ? debitError : error;
+                            var saved = outcome != null && debitAttempted.get() ? state.uncertain(entry.id()) : state.complete(entry.id());
+                            saved.whenComplete((nothing, saveError) -> {
+                                if (saveError != null) {
+                                    plugin.getLogger().warning("Direct activation completion persistence failed; retained start fence prevents replay");
+                                    completed.completeExceptionally(saveError);
+                                } else if (outcome != null) completed.completeExceptionally(outcome);
+                                else completed.complete(null);
+                            });
+                        });
+                    };
+                    java.util.function.Supplier<java.util.concurrent.CompletableFuture<Void>> consume = () -> {
+                        final java.util.concurrent.CompletableFuture<Void> once;
+                        synchronized (consumption) {
+                            if (executionSettled.get()) return java.util.concurrent.CompletableFuture.failedFuture(
+                                    new IllegalStateException("Activation execution already settled"));
+                            if (consumption.get() != null) return consumption.get();
+                            once = new java.util.concurrent.CompletableFuture<Void>(); consumption.set(once);
+                        }
+                        state.storage(() -> {
+                            verifyAdmission.run();
+                            if (retired || suspended || version != generation) throw new IllegalStateException("Activation lifecycle retired");
+                            java.util.function.BooleanSupplier debitOnce = () -> {
+                                debitAttempted.set(true);
+                                boolean consumed = debit(entry);
+                                if (!consumed) debitAttempted.set(false);
+                                return consumed;
+                            };
+                            boolean consumed;
+                            if (perk.getInteractionOptions().banked()) {
+                                if (plugin.getBankedPerks().grantUnavailable(owner, perk, perk.getTime()) != null)
+                                    throw new IllegalStateException("Bank grant unavailable before debit");
+                                consumed = state.addBankOnWorker(new FeatureState.BankKey(owner, perk.getPerk()),
+                                        Math.multiplyExact((long) perk.getTime(), 1000), debitOnce) != null;
+                            } else consumed = debitOnce.getAsBoolean();
+                            if (!consumed) throw new IllegalStateException("Activation credit unavailable; no activation consumed");
+                            var manager = plugin.getUserManager().getDataManager();
+                            manager.cacheUser(owner);
+                            if (manager.getPublishedCache(owner) == null) throw new IllegalStateException("Activation cache publication unavailable after debit");
+                            return null;
+                        }).whenComplete((ignored, error) -> {
+                            if (error == null) once.complete(null); else once.completeExceptionally(error);
+                        });
+                        return once;
+                    };
+                    try {
+                        reply(owner, () -> {
+                            if (!executed.compareAndSet(false, true)) return;
+                            try { verifyAdmission.run(); execute.apply(consume).whenComplete(finish); }
+                            catch (Throwable error) { finish.accept(null, error); }
+                        }, () -> { if (executed.compareAndSet(false, true)) finish.accept(null, new IllegalStateException("Activation owner retired")); });
+                    } catch (Throwable error) { if (executed.compareAndSet(false, true)) finish.accept(null, error); }
+                    return completed;
+                });
+        return work.whenComplete((ignored, error) -> { admissions.remove(owner); refreshLegacyView(); check(); });
+    }
     public void enqueue(MCPerksUser user, Perk perk) {
         UUID owner = UUID.fromString(user.getUUID());
         if (!state.available()) { user.sendMessage("&cQueue state is unavailable; no activation consumed."); return; }

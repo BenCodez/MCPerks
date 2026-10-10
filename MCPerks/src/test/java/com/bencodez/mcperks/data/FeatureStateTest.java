@@ -10,6 +10,19 @@ import org.junit.jupiter.params.provider.ValueSource;
 class FeatureStateTest {
     @TempDir Path directory;
     private static <T> T await(CompletableFuture<T> future) throws Exception { return future.get(5, TimeUnit.SECONDS); }
+    @Test void directStartUsesExistingBoundedWireFormatAndNeverBecomesWaitingOnRecovery() throws Exception {
+        var file = directory.resolve("direct.dat"); UUID owner = UUID.randomUUID(); FeatureState.QueueEntry entry;
+        try (var state = new FeatureState(file)) {
+            await(state.ready()); entry = await(state.startDirect(owner, "personal", "Activations", 1));
+            assertEquals(FeatureState.Stage.STARTING, entry.stage()); assertNull(await(state.claim(entry.id())));
+            assertThrows(ExecutionException.class, () -> await(state.startDirect(owner, "other", "Activations", 2)));
+            assertEquals(1, state.reserved(owner, "Activations"));
+        }
+        try (var recovered = new FeatureState(file)) {
+            await(recovered.ready()); assertEquals(List.of(entry.withStage(FeatureState.Stage.UNCERTAIN)), recovered.queue());
+            assertNull(await(recovered.claim(entry.id()))); assertEquals(1, recovered.reserved(owner, "Activations"));
+        }
+    }
     /** Real wire fixture avoids thousands of unrelated O(n) atomic publications in a boundary test. */
     private static String unicodeBankFixture(Path file) throws Exception {
         String name = "\uD83D\uDE00".repeat(62); // 124 UTF-16 code units, 372 modified UTF-8 bytes.

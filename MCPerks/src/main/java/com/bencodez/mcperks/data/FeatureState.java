@@ -64,11 +64,18 @@ public final class FeatureState implements AutoCloseable {
     public boolean paused() { return paused; }
     public int reserved(UUID owner, String credit) { return (int) queue.stream().filter(e -> e.owner.equals(owner) && e.credit.equals(credit)).count(); }
     public CompletableFuture<QueueEntry> enqueue(UUID owner, String perk, String credit, int available) {
+        return admit(owner, perk, credit, available, Stage.WAITING);
+    }
+    /** Direct starts never enter WAITING, so normal queue checks cannot schedule them. */
+    public CompletableFuture<QueueEntry> startDirect(UUID owner, String perk, String credit, int available) {
+        return admit(owner, perk, credit, available, Stage.STARTING);
+    }
+    private CompletableFuture<QueueEntry> admit(UUID owner, String perk, String credit, int available, Stage stage) {
         return submit(() -> {
             if (queue.size() >= 256) throw new IllegalStateException("Queue capacity reached");
             if (queue.stream().anyMatch(e -> e.owner.equals(owner))) throw new IllegalStateException("Player already queued");
             if (!credit.isEmpty() && available <= reserved(owner, credit)) throw new IllegalStateException("Activation already reserved");
-            QueueEntry entry = new QueueEntry(UUID.randomUUID(), owner, boundedName(perk), System.currentTimeMillis(), Stage.WAITING, boundedCredit(credit));
+            QueueEntry entry = new QueueEntry(UUID.randomUUID(), owner, boundedName(perk), System.currentTimeMillis(), stage, boundedCredit(credit));
             var next = new ArrayList<>(queue); next.add(entry); publish(next, banks, paused); return entry;
         });
     }

@@ -437,6 +437,17 @@ public class ServerData {
     public synchronized CompletableFuture<Void> confirmedActivationBeforeGameplay(Map<String, Long> fields,
             java.util.function.Supplier<CompletableFuture<Void>> callerStorage, Runnable gameplay,
             org.bukkit.entity.Entity owner) {
+        return prepareActivation(fields, callerStorage, owner)
+                .thenCompose(ignored -> ownerStep(owner, () -> confirmedActivation(gameplay)));
+    }
+    /** Same admission boundary, with an asynchronous owner work completion (bank attachment). */
+    public CompletableFuture<Void> confirmedActivationBeforeWork(Map<String, Long> fields,
+            java.util.function.Supplier<CompletableFuture<Void>> callerStorage,
+            java.util.function.Supplier<CompletableFuture<Void>> gameplay, org.bukkit.entity.Entity owner) {
+        return prepareActivation(fields, callerStorage, owner).thenCompose(ignored -> ownerStep(owner, gameplay));
+    }
+    private synchronized CompletableFuture<Void> prepareActivation(Map<String, Long> fields,
+            java.util.function.Supplier<CompletableFuture<Void>> callerStorage, org.bukkit.entity.Entity owner) {
         if (!isReady()) return CompletableFuture.failedFuture(new IllegalStateException("ServerData initialization unavailable"));
         if (pendingActivations.size() >= 256 || fields.size() > 2)
             return CompletableFuture.failedFuture(new IllegalStateException("Activation staging capacity exceeded"));
@@ -451,8 +462,7 @@ public class ServerData {
             published = publishSnapshot(snapshot, List.of(), pendingCalendar,
                     calendarEdits.clone(), null, update);
         } catch (Throwable error) { return CompletableFuture.failedFuture(error); }
-        return published.thenCompose(ignored -> ownerStep(owner, callerStorage))
-                .thenCompose(ignored -> ownerStep(owner, () -> confirmedActivation(gameplay))).orTimeout(30, TimeUnit.SECONDS);
+        return published.thenCompose(ignored -> ownerStep(owner, callerStorage));
     }
     /** Each phase runs once on its owner; retired or timed-out callbacks cannot execute later. */
     private CompletableFuture<Void> ownerStep(org.bukkit.entity.Entity owner,
@@ -470,7 +480,13 @@ public class ServerData {
             if (owner == null) plugin.getBukkitScheduler().runTask(plugin, run);
             else plugin.getBukkitScheduler().runTask(plugin, run, owner);
         } catch (Throwable error) { completed.completeExceptionally(error); }
-        return completed.orTimeout(30, TimeUnit.SECONDS);
+        // Bound dispatch, but never declare accepted work finished while its storage callback
+        // can still commit. Its own completion owns the activation fence until it settles.
+        CompletableFuture.delayedExecutor(30, TimeUnit.SECONDS).execute(() -> {
+            if (invoked.compareAndSet(false, true)) completed.completeExceptionally(
+                    new TimeoutException("Activation owner dispatch timed out"));
+        });
+        return completed;
     }
     /** The callback must contain only an already captured log message and its file writer. */
     public synchronized void activationLog(Runnable write) {

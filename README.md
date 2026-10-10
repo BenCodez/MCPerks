@@ -155,12 +155,25 @@ activation paths cannot safely promise pause/resume ownership. These restriction
 are reported at load and before consuming an activation. Banked resume attaches
 only the existing entitlement and does not replay activation/deactivation reward
 hooks, announcements or commands. New grants retain personal/server cooldown
-bookkeeping. Limited-activation bank purchases use the durable queue start fence
-even when `PerkQue` is disabled and can wait behind an active perk. Known
+bookkeeping. Limited direct purchases persist a `STARTING` identity in the existing
+bounded feature file before consuming credit. With `PerkQue` disabled, personal banks
+can start alongside unrelated active or permanent perks, and different players can
+start in parallel unless this perk has a shared server cooldown. Direct identities
+never enter `WAITING` or run through the ordinary global queue. Known
 unsupported/unavailable bank admission is rejected before credit consumption.
 If a bank write fails after a confirmed debit, the retained start fence requires
 admin review; it is never automatically replayed or refunded. The queue command
 shows the last confirmed fences even when storage becomes unavailable.
+Direct purchases validate and publish current ServerData and confirm current
+caller-owned storage before the atomic credit debit. New expiration and cooldown
+fields are published through the normal owner admission only after that debit
+succeeds, so a rejected purchase cannot restore as a free permanent perk. A definite failure before debit, or an authoritative false
+debit, consumes no credit and removes the direct fence. Once the debit may have
+committed, publication or gameplay failure retains `UNCERTAIN` evidence without
+automatic replay or refund. A crash or completion-save failure preserves the start
+identity for review. Owner, perk and reload admission remain held until the actual
+callbacks and completion publication settle. Bank publication uses the existing
+capacity-before-debit transaction; attachment does not grant banked time again.
 Checkpoints normally occur each second; a
 crash can preserve the uncheckpointed final fraction of time.
 

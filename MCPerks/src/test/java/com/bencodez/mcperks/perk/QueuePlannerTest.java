@@ -57,7 +57,7 @@ class QueuePlannerTest {
     private void drainUntil(java.util.function.BooleanSupplier done) throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         while (!done.getAsBoolean() && System.nanoTime() < deadline) { Runnable task = scheduler.tasks.poll(20, TimeUnit.MILLISECONDS); if (task != null) { task.run(); task.run(); } }
-        assertTrue(done.getAsBoolean(), "condition not reached"); state.storage(() -> null).get(5, TimeUnit.SECONDS);
+        assertTrue(done.getAsBoolean(), "condition not reached"); state.runtimeStorage(() -> null).get(5, TimeUnit.SECONDS);
     }
     @Test void queueHeadUsesOneSnapshotWhenConcurrentCancellationPublishesEmptyQueue() throws Exception {
         var entry = state.enqueue(owner, "vein", "", 1).get(5, TimeUnit.SECONDS);
@@ -315,9 +315,262 @@ class QueuePlannerTest {
         when(perk.checkTimesUsed(user)).thenReturn(true); when(perk.checkCoolDown(user)).thenReturn(true); when(perk.checkServerWideCoolDown(user)).thenReturn(true);
         doAnswer(call -> { activated.incrementAndGet(); return null; }).when(perk).activatePerk(eq(user), eq(10), nullable(Timestamp.class));
         perk.runPerk(user);
-        drainUntil(() -> activated.get() == 1);
-        verify(user).addActivation("vein",-1); verify(user,never()).addActivation(anyInt());
+        drainUntil(() -> activated.get() == 1 && state.queue().isEmpty());
+        assertEquals(0, personal.get()); assertEquals(5, global.get());
+        verify(user, never()).addActivation(anyString(), anyInt()); verify(user,never()).addActivation(anyInt());
+        verify(dataManager, times(1)).withAtomicUserTransaction(eq(owner), any(), anyMap(), any());
         verify(perk, times(1)).activatePerk(eq(user), eq(10), nullable(Timestamp.class)); verify(user,never()).sendMessage(contains("unavailable"));
+    }
+    private void directRuntime() throws Exception {
+        runtimeFile(); field(perk, "perk", "vein"); doCallRealMethod().when(perk).runPerk(user);
+        when(perk.checkTimesUsed(user)).thenReturn(true); when(perk.checkCoolDown(user)).thenReturn(true);
+        when(perk.checkServerWideCoolDown(user)).thenReturn(true);
+        doAnswer(call -> { activated.incrementAndGet(); return null; }).when(perk).activatePerk(eq(user), eq(10), nullable(Timestamp.class));
+    }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void directPredebitServerPublicationOrCapacityFailureConsumesNothing(boolean oversized) throws Exception {
+        directRuntime();
+        if (oversized) plugin.getMcperksServerData().getData().set("Indispensable", "x".repeat(4_100_000));
+        else Files.createDirectory(directory.resolve("ServerData.yml"));
+        perk.runPerk(user);
+        drainUntil(() -> !planner.hasAdmissions());
+        assertEquals(1, personal.get()); assertEquals(0, activated.get()); assertTrue(state.queue().isEmpty());
+        verify(dataManager, never()).withAtomicUserTransaction(any(), any(), anyMap(), any());
+    }
+    @Test void directCallerStorageFailureReleasesDurableStartWithoutDebitOrGameplay() throws Exception {
+        directRuntime();
+        var cache = dataManager.getCache(owner);
+        doThrow(new IllegalStateException("caller flush unavailable")).when(cache).flushChangesAndRun(any());
+        perk.runPerk(user); drainUntil(() -> !planner.hasAdmissions());
+        assertTrue(Files.isRegularFile(directory.resolve("ServerData.yml")));
+        assertTrue(state.queue().isEmpty()); assertEquals(1, personal.get()); assertEquals(0, activated.get());
+        verify(dataManager, never()).withAtomicUserTransaction(any(), any(), anyMap(), any());
+    }
+    @Test void directAtomicFalseReleasesFenceWithoutGameplay() throws Exception {
+        directRuntime(); personal.set(0); // advisory cache still offers one, authoritative transaction offers none
+        perk.runPerk(user); drainUntil(() -> !planner.hasAdmissions());
+        assertTrue(state.queue().isEmpty()); assertEquals(0, personal.get()); assertEquals(0, activated.get());
+        verify(dataManager, times(1)).withAtomicUserTransaction(eq(owner), any(), anyMap(), any());
+        verify(dataManager, never()).cacheUser(any());
+    }
+    @Test void directDebitThenCachePublicationFailureRetainsUncertainIdentityAcrossRestart() throws Exception {
+        directRuntime(); when(dataManager.getPublishedCache(owner)).thenReturn(null);
+        perk.runPerk(user); drainUntil(() -> !planner.hasAdmissions());
+        assertEquals(0, personal.get()); assertEquals(0, activated.get());
+        var entry = state.queue().getFirst(); assertEquals(FeatureState.Stage.UNCERTAIN, entry.stage());
+        planner.check(); perk.runPerk(user); drainUntil(() -> !planner.hasAdmissions());
+        assertEquals(List.of(entry), state.queue());
+        verify(dataManager, times(1)).withAtomicUserTransaction(eq(owner), any(), anyMap(), any());
+        state.close();
+        try (var recovered = new FeatureState(directory.resolve("features.dat"))) {
+            recovered.ready().get(5, TimeUnit.SECONDS); assertEquals(List.of(entry), recovered.queue());
+        }
+    }
+    @Test void directStartIsPersistedBeforeCallerFlushAndRetainsOwnerUntilFinalCompletion() throws Exception {
+        directRuntime(); personal.set(2); when(user.getActivations("vein")).thenReturn(2);
+        var flush = new CompletableFuture<Runnable>();
+        var cache = dataManager.getCache(owner);
+        var firstFlush = new java.util.concurrent.atomic.AtomicBoolean(true);
+        doAnswer(call -> { Runnable callback = call.getArgument(0); if (firstFlush.getAndSet(false)) flush.complete(callback); else callback.run(); return null; }).when(cache).flushChangesAndRun(any());
+        perk.runPerk(user); drainUntil(flush::isDone);
+        var entry = state.queue().getFirst(); assertEquals(FeatureState.Stage.STARTING, entry.stage());
+        assertEquals(2, personal.get()); assertEquals(0, activated.get());
+        perk.runPerk(user); assertEquals(1, state.queue().size()); assertTrue(planner.hasAdmissions());
+        verify(user).sendMessage(contains("still being confirmed"));
+        flush.get(5, TimeUnit.SECONDS).run(); drainUntil(() -> !planner.hasAdmissions());
+        assertTrue(state.queue().isEmpty()); assertEquals(1, personal.get()); assertEquals(1, activated.get());
+        verify(dataManager, times(1)).withAtomicUserTransaction(eq(owner), any(), anyMap(), any());
+    }
+    @Test void directReloadRetiresPendingCallerFlushBeforeDebit() throws Exception {
+        directRuntime(); var epoch = new AtomicInteger(); when(plugin.getFeatureLifecycle()).thenAnswer(call -> epoch.get());
+        var flush = new CompletableFuture<Runnable>();
+        var cache = dataManager.getCache(owner);
+        doAnswer(call -> { flush.complete(call.getArgument(0)); return null; }).when(cache).flushChangesAndRun(any());
+        perk.runPerk(user); drainUntil(flush::isDone); epoch.incrementAndGet(); planner.invalidate();
+        flush.get(5, TimeUnit.SECONDS).run(); drainUntil(() -> !planner.hasAdmissions());
+        assertEquals(1, personal.get()); assertEquals(0, activated.get()); assertTrue(state.queue().isEmpty());
+        verify(dataManager, never()).withAtomicUserTransaction(any(), any(), anyMap(), any());
+    }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"PLAYER,false", "PLAYER,true", "ALL,false", "ALL,true"})
+    void rejectedPermanentDirectPurchasePreservesExistingMetadataAndCannotRestoreAsFreeGrant(String audience, boolean retireBeforeDebit) throws Exception {
+        var nativeFile = runtimeFile(); field(perk, "perk", "vein"); doCallRealMethod().when(perk).runPerk(user);
+        when(perk.checkTimesUsed(user)).thenReturn(true); when(perk.checkCoolDown(user)).thenReturn(true); when(perk.checkServerWideCoolDown(user)).thenReturn(true);
+        PerkSystemType scope = PerkSystemType.valueOf(audience); when(perk.getPerkType()).thenReturn(scope);
+        when(perk.isTimed()).thenReturn(true); when(perk.isLastForever()).thenReturn(true);
+        when(perk.getCoolDown()).thenReturn(30); when(perk.getServerWideCoolDown()).thenReturn(60);
+        long priorExpiration = System.currentTimeMillis() + 120_000, priorPersonalCooldown = System.currentTimeMillis() - 100_000;
+        long priorServerCooldown = System.currentTimeMillis() - 50_000;
+        var personalExpiration = new java.util.concurrent.atomic.AtomicLong(priorExpiration);
+        var personalCooldown = new java.util.concurrent.atomic.AtomicLong(priorPersonalCooldown);
+        when(user.getPerkExperation(perk)).thenAnswer(call -> personalExpiration.get());
+        when(user.getPerkCoolDown(perk)).thenAnswer(call -> personalCooldown.get());
+        doAnswer(call -> { personalExpiration.set(call.getArgument(1)); return null; }).when(user).setPerkExperation(eq(perk), anyLong());
+        doAnswer(call -> { personalCooldown.set(call.getArgument(1)); return null; }).when(user).setPerkCoolDown(eq(perk), anyLong());
+        plugin.getMcperksServerData().getData().set("Experation.vein", priorExpiration);
+        plugin.getMcperksServerData().getData().set("vein.CoolDown", priorServerCooldown);
+        var epoch = new AtomicInteger(); when(plugin.getFeatureLifecycle()).thenAnswer(call -> epoch.get());
+        var flush = new CompletableFuture<Runnable>(); var cache = dataManager.getCache(owner);
+        if (retireBeforeDebit) doAnswer(call -> { flush.complete(call.getArgument(0)); return null; }).when(cache).flushChangesAndRun(any());
+        else personal.set(0); // stale admission cache still offers one; the authoritative debit returns false
+        perk.runPerk(user);
+        if (retireBeforeDebit) {
+            drainUntil(flush::isDone); assertEquals(FeatureState.Stage.STARTING, state.queue().getFirst().stage());
+            assertEquals(priorExpiration, personalExpiration.get()); assertEquals(priorPersonalCooldown, personalCooldown.get());
+            epoch.incrementAndGet(); planner.invalidate(); flush.get(5, TimeUnit.SECONDS).run();
+        }
+        drainUntil(() -> !planner.hasAdmissions()); assertTrue(state.queue().isEmpty());
+        assertEquals(retireBeforeDebit ? 1 : 0, personal.get()); assertEquals(priorExpiration, personalExpiration.get());
+        assertEquals(priorPersonalCooldown, personalCooldown.get());
+        assertEquals(priorExpiration, plugin.getMcperksServerData().getPerkExperation(perk));
+        assertEquals(priorServerCooldown, plugin.getMcperksServerData().getServerCooldown("vein"));
+        verify(user, never()).setPerkExperation(any(), anyLong()); verify(user, never()).setPerkCoolDown(any(), anyLong());
+        verify(perk, never()).activatePerk(any(), anyInt(), any());
+        var recovered = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(directory.resolve("ServerData.yml").toFile());
+        assertEquals(priorExpiration, recovered.getLong("Experation.vein")); assertEquals(priorServerCooldown, recovered.getLong("vein.CoolDown"));
+        when(nativeFile.getData()).thenReturn(recovered);
+        var runtime = new ServerData(plugin); when(plugin.getMcperksServerData()).thenReturn(runtime);
+        runtime.initialize(state).get(5, TimeUnit.SECONDS);
+        when(perk.getExperation(user)).thenAnswer(call -> scope == PerkSystemType.ALL ? runtime.getPerkExperation(perk) : user.getPerkExperation(perk));
+        var restorationTasks = new LinkedBlockingQueue<Runnable>(); var actual = restorer(restorationTasks, perk);
+        var restored = actual.loadActivePerksConfirmed(() -> {});
+        Objects.requireNonNull(restorationTasks.poll(5, TimeUnit.SECONDS)).run(); restored.get(5, TimeUnit.SECONDS);
+        verify(perk, never()).activatePerk(user, 10); verify(perk, atLeastOnce()).scheduleDeactivation(user);
+    }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"PLAYER", "ALL"})
+    void successfulPermanentDirectPurchasePublishesMetadataOnlyAfterOneDebitAndRunsHooksOnce(String audience) throws Exception {
+        directRuntime(); when(perk.getPerkType()).thenReturn(PerkSystemType.valueOf(audience));
+        when(perk.isTimed()).thenReturn(true); when(perk.isLastForever()).thenReturn(true);
+        when(perk.getCoolDown()).thenReturn(30); when(perk.getServerWideCoolDown()).thenReturn(60);
+        doAnswer(call -> { assertEquals(0, personal.get(), "new personal metadata requires a committed debit"); return null; }).when(user).setPerkExperation(eq(perk), anyLong());
+        doAnswer(call -> { assertEquals(0, personal.get(), "new cooldown requires a committed debit"); return null; }).when(user).setPerkCoolDown(eq(perk), anyLong());
+        perk.runPerk(user); drainUntil(() -> !planner.hasAdmissions());
+        assertEquals(0, personal.get()); assertEquals(1, activated.get()); assertTrue(state.queue().isEmpty());
+        if (audience.equals("PLAYER")) verify(user).setPerkExperation(perk, -1);
+        else assertEquals(-1, plugin.getMcperksServerData().getPerkExperation(perk));
+        verify(dataManager, times(1)).withAtomicUserTransaction(eq(owner), any(), anyMap(), any());
+        verify(perk, times(1)).activatePerk(eq(user), eq(10), isNull());
+    }
+    @Test void directTransactionExceptionRetainsUncertaintyEvenWhenBackendMayHaveCommitted() throws Exception {
+        directRuntime(); afterDebit = () -> { throw new IllegalStateException("transaction acknowledgement lost"); };
+        perk.runPerk(user); drainUntil(() -> !planner.hasAdmissions());
+        assertEquals(0, personal.get()); assertEquals(0, activated.get());
+        assertEquals(FeatureState.Stage.UNCERTAIN, state.queue().getFirst().stage());
+        planner.check(); verify(dataManager, times(1)).withAtomicUserTransaction(eq(owner), any(), anyMap(), any());
+    }
+    @Test void repeatedDirectConsumeCallbackUsesTheSameAtomicCompletion() throws Exception {
+        var completed = planner.startDirect(user, perk, () -> {}, consume -> {
+            var first = consume.get(); assertSame(first, consume.get()); return first;
+        });
+        drainUntil(completed::isDone); completed.get(5, TimeUnit.SECONDS);
+        assertEquals(0, personal.get()); assertTrue(state.queue().isEmpty());
+        verify(dataManager, times(1)).withAtomicUserTransaction(eq(owner), any(), anyMap(), any());
+    }
+    @Test void acceptedQueuedConsumeThenSynchronousThrowKeepsStartFenceUntilDebitSettles() throws Exception {
+        var completed = planner.startDirect(user, perk, () -> {}, consume -> {
+            consume.get(); throw new IllegalStateException("caller failed after accepting consumption");
+        });
+        Runnable callback = next(); // admission is durable, but the owner has not requested consumption yet
+        var entered = new CountDownLatch(1); var release = new CountDownLatch(1);
+        var blocker = state.storage(() -> {
+            entered.countDown(); try { if (!release.await(5, TimeUnit.SECONDS)) throw new IllegalStateException("timeout"); }
+            catch (InterruptedException error) { throw new RuntimeException(error); } return null;
+        });
+        try {
+            assertTrue(entered.await(5, TimeUnit.SECONDS)); callback.run(); callback.run();
+            assertFalse(completed.isDone()); assertTrue(planner.hasAdmissions());
+            assertEquals(FeatureState.Stage.STARTING, state.queue().getFirst().stage());
+            assertEquals(1, personal.get()); assertEquals(0, activated.get());
+        } finally { release.countDown(); }
+        blocker.get(5, TimeUnit.SECONDS); drainUntil(completed::isDone);
+        assertThrows(ExecutionException.class, () -> completed.get(5, TimeUnit.SECONDS));
+        assertFalse(planner.hasAdmissions()); assertEquals(0, personal.get()); assertEquals(0, activated.get());
+        assertEquals(FeatureState.Stage.UNCERTAIN, state.queue().getFirst().stage());
+        verify(dataManager, times(1)).withAtomicUserTransaction(eq(owner), any(), anyMap(), any());
+    }
+    @Test void consumeAfterExecutionSettlesIsRejectedBeforeAnyDebit() throws Exception {
+        var captured = new java.util.concurrent.atomic.AtomicReference<java.util.function.Supplier<CompletableFuture<Void>>>();
+        var completed = planner.startDirect(user, perk, () -> {}, consume -> {
+            captured.set(consume); return CompletableFuture.completedFuture(null);
+        });
+        drainUntil(completed::isDone); completed.get(5, TimeUnit.SECONDS);
+        assertTrue(state.queue().isEmpty()); assertEquals(1, personal.get()); assertFalse(planner.hasAdmissions());
+        assertThrows(ExecutionException.class, () -> captured.get().get().get(5, TimeUnit.SECONDS));
+        assertEquals(1, personal.get()); assertTrue(state.queue().isEmpty());
+        verify(dataManager, never()).withAtomicUserTransaction(any(), any(), anyMap(), any());
+    }
+    @Test void directCompletionFailureRetainsStartFenceAndRecoversUncertainWithoutReplay() throws Exception {
+        directRuntime(); planner.retire(); state.close(); var publications = new AtomicInteger();
+        state = FeatureStateFixture.create(directory.resolve("features.dat"), (staged, target) -> {
+            if (publications.incrementAndGet() == 2) throw new java.io.IOException("completion publication failed");
+            DurableFeatureFiles.publish(staged, target);
+        });
+        state.ready().get(5, TimeUnit.SECONDS); when(plugin.getFeatureState()).thenReturn(state);
+        planner = new QueuePlanner(plugin, state); when(plugin.getQueuePlanner()).thenReturn(planner);
+        perk.runPerk(user); drainUntil(() -> !planner.hasAdmissions());
+        assertEquals(1, activated.get()); assertEquals(0, personal.get()); assertFalse(state.available());
+        var id = state.queue().getFirst().id(); assertEquals(FeatureState.Stage.STARTING, state.queue().getFirst().stage());
+        planner.check(); assertEquals(1, activated.get()); state.close();
+        try (var recovered = new FeatureState(directory.resolve("features.dat"))) {
+            recovered.ready().get(5, TimeUnit.SECONDS); assertEquals(id, recovered.queue().getFirst().id());
+            assertEquals(FeatureState.Stage.UNCERTAIN, recovered.queue().getFirst().stage());
+        }
+    }
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void queueDisabledLimitedBanksRemainParallelExceptSharedPerkCooldown(boolean sharedCooldown) throws Exception {
+        directRuntime(); when(config.getPerkQue()).thenReturn(false);
+        when(perk.getInteractionOptions()).thenReturn(new InteractionOptions(false, true, 16, 8, List.of(), List.of(), List.of(), List.of()));
+        when(perk.getEffects()).thenReturn(new ArrayList<>(List.of(Effect.NoFallDamage)));
+        when(perk.getServerWideCoolDown()).thenReturn(sharedCooldown ? 60 : 0);
+        when(perk.clone()).thenAnswer(call -> {
+            var clone = mock(Perk.class); when(clone.getPerk()).thenReturn("vein");
+            when(clone.getEffectedPlayers()).thenReturn(new ArrayList<String>()); return clone;
+        });
+        UUID secondOwner = UUID.randomUUID(); var secondPlayer = mock(Player.class); var secondUser = mock(MCPerksUser.class);
+        when(secondPlayer.getUniqueId()).thenReturn(secondOwner); when(secondPlayer.isOnline()).thenReturn(true);
+        var secondWorld = player.getWorld();
+        when(secondPlayer.isValid()).thenReturn(true); when(secondPlayer.getWorld()).thenReturn(secondWorld);
+        when(Bukkit.getServer().getPlayer(secondOwner)).thenReturn(secondPlayer);
+        when(secondUser.getUUID()).thenReturn(secondOwner.toString()); when(secondUser.getActivations("vein")).thenReturn(1);
+        when(plugin.getMcperksUserManager().getMCPerksUser(secondOwner)).thenReturn(secondUser);
+        when(perk.checkTimesUsed(secondUser)).thenReturn(true); when(perk.checkCoolDown(secondUser)).thenReturn(true);
+        when(perk.checkServerWideCoolDown(secondUser)).thenReturn(true);
+        doCallRealMethod().when(perk).runPerk(secondUser);
+        when(scheduler.implementation.runAtEntityWithFallback(eq(secondPlayer), any(), any())).thenAnswer(call -> {
+            java.util.function.Consumer<com.bencodez.simpleapi.folialib.wrapper.task.WrappedTask> action = call.getArgument(1);
+            scheduler.tasks.add(() -> action.accept(null));
+            return CompletableFuture.completedFuture(com.bencodez.simpleapi.folialib.enums.EntityTaskResult.SUCCESS);
+        });
+        var secondCredits = new AtomicInteger(1); var secondCache = mock(com.bencodez.advancedcore.api.user.usercache.UserDataCache.class);
+        when(dataManager.getCache(secondOwner)).thenReturn(secondCache); when(dataManager.getPublishedCache(secondOwner)).thenReturn(secondCache);
+        when(dataManager.withAtomicUserTransaction(eq(secondOwner), any(), anyMap(), any())).thenAnswer(call -> {
+            var transaction = mock(SqlUserStorage.TransactionScope.class); var column = mock(com.bencodez.simpleapi.sql.Column.class);
+            when(column.getName()).thenReturn("PerkActivations_vein"); when(column.getValue()).thenAnswer(i -> new com.bencodez.simpleapi.sql.data.DataValueInt(secondCredits.get()));
+            when(transaction.readRow()).thenReturn(List.of(column));
+            doAnswer(i -> { Map<String, com.bencodez.simpleapi.sql.data.DataValue> values = i.getArgument(0); secondCredits.set(values.get("PerkActivations_vein").getInt()); return null; }).when(transaction).writeValues(anyMap());
+            SqlUserStorage.TransactionWork<?> work = call.getArgument(3); return work.run(transaction);
+        });
+        var flushes = new ConcurrentHashMap<UUID, Runnable>();
+        for (var entry : Map.of(owner, dataManager.getCache(owner), secondOwner, secondCache).entrySet()) {
+            var first = new java.util.concurrent.atomic.AtomicBoolean(true);
+            doAnswer(call -> { Runnable callback = call.getArgument(0); if (first.getAndSet(false)) flushes.put(entry.getKey(), callback); else callback.run(); return null; }).when(entry.getValue()).flushChangesAndRun(any());
+        }
+        var unrelated = mock(Perk.class); when(unrelated.getPerk()).thenReturn("permanent-global"); when(unrelated.isLastForever()).thenReturn(true);
+        handler.getActivePerks().add(unrelated);
+        perk.runPerk(user); drainUntil(() -> flushes.containsKey(owner));
+        perk.runPerk(secondUser);
+        if (sharedCooldown) verify(secondUser).sendMessage(contains("still being confirmed"));
+        else { drainUntil(() -> flushes.containsKey(secondOwner)); verify(perk).checkTimesUsed(secondUser); }
+        assertEquals(sharedCooldown ? 1 : 2, state.queue().size()); assertEquals(1, personal.get()); assertEquals(1, secondCredits.get());
+        flushes.values().forEach(Runnable::run); drainUntil(() -> !planner.hasAdmissions());
+        assertTrue(state.queue().isEmpty()); assertEquals(0, personal.get()); assertEquals(sharedCooldown ? 1 : 0, secondCredits.get());
+        assertEquals(10_000, state.banks().get(new FeatureState.BankKey(owner, "vein")).milliseconds());
+        assertEquals(sharedCooldown ? 2 : 3, handler.getActivePerks().size());
+        if (!sharedCooldown) assertEquals(10_000, state.banks().get(new FeatureState.BankKey(secondOwner, "vein")).milliseconds());
+        verify(handler, never()).addQue(any(), any()); verify(perk, never()).activatePerk(any(), anyInt(), any());
     }
     private static void field(Perk perk,String name,Object value) throws Exception {
         var field=Perk.class.getDeclaredField(name); field.setAccessible(true); field.set(perk,value);
