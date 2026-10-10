@@ -95,6 +95,66 @@ class PerkActivationAdmissionTest {
         }
     }
 
+    @Test void directLimitedActivationRejectsDuplicateBeforeDebitingAnotherCredit() throws Exception {
+        Fixture f = fixture(false);
+        var config = mock(com.bencodez.mcperks.configs.Config.class);
+        var features = mock(com.bencodez.mcperks.data.FeatureState.class);
+        when(f.plugin().getConfigFile()).thenReturn(config);
+        when(f.plugin().getFeatureState()).thenReturn(features);
+        when(config.getLimitActivations()).thenReturn(true);
+        when(features.available()).thenReturn(true);
+        when(f.handler().isRestorationReady()).thenReturn(true);
+        when(f.data().getData()).thenReturn(new org.bukkit.configuration.file.YamlConfiguration());
+        doReturn(false).when(f.perk()).isPerkActive(f.user());
+        doReturn(true).when(f.perk()).checkTimesUsed(f.user());
+        doReturn(true).when(f.perk()).checkCoolDown(f.user());
+        doReturn(true).when(f.perk()).checkServerWideCoolDown(f.user());
+        var credits = new java.util.concurrent.atomic.AtomicInteger(2);
+        when(f.user().getActivations("admission")).thenAnswer(call -> credits.get());
+        doAnswer(call -> { credits.addAndGet(call.getArgument(1)); return null; })
+                .when(f.user()).addActivation(eq("admission"), anyInt());
+        try (MockedStatic<UserStorageConfirmation> confirmation = mockStatic(UserStorageConfirmation.class)) {
+            confirmation.when(() -> UserStorageConfirmation.confirm(f.plugin(), f.user())).thenReturn(f.callerStorage());
+            f.perk().runPerk(f.user());
+            assertEquals(1, credits.get());
+            f.perk().runPerk(f.user());
+            assertEquals(1, credits.get(), "a rejected pending activation must not consume a second credit");
+            verify(f.user(), times(1)).addActivation("admission", -1);
+            verify(f.data(), times(1)).confirmedActivationBeforeGameplay(any(), any(), any(), isNull());
+            f.published().complete(null); f.callerStorage().complete(null);
+            verify(f.handler(), times(1)).activePerk(eq(f.perk()), eq(f.user()), eq(30), isNull());
+        }
+    }
+
+    @Test void differentPersonalOwnersDoNotShareAnAdmissionFence() {
+        Fixture f = fixture(false);
+        MCPerksUser other = mock(MCPerksUser.class);
+        when(other.getUUID()).thenReturn(UUID.randomUUID().toString());
+        assertFalse(f.perk().executeConfirmed(f.user(), 30).isDone());
+        assertFalse(f.perk().executeConfirmed(other, 30).isDone());
+        verify(f.data(), times(2)).confirmedActivationBeforeGameplay(any(), any(), any(), isNull());
+    }
+
+    @Test void actualReloadGenerationChangeRetiresPendingUserConfirmation() throws Exception {
+        Fixture f = fixture(false);
+        doCallRealMethod().when(f.plugin()).getFeatureLifecycle();
+        var config = mock(com.bencodez.mcperks.configs.Config.class);
+        var field = MCPerksMain.class.getDeclaredField("configFile"); field.setAccessible(true); field.set(f.plugin(), config);
+        doThrow(new IllegalStateException("stop fixture after configuration generation change"))
+                .when(config).reloadData();
+        try (MockedStatic<UserStorageConfirmation> confirmation = mockStatic(UserStorageConfirmation.class)) {
+            confirmation.when(() -> UserStorageConfirmation.confirm(f.plugin(), f.user())).thenReturn(f.callerStorage());
+            var execution = f.perk().executeConfirmed(f.user(), 30);
+            f.published().complete(null);
+            var reload = MCPerksMain.class.getDeclaredMethod("reloadAfterDrain"); reload.setAccessible(true);
+            assertThrows(java.lang.reflect.InvocationTargetException.class, () -> reload.invoke(f.plugin()));
+            assertEquals(1, f.plugin().getFeatureLifecycle());
+            f.callerStorage().complete(null);
+            assertThrows(ExecutionException.class, execution::get);
+            verify(f.handler(), never()).activePerk(any(), any(), anyInt(), any());
+        }
+    }
+
     @Test void actualExecuteDoesNotRunHooksWhenAdmissionStorageFails() throws Exception {
         Fixture f = fixture(false);
         try (MockedStatic<UserStorageConfirmation> confirmation = mockStatic(UserStorageConfirmation.class)) {

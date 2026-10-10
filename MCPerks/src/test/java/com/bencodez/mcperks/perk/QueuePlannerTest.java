@@ -313,9 +313,11 @@ class QueuePlannerTest {
     @Test void readyLegacyRuntimeStillConsumesOnlySelectedPersonalCreditOnDirectActivation() throws Exception {
         runtimeFile(); field(perk,"perk","vein"); doCallRealMethod().when(perk).runPerk(user);
         when(perk.checkTimesUsed(user)).thenReturn(true); when(perk.checkCoolDown(user)).thenReturn(true); when(perk.checkServerWideCoolDown(user)).thenReturn(true);
+        doAnswer(call -> { activated.incrementAndGet(); return null; }).when(perk).activatePerk(eq(user), eq(10), nullable(Timestamp.class));
         perk.runPerk(user);
+        drainUntil(() -> activated.get() == 1);
         verify(user).addActivation("vein",-1); verify(user,never()).addActivation(anyInt());
-        verify(perk).runPerkPerk(user,false); verify(user,never()).sendMessage(contains("unavailable"));
+        verify(perk, times(1)).activatePerk(eq(user), eq(10), nullable(Timestamp.class)); verify(user,never()).sendMessage(contains("unavailable"));
     }
     private static void field(Perk perk,String name,Object value) throws Exception {
         var field=Perk.class.getDeclaredField(name); field.setAccessible(true); field.set(perk,value);

@@ -38,7 +38,13 @@ class BankedPerksTest {
         scheduler=new OwnerTaskHarness(plugin,player,true); time=new AtomicLong(1_000_000_000L); state=new FeatureState(directory.resolve("features.dat")); key=new FeatureState.BankKey(owner,"passive"); state.setBank(key,10000).get(5,TimeUnit.SECONDS);
         banked=new BankedPerks(plugin,state,time::get); when(plugin.getBankedPerks()).thenReturn(banked); when(plugin.getFeatureState()).thenReturn(state); when(plugin.getQueuePlanner()).thenReturn(new QueuePlanner(plugin, state));
     }
-    private static void field(Perk perk,String name,Object value) throws Exception { var field=Perk.class.getDeclaredField(name); field.setAccessible(true); field.set(perk,value); }
+    private static void field(Perk perk,String name,Object value) throws Exception {
+        var field=Perk.class.getDeclaredField(name); field.setAccessible(true); field.set(perk,value);
+        if (name.equals("plugin")) {
+            var admissions = Perk.class.getDeclaredField("activationAdmissions"); admissions.setAccessible(true);
+            if (admissions.get(perk) == null) admissions.set(perk, new LinkedHashMap<String, Long>());
+        }
+    }
     private void nextOwner() throws Exception { Objects.requireNonNull(scheduler.tasks.poll(5,TimeUnit.SECONDS)).run(); }
     private void barrier() throws Exception { state.storage(() -> null).get(5,TimeUnit.SECONDS); }
     @ParameterizedTest @ValueSource(strings = {"omitted", "-1", "-12", "0", "1", "60"})
@@ -478,7 +484,7 @@ class BankedPerksTest {
                 var config=mock(com.bencodez.mcperks.configs.ConfigPerks.class); configs.when(com.bencodez.mcperks.configs.ConfigPerks::getInstance).thenReturn(config);
                 when(config.getPerkAlreayActive("passive")).thenReturn("already active");
                 source.runPerk(user); verify(user).sendMessage("already active");
-                verify(source,times(1)).executeConfirmed(user,10); assertEquals(10000,state.banks().get(key).milliseconds());
+                verify(user,times(1)).setPerkCoolDown(eq(source),anyLong()); assertEquals(10000,state.banks().get(key).milliseconds());
             }
         } finally { release.countDown(); }
     }
@@ -500,7 +506,7 @@ class BankedPerksTest {
                 when(config.getPerkInCoolDown("passive")).thenReturn("cooldown"); source.runPerk(otherUser);
                 verify(otherUser).sendMessage(eq("cooldown"),eq("cooldown"),anyString());
             }
-            assertFalse(state.banks().containsKey(new FeatureState.BankKey(other,"passive"))); verify(source,times(1)).executeConfirmed(any(),anyInt());
+            assertFalse(state.banks().containsKey(new FeatureState.BankKey(other,"passive"))); verify(user,times(1)).setPerkCoolDown(eq(source),anyLong());
         } finally { MCPerksMain.plugin=previous; }
     }
     @Test void failedDirectBankPublicationReleasesAdmissionWithoutPublishingCooldown() throws Exception {
@@ -757,7 +763,7 @@ class BankedPerksTest {
             banked.pause(running, true).get(5, TimeUnit.SECONDS); nextOwner();
             Objects.requireNonNull(scheduler.timers.poll(5, TimeUnit.SECONDS)).run(); nextOwner(); barrier();
             assertEquals(1, active.size()); assertEquals(waiting.perk(), active.getFirst().getPerk()); assertEquals(10000, state.banks().get(waiting).milliseconds());
-            verify(source, times(1)).executeConfirmed(user, 10); verify(second, times(1)).executeConfirmed(user, 10);
+            verify(user, times(1)).setPerkCoolDown(eq(source), anyLong()); verify(user, times(1)).setPerkCoolDown(eq(second), anyLong());
             verify(user, never()).addActivation(anyInt()); verify(plugin, never()).getEffectHandler();
         } finally { release.countDown(); MCPerksMain.plugin = previous; }
     }

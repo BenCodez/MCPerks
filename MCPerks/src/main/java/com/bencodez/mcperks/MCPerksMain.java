@@ -568,6 +568,8 @@ public class MCPerksMain extends AdvancedCorePlugin {
         });
     }
     private void reloadAfterDrain() {
+        // Retire direct activations admitted by the previous configuration generation.
+        featureLifecycle++;
         if (usageEffects != null) usageEffects.invalidate();
         if (queuePlanner != null) queuePlanner.invalidate();
 		configFile.reloadData();

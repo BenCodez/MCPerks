@@ -449,6 +449,22 @@ public class Perk {
         executeConfirmed(user, length).exceptionally(error -> { plugin.getLogger().warning("Perk execution could not be confirmed: " + getPerk()); return null; });
     }
     public java.util.concurrent.CompletableFuture<Void> executeConfirmed(MCPerksUser user, int length) {
+        long admission = acquireActivationAdmission(user);
+        if (admission == 0) return java.util.concurrent.CompletableFuture.failedFuture(
+                new IllegalStateException("Perk activation already pending or admissions busy"));
+        return executeAdmitted(user, length, admission);
+    }
+    private java.util.concurrent.CompletableFuture<Void> executeAdmitted(MCPerksUser user, int length, long admission) {
+        final String admissionKey = activationKey(user);
+        try {
+            return executeAdmittedWork(user, length, admissionKey, admission).whenComplete((ignored, error) ->
+                    releaseActivationAdmission(admissionKey, admission));
+        } catch (RuntimeException failure) {
+            releaseActivationAdmission(admissionKey, admission);
+            return java.util.concurrent.CompletableFuture.failedFuture(failure);
+        }
+    }
+    private java.util.concurrent.CompletableFuture<Void> executeAdmittedWork(MCPerksUser user, int length, String admissionKey, long admission) {
         if (!plugin.getMcperksServerData().isReady()) return java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("ServerData initialization unavailable"));
         if (getInteractionOptions().banked()) return plugin.getBankedPerks().grantConfirmed(user, this, length)
                 .thenCompose(ignored -> confirmCooldown(user));
@@ -456,15 +472,6 @@ public class Perk {
         final int lifecycle = plugin.getFeatureLifecycle();
         long admissionExpiration = activationExpiration(length);
         org.bukkit.entity.Player owner = user == null ? null : user.getPlayer();
-        final String admissionKey = getPerkType() == PerkSystemType.PLAYER
-                ? "PLAYER:" + user.getUUID() : getPerkType().name() + ":" + getPerk();
-        final long admission;
-        synchronized (this) {
-            if (activationAdmissions.size() >= 256) return java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("Perk activation admissions busy"));
-            if (activationAdmissions.containsKey(admissionKey)) return java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("Perk activation already pending"));
-            admission = ++activationSequence;
-            activationAdmissions.put(admissionKey, admission);
-        }
         final long personalCooldown = MiscUtils.getInstance().addSeconds(new Date(), getCoolDown()).getTime();
         Map<String, Long> sharedFields = new LinkedHashMap<>();
         if (getServerWideCoolDown() > 0)
@@ -490,9 +497,21 @@ public class Perk {
             verifyAdmission.run();
             activatePerk(user, length, isTimed() && !isLastForever() ? new Timestamp(admissionExpiration) : null);
         }, owner);
-        return confirmed.whenComplete((ignored, error) -> {
-            synchronized (this) { if (Objects.equals(activationAdmissions.get(admissionKey), admission)) activationAdmissions.remove(admissionKey); }
-        });
+        return confirmed;
+    }
+    private String activationKey(MCPerksUser user) {
+        return getPerkType() == PerkSystemType.PLAYER
+                ? "PLAYER:" + user.getUUID() : getPerkType().name() + ":" + getPerk();
+    }
+    private synchronized long acquireActivationAdmission(MCPerksUser user) {
+        String key = activationKey(user);
+        if (activationAdmissions.size() >= 256 || activationAdmissions.containsKey(key)) return 0;
+        long admission = ++activationSequence;
+        activationAdmissions.put(key, admission);
+        return admission;
+    }
+    private synchronized void releaseActivationAdmission(String key, long admission) {
+        if (Objects.equals(activationAdmissions.get(key), admission)) activationAdmissions.remove(key);
     }
     private long activationExpiration(int length) {
         if (!isTimed()) return 0;
@@ -905,41 +924,55 @@ public class Perk {
         if (queueOwned && !plugin.getQueuePlanner().beginDirect(directOwner, this)) {
             plugin.getPerkHandler().addQue(user, this); return false;
         }
-        boolean globalActivation = true;
-        try { if (plugin.getConfigFile().getLimitActivations()) {
-            java.util.UUID owner = java.util.UUID.fromString(user.getUUID());
-            if (user.getActivations(getPerk()) - plugin.getFeatureState().reserved(owner, "PerkActivations_" + getPerk()) > 0) {
-                globalActivation = false; user.addActivation(getPerk(), -1);
-            } else if (user.getActivations() - plugin.getFeatureState().reserved(owner, "Activations") > 0) {
-                user.addActivation(-1);
-            } else {
-                if (queueOwned) plugin.getQueuePlanner().finishDirect(directOwner, this);
-                user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk)); return false;
-            }
-        } } catch (RuntimeException failure) {
+        final long admission = acquireActivationAdmission(user);
+        if (admission == 0) {
             if (queueOwned) plugin.getQueuePlanner().finishDirect(directOwner, this);
-            throw failure;
+            user.sendMessage("&cA perk activation is still being confirmed; no activation consumed.");
+            return false;
         }
-
-        if (getInteractionOptions().banked()) {
-            try {
-                executeConfirmed(user, getTime()).whenComplete((ignored, error) -> {
-                    controller.finishDirect(this);
+        boolean handedOff = false;
+        try {
+            try { if (plugin.getConfigFile().getLimitActivations()) {
+                java.util.UUID owner = java.util.UUID.fromString(user.getUUID());
+                if (user.getActivations(getPerk()) - plugin.getFeatureState().reserved(owner, "PerkActivations_" + getPerk()) > 0) {
+                    user.addActivation(getPerk(), -1);
+                } else if (user.getActivations() - plugin.getFeatureState().reserved(owner, "Activations") > 0) {
+                    user.addActivation(-1);
+                } else {
                     if (queueOwned) plugin.getQueuePlanner().finishDirect(directOwner, this);
-                    if (error != null) plugin.getLogger().warning("Bank grant could not be confirmed: " + getPerk());
-                });
-            } catch (RuntimeException failure) {
+                    user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk)); return false;
+                }
+            } } catch (RuntimeException failure) {
                 if (queueOwned) plugin.getQueuePlanner().finishDirect(directOwner, this);
                 throw failure;
             }
-            return true;
+
+            if (getInteractionOptions().banked()) {
+                try {
+                    executeAdmitted(user, getTime(), admission).whenComplete((ignored, error) -> {
+                        controller.finishDirect(this);
+                        if (queueOwned) plugin.getQueuePlanner().finishDirect(directOwner, this);
+                        if (error != null) plugin.getLogger().warning("Bank grant could not be confirmed: " + getPerk());
+                    });
+                } catch (RuntimeException failure) {
+                    if (queueOwned) plugin.getQueuePlanner().finishDirect(directOwner, this);
+                    throw failure;
+                }
+                handedOff = true;
+                return true;
+            }
+            if (queueOwned) {
+                try {
+                    executeAdmitted(user, getTime(), admission).whenComplete((ignored, error) -> plugin.getQueuePlanner().finishDirect(directOwner, this));
+                } catch (RuntimeException failure) { plugin.getQueuePlanner().finishDirect(directOwner, this); throw failure; }
+            } else executeAdmitted(user, getTime(), admission).exceptionally(error -> {
+                plugin.getLogger().warning("Perk execution could not be confirmed: " + getPerk()); return null;
+            });
+            handedOff = true;
+            return false;
+        } finally {
+            if (!handedOff) releaseActivationAdmission(activationKey(user), admission);
         }
-        if (queueOwned) {
-            try {
-                executeConfirmed(user, getTime()).whenComplete((ignored, error) -> plugin.getQueuePlanner().finishDirect(directOwner, this));
-            } catch (RuntimeException failure) { plugin.getQueuePlanner().finishDirect(directOwner, this); throw failure; }
-        } else runPerkPerk(user, globalActivation);
-        return false;
 
 	}
 
