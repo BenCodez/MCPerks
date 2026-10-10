@@ -7,6 +7,15 @@
 ### Creative Commons Arttribution 3.0 Unported
 https://github.com/Ben12345rocks/AdvancedCore/blob/master/VotingPlugin/LICENSE.txt
 
+## Platform support
+
+Use Bukkit/Spigot or Paper. The current plugin descriptor does not declare Folia
+support, so Folia refuses to load MCPerks. The conditional Folia scheduling code
+described below does not establish whole-plugin support. An actual Folia 26.2
+build 7 startup check confirmed this loader rejection; no effect tests ran there.
+Do not add `folia-supported` as a workaround without a complete ownership audit
+and runtime validation.
+
 ## Optional interaction effects
 
 Add any of `AutoBlockRefill`, `VeinMining`, `RightClickHarvest`, or `PrecisionMode`
@@ -20,8 +29,9 @@ unlimited behavior when the new options are absent.
   includes the original player break; only additional blocks count as successful
   units. It uses the native player break path for protection events, normal tool
   durability, enchantments, drops, and experience, with a recursion guard. It
-  accesses loaded chunks only. On Folia it stays in the starting chunk and checks
-  current region ownership; it never follows an ore across a region boundary.
+  accesses loaded chunks only. Its conditional Folia path stays in the starting
+  chunk and checks current region ownership, but MCPerks currently cannot load
+  on Folia (see Platform support).
 - `RightClickHarvest` accepts the main hand once, mature wheat, carrots, potatoes,
   beetroot and nether wart, and the existing AutoPlant tool, enchantment and block
   policy. The final right-click decision and the native block-break decision must
@@ -193,8 +203,9 @@ controller, even if the last confirmed balance remains positive. Eligible time
 starts when the effect attaches after storage admission; storage delays before
 initial attachment or resume consume no bank time. Retired player-session
 callbacks cannot stop a reconnecting successor.
-Bank pulses use the synchronous Bukkit delay on Spigot/Paper and the moving
-player's entity scheduler on Folia. Delayed scheduler rejection or entity
+Bank pulses use the synchronous Bukkit delay on Spigot/Paper. The conditional
+Folia path uses the moving player's entity scheduler; current Folia loading is
+unsupported (see Platform support). Delayed scheduler rejection or entity
 retirement stops the owning controller and detaches its effect; callbacks from
 retired controllers cannot attach it again.
 

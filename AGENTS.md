@@ -1,6 +1,6 @@
 # Maintainer and AI-agent guide
 
-MCPerks is a Bukkit/Paper/Folia plugin built on AdvancedCore. It grants time-limited perks and effects at player, server, permission, Towny, or Factions scope and optionally integrates with VotingPlugin, Vault, RoseStacker, mcMMO, PlaceholderAPI, and other plugins.
+MCPerks is a Bukkit/Paper plugin built on AdvancedCore. It grants time-limited perks and effects at player, server, permission, Towny, or Factions scope and optionally integrates with VotingPlugin, Vault, RoseStacker, mcMMO, PlaceholderAPI, and other plugins. The current descriptor does not declare Folia support, and Folia refuses to load it. Conditional Folia scheduler paths are not a platform-support guarantee; do not add the descriptor flag without auditing and validating the complete plugin lifecycle and integrations.
 
 ## Build and verification
 
