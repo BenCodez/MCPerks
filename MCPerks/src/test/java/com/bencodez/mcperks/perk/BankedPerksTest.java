@@ -376,6 +376,11 @@ class BankedPerksTest {
     }
     private com.bencodez.advancedcore.api.user.usercache.UserDataCache directRuntime() throws Exception {
         field(source,"plugin",plugin); field(source,"perk","passive"); when(source.getTime()).thenReturn(10);
+        // Direct activation's admission callback uses the global scheduler in
+        // this fixture; the bank attachment itself still uses the owner task.
+        var directScheduler = plugin.getBukkitScheduler();
+        doAnswer(invocation -> { invocation.<Runnable>getArgument(1).run(); return null; })
+                .when(directScheduler).runTask(eq(plugin), any(Runnable.class));
         when(source.checkTimesUsed(any())).thenReturn(true); when(source.checkCoolDown(any())).thenReturn(true); when(source.checkServerWideCoolDown(any())).thenReturn(true);
         var config=mock(com.bencodez.mcperks.configs.Config.class); when(plugin.getConfigFile()).thenReturn(config);
         when(plugin.getLogger()).thenReturn(Logger.getLogger("test"));
@@ -474,8 +479,10 @@ class BankedPerksTest {
     @Test void newBankGrantRecordsCooldownOnceAndResumeDoesNotRecordItAgain() throws Exception {
         field(source,"plugin",plugin); when(source.getCoolDown()).thenReturn(30); when(source.getServerWideCoolDown()).thenReturn(60); doCallRealMethod().when(source).executeConfirmed(user,10);
         directRuntime();
-        long before=System.currentTimeMillis(); source.executeConfirmed(user,10).get(5,TimeUnit.SECONDS); verify(user,times(1)).setPerkCoolDown(eq(source),longThat(value->value>=before+29000)); verify(source,times(1)).setServerCoolDownTime(longThat(value->value>=before+59000));
+        long before=System.currentTimeMillis(); source.executeConfirmed(user,10).get(5,TimeUnit.SECONDS); verify(user,times(1)).setPerkCoolDown(eq(source),longThat(value->value>=before+29000)); long serverCooldown = plugin.getMcperksServerData().getServerCooldown("passive"); assertTrue(serverCooldown >= before + 59000);
+        var written = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(directory.resolve("ServerData.yml").toFile()); assertEquals(serverCooldown, written.getLong("passive.CoolDown"));
         banked.pause(key,true).get(); banked.pause(key,false).get(); verify(user,times(1)).setPerkCoolDown(any(),anyLong());
+        assertEquals(serverCooldown, plugin.getMcperksServerData().getServerCooldown("passive"));
     }
     @Test void directBankSerializesBeforeChecksAndKeepsFenceThroughUserConfirmation() throws Exception {
         var cache=directRuntime(); state.setBank(key,0).get(5,TimeUnit.SECONDS);
@@ -487,10 +494,13 @@ class BankedPerksTest {
         try {
             source.runPerk(user); source.runPerk(user); assertEquals(0,state.banks().get(key).milliseconds());
             verify(source,times(1)).checkTimesUsed(user); verify(user).sendMessage(contains("still being confirmed"));
+            verify(user, never()).setPerkCoolDown(eq(source), anyLong());
             release.countDown(); var completed=callback.get(5,TimeUnit.SECONDS);
-            assertEquals(10000,state.banks().get(key).milliseconds()); assertTrue(active.isEmpty());
+            assertEquals(0,state.banks().get(key).milliseconds()); assertTrue(active.isEmpty());
             source.runPerk(user); verify(source,times(1)).checkTimesUsed(user);
-            completed.run(); assertTrue(banked.beginDirect(source)); banked.finishDirect(source);
+            completed.run(); barrier(); barrier();
+            assertEquals(10000,state.banks().get(key).milliseconds());
+            assertTrue(banked.beginDirect(source)); banked.finishDirect(source);
             try (var configs=mockStatic(com.bencodez.mcperks.configs.ConfigPerks.class)) {
                 var config=mock(com.bencodez.mcperks.configs.ConfigPerks.class); configs.when(com.bencodez.mcperks.configs.ConfigPerks::getInstance).thenReturn(config);
                 when(config.getPerkAlreayActive("passive")).thenReturn("already active");
@@ -498,6 +508,33 @@ class BankedPerksTest {
                 verify(user,times(1)).setPerkCoolDown(eq(source),anyLong()); assertEquals(10000,state.banks().get(key).milliseconds());
             }
         } finally { release.countDown(); }
+    }
+    @Test void idleLimitedBankedActivationUsesDirectStartFenceInsteadOfWaitingQueue() throws Exception {
+        directRuntime(); state.setBank(key, 0).get(5, TimeUnit.SECONDS);
+        when(plugin.getConfigFile().getLimitActivations()).thenReturn(true);
+        when(plugin.getConfigFile().getPerkQue()).thenReturn(true);
+        when(user.getActivations()).thenReturn(1);
+        var planner = mock(QueuePlanner.class);
+        when(plugin.getQueuePlanner()).thenReturn(planner);
+        when(planner.beginDirect(owner, source)).thenReturn(true);
+        when(planner.startDirect(eq(user), eq(source), any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        source.runPerk(user);
+        verify(planner).startDirect(eq(user), eq(source), any(), any());
+        verify(plugin.getPerkHandler(), never()).addQue(user, source);
+    }
+    @Test void directBankDoesNotPublishEntitlementUntilCooldownConfirmationSucceeds() throws Exception {
+        var cache = directRuntime(); state.setBank(key, 0).get(5, TimeUnit.SECONDS);
+        var confirmation = new CompletableFuture<Runnable>();
+        doAnswer(invocation -> { confirmation.complete(invocation.getArgument(0)); return null; })
+                .when(cache).flushChangesAndRun(any());
+        var granting = source.executeConfirmed(user, 10);
+        var callback = confirmation.get(5, TimeUnit.SECONDS);
+        assertEquals(0, state.banks().get(key).milliseconds(),
+                "bank publication must wait for the caller cooldown confirmation");
+        assertFalse(granting.isDone());
+        callback.run();
+        granting.get(5, TimeUnit.SECONDS);
+        assertEquals(10000, state.banks().get(key).milliseconds());
     }
     @Test void directBankPublishesServerCooldownBeforeReleasingAdmissionAndRejectsOtherPlayerAfterReload() throws Exception {
         directRuntime(); state.setBank(key,0).get(5,TimeUnit.SECONDS); when(source.getServerWideCoolDown()).thenReturn(60);
@@ -520,14 +557,20 @@ class BankedPerksTest {
             assertFalse(state.banks().containsKey(new FeatureState.BankKey(other,"passive"))); verify(user,times(1)).setPerkCoolDown(eq(source),anyLong());
         } finally { MCPerksMain.plugin=previous; }
     }
-    @Test void failedDirectBankPublicationReleasesAdmissionWithoutPublishingCooldown() throws Exception {
+    @Test void failedDirectBankPublicationReleasesAdmissionAndRetainsConfirmedCooldown() throws Exception {
         directRuntime(); state.setBank(key,0).get(5,TimeUnit.SECONDS);
         when(plugin.getConfigFile().getPerkQue()).thenReturn(true);
         Files.delete(directory.resolve("features.dat")); Files.createDirectory(directory.resolve("features.dat"));
-        source.runPerk(user); state.runtimeStorage(() -> null).get(5,TimeUnit.SECONDS);
-        assertTrue(banked.beginDirect(source)); banked.finishDirect(source);
+        source.runPerk(user);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (plugin.getQueuePlanner().hasDirectStart() && System.nanoTime() < deadline)
+            state.runtimeStorage(() -> null).get(5,TimeUnit.SECONDS);
         assertFalse(plugin.getQueuePlanner().hasDirectStart());
-        verify(user,never()).setPerkCoolDown(any(),anyLong()); assertFalse(Files.exists(directory.resolve("ServerData.yml")));
+        assertTrue(banked.beginDirect(source)); banked.finishDirect(source);
+        assertEquals(0, state.banks().get(key).milliseconds());
+        verify(user,times(1)).setPerkCoolDown(eq(source),anyLong());
+        assertTrue(Files.exists(directory.resolve("ServerData.yml")));
+        Files.delete(directory.resolve("features.dat"));
     }
     @Test void unavailableDirectBankPurchaseRejectsBeforeAnyActivationDebit() throws Exception {
         field(source,"plugin",plugin); field(source,"perk","passive"); when(source.getTime()).thenReturn(10); when(source.checkTimesUsed(user)).thenReturn(true); when(source.checkCoolDown(user)).thenReturn(true); when(source.checkServerWideCoolDown(user)).thenReturn(true);

@@ -591,25 +591,52 @@ public class MCPerksMain extends AdvancedCorePlugin {
     }
 
     private final java.util.concurrent.atomic.AtomicBoolean reloadPending = new java.util.concurrent.atomic.AtomicBoolean();
+    private volatile java.util.concurrent.CompletableFuture<Void> reloadOperation;
     @Override
     public void reload() {
-        if (!reloadPending.compareAndSet(false, true)) return;
+        reloadAsync();
+    }
+    /** Starts (or joins) the asynchronous reload and completes after the new lifecycle is installed. */
+    public synchronized java.util.concurrent.CompletableFuture<Void> reloadAsync() {
+        java.util.concurrent.CompletableFuture<Void> existing = reloadOperation;
+        if (existing != null && !existing.isDone()) return existing;
+        if (!reloadPending.compareAndSet(false, true)) return reloadOperation;
+        var operation = new java.util.concurrent.CompletableFuture<Void>();
+        reloadOperation = operation;
         if (usageEffects != null) usageEffects.invalidate();
         if (queuePlanner != null) queuePlanner.suspend();
         // ServerData snapshots accepted before reload must publish before AdvancedCore reads its file.
         var barrier = featureState == null ? java.util.concurrent.CompletableFuture.completedFuture(null) : featureState.runtimeStorage(() -> null);
         barrier.whenComplete((ignored, error) -> {
             if (error != null || !isEnabled()) {
-                reloadPending.set(false);
                 if (error != null) getLogger().warning("Reload postponed: pending ServerData publication could not drain");
-                if (queuePlanner != null) queuePlanner.resume();
+                finishReload(operation, error == null ? new IllegalStateException("Plugin is disabled") : error);
                 return;
             }
-            getBukkitScheduler().runTask(this, () -> {
-                try { reloadAfterDrain(); }
-                finally { reloadPending.set(false); if (queuePlanner != null) queuePlanner.resume(); }
-            });
+            try {
+                var dispatch = getBukkitScheduler().getFoliaLib().getImpl().runNextTick(scheduledTask -> {
+                    if (operation.isDone()) return;
+                    if (!isEnabled()) { finishReload(operation, new IllegalStateException("Plugin is disabled")); return; }
+                    try { reloadAfterDrain(); finishReload(operation, null); }
+                    catch (Throwable failure) { finishReload(operation, failure); }
+                });
+                dispatch.whenComplete((dispatchResult, dispatchFailure) -> {
+                    if (dispatchFailure != null) finishReload(operation, dispatchFailure);
+                });
+            } catch (Throwable failure) {
+                finishReload(operation, failure);
+            }
         });
+        return operation;
+    }
+    private synchronized void finishReload(java.util.concurrent.CompletableFuture<Void> operation, Throwable failure) {
+        if (operation.isDone()) return;
+        reloadPending.set(false);
+        if (queuePlanner != null) queuePlanner.resume();
+        if (failure == null) operation.complete(null); else {
+            getLogger().log(java.util.logging.Level.WARNING, "Reload failed", failure);
+            operation.completeExceptionally(failure);
+        }
     }
     private void reloadAfterDrain() {
         // Retire direct activations admitted by the previous configuration generation.

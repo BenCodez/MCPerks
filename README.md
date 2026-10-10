@@ -165,7 +165,12 @@ activation paths cannot safely promise pause/resume ownership. These restriction
 are reported at load and before consuming an activation. Banked resume attaches
 only the existing entitlement and does not replay activation/deactivation reward
 hooks, announcements or commands. New grants retain personal/server cooldown
-bookkeeping. Limited direct purchases persist a `STARTING` identity in the existing
+bookkeeping. Unlimited direct grants confirm personal/server cooldown storage before
+publishing new bank time. A later bank-publication failure may leave a cooldown
+without added time; inspect and reconcile it rather than automatically retrying or
+refunding. A successful bank write followed by attachment failure keeps the bank
+and its cooldown. Configured zero cooldown and duplicate-active permission can
+intentionally allow another grant; they are not delivery deduplication. Limited direct purchases persist a `STARTING` identity in the existing
 bounded feature file before consuming credit. With `PerkQue` disabled, personal banks
 can start alongside unrelated active or permanent perks, and different players can
 start in parallel unless this perk has a shared server cooldown. Direct identities

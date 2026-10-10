@@ -543,8 +543,6 @@ public class Perk {
     private java.util.concurrent.CompletableFuture<Void> executeMetadataAndGameplay(MCPerksUser user, int length,
             String admissionKey, long admission, boolean alreadyConsumed, org.bukkit.entity.Player owner) {
         final boolean banked = getInteractionOptions().banked();
-        if (banked && !alreadyConsumed) return plugin.getBankedPerks().grantConfirmed(user, this, length)
-                .thenCompose(ignored -> confirmCooldown(user));
         long admissionExpiration = activationExpiration(length);
         final long personalCooldown = MiscUtils.getInstance().addSeconds(new Date(), getCoolDown()).getTime();
         Map<String, Long> sharedFields = new LinkedHashMap<>();
@@ -562,6 +560,14 @@ public class Perk {
             }
             return com.bencodez.mcperks.userapi.UserStorageConfirmation.confirm(plugin, user);
         };
+        // Publish the cooldown/admission boundary before adding bank time. The
+        // bank remains durable if the later attachment fails, so a retry must
+        // observe the cooldown and duplicate-entitlement policy.
+        if (banked && !alreadyConsumed)
+            return plugin.getMcperksServerData().confirmedActivationBeforeWork(sharedFields, callerStorage, () -> {
+                verifyAdmission.run();
+                return plugin.getBankedPerks().grantConfirmed(user, this, length);
+            }, owner);
         if (banked) return plugin.getMcperksServerData().confirmedActivationBeforeWork(sharedFields, callerStorage, () -> {
             verifyAdmission.run();
             return attachPublishedBank(user, verifyAdmission);
@@ -992,9 +998,6 @@ public class Perk {
 			}
 		}
 
-        if (getInteractionOptions().banked() && plugin.getConfigFile().getLimitActivations() && plugin.getConfigFile().getPerkQue()) {
-            plugin.getPerkHandler().addQue(user, this); return false;
-        }
         if (plugin.getConfigFile().getPerkQue() && (!plugin.getPerkHandler().getActivePerks().isEmpty() || plugin.getFeatureState().paused()
                 || !plugin.getFeatureState().queue().isEmpty() || plugin.getQueuePlanner().isStarting() || plugin.getQueuePlanner().hasAdmissions() || plugin.getQueuePlanner().hasDirectStart())) {
             plugin.getPerkHandler().addQue(user, this); return false;

@@ -53,6 +53,22 @@ public class CommandLoader {
 
 	private Object activationsLock = new Object();
 
+	private void loadReloadCommand() {
+        plugin.getCommands().add(new CommandHandler(plugin, new String[] { "Reload" }, "MCPerks.Reload", "Reloads the plugin") {
+            @Override public void execute(CommandSender sender, String[] args) {
+                plugin.reloadAsync().whenComplete((ignored, error) -> {
+                    Runnable response = () -> sender.sendMessage(MessageAPI.colorize(error == null
+                            ? "&c" + plugin.getName() + " v" + plugin.getDescription().getVersion() + " reloaded!"
+                            : "&c" + plugin.getName() + " reload failed; check the server log."));
+                    if (sender instanceof Player player)
+                        com.bencodez.mcperks.scheduling.OwnerTasks.run(plugin, player,
+                                () -> { if (player.isOnline()) response.run(); }, () -> {});
+                    else plugin.getBukkitScheduler().runTask(plugin, response);
+                });
+            }
+        });
+    }
+
 	private void registerFeatureArgumentMatchers() {
 		TabCompleteHandler replacements = TabCompleteHandler.getInstance();
 		for (String name : new String[] { "(effect)", "(seconds)", "(id)", "(position)" }) {
@@ -315,16 +331,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands()
-				.add(new CommandHandler(plugin, new String[] { "Reload" }, "MCPerks.Reload", "Reloads the plugin") {
-
-					@Override
-					public void execute(CommandSender sender, String[] args) {
-						plugin.reload();
-						sender.sendMessage(MessageAPI.colorize(
-								"&c" + plugin.getName() + " v" + plugin.getDescription().getVersion() + " reloaded!"));
-					}
-				});
+		loadReloadCommand();
 
 		plugin.getCommands()
 				.add(new CommandHandler(plugin, new String[] { "Version" }, "MCPerks.Version", "List version info") {
