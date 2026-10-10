@@ -54,8 +54,9 @@ class QueuePlannerTest {
     }
     @AfterEach void close() { planner.retire(); state.close(); }
     private Runnable next() throws Exception { return Objects.requireNonNull(scheduler.tasks.poll(5, TimeUnit.SECONDS)); }
-    private void drainUntil(java.util.function.BooleanSupplier done) throws Exception {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+    private void drainUntil(java.util.function.BooleanSupplier done) throws Exception { drainUntil(done, 5); }
+    private void drainUntil(java.util.function.BooleanSupplier done, int timeoutSeconds) throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
         while (!done.getAsBoolean() && System.nanoTime() < deadline) { Runnable task = scheduler.tasks.poll(20, TimeUnit.MILLISECONDS); if (task != null) { task.run(); task.run(); } }
         assertTrue(done.getAsBoolean(), "condition not reached"); state.runtimeStorage(() -> null).get(5, TimeUnit.SECONDS);
     }
@@ -334,7 +335,9 @@ class QueuePlannerTest {
         if (oversized) plugin.getMcperksServerData().getData().set("Indispensable", "x".repeat(4_100_000));
         else Files.createDirectory(directory.resolve("ServerData.yml"));
         perk.runPerk(user);
-        drainUntil(() -> !planner.hasAdmissions());
+        // Serializing the intentionally oversized four-MB YAML fixture can exceed five
+        // seconds in the full suite; retain every accounting assertion and a hard bound.
+        drainUntil(() -> !planner.hasAdmissions(), oversized ? 20 : 5);
         assertEquals(1, personal.get()); assertEquals(0, activated.get()); assertTrue(state.queue().isEmpty());
         verify(dataManager, never()).withAtomicUserTransaction(any(), any(), anyMap(), any());
     }

@@ -53,6 +53,17 @@ public class CommandLoader {
 
 	private Object activationsLock = new Object();
 
+	private void registerFeatureArgumentMatchers() {
+		TabCompleteHandler replacements = TabCompleteHandler.getInstance();
+		for (String name : new String[] { "(effect)", "(seconds)", "(id)", "(position)" }) {
+			if (replacements.getTabCompleteReplaces().contains(name)) continue;
+			replacements.addTabCompleteOption(new TabCompleteHandle(name) {
+				@Override public void reload() { }
+				@Override public void updateReplacements() { setReplace(new ArrayList<String>()); }
+			});
+		}
+	}
+
 	/**
 	 * Instantiates a new command loader.
 	 *
@@ -288,6 +299,7 @@ public class CommandLoader {
     }
 
     public void loadCommands() {
+		registerFeatureArgumentMatchers();
 		plugin.setCommands(new ArrayList<CommandHandler>());
 		commands = new HashMap<String, CommandHandler>();
 
