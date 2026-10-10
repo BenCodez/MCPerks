@@ -97,12 +97,23 @@ public class PerkHandler {
     }
 
 	public void activePerk(Perk perk, MCPerksUser user, int length, Timestamp timestamp) {
+		activePerk(perk, user, length, timestamp, true);
+	}
+
+	/** Restores the timer/effects for a persisted grant without replaying activation-only effects/hooks. */
+	public void restoreActivePerk(Perk perk, MCPerksUser user, Timestamp expiration) {
+		int remaining = expiration == null ? 0 : (int) Math.max(0L,
+				(expiration.getTime() - System.currentTimeMillis()) / 1000L);
+		activePerk(perk, user, remaining, expiration, false);
+	}
+
+	private void activePerk(Perk perk, MCPerksUser user, int length, Timestamp timestamp, boolean runActivationHooks) {
 		final Perk clone = perk.clone();
-        plugin.getLocalStatistics().activation();
+		if (runActivationHooks) plugin.getLocalStatistics().activation();
 		clone.setActivater(user);
 		clone.getEffectedPlayers().clear();
 		ArrayList<Integer> times = new ArrayList<Integer>();
-		if (perk.getTime() > 0) {
+		if (runActivationHooks && perk.getTime() > 0) {
 			for (String str : ConfigPerks.getInstance().getCountDownTimes(perk.getPerk())) {
 				if (MessageAPI.isInt(str)) {
 					int num = Integer.parseInt(str);
@@ -206,7 +217,7 @@ public class PerkHandler {
 			}
 		}
 
-		plugin.getEffectHandler().activate(clone, user);
+		plugin.getEffectHandler().activate(clone, user, runActivationHooks);
 		if (clone.isTimed()) {
 			clone.setActive(true);
 			if (!clone.isLastForever()) {
@@ -361,16 +372,18 @@ public class PerkHandler {
 			}, 1000, (long) timing);
 		}
 
-		boolean perkRewards = plugin.getRewardHandler().hasRewards(ConfigPerks.getInstance().getData(perk.getPerk()),
-				ConfigPerks.getInstance().getActivationEffectPath());
-		for (String uuid : clone.getEffectedPlayers()) {
-			if (perkRewards) {
-				new RewardBuilder(ConfigPerks.getInstance().getData(perk.getPerk()),
-						ConfigPerks.getInstance().getActivationEffectPath()).setGiveOffline(false)
-						.send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
-			} else {
-				new RewardBuilder(plugin.getConfigFile().getData(), plugin.getConfigFile().getActivationEffectPath())
-						.setGiveOffline(false).send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
+		if (runActivationHooks) {
+			boolean perkRewards = plugin.getRewardHandler().hasRewards(ConfigPerks.getInstance().getData(perk.getPerk()),
+					ConfigPerks.getInstance().getActivationEffectPath());
+			for (String uuid : clone.getEffectedPlayers()) {
+				if (perkRewards) {
+					new RewardBuilder(ConfigPerks.getInstance().getData(perk.getPerk()),
+							ConfigPerks.getInstance().getActivationEffectPath()).setGiveOffline(false)
+							.send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
+				} else {
+					new RewardBuilder(plugin.getConfigFile().getData(), plugin.getConfigFile().getActivationEffectPath())
+							.setGiveOffline(false).send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
+				}
 			}
 		}
 
@@ -435,15 +448,15 @@ public class PerkHandler {
 			}
 		}
 
-		clone.announcePerk(user.getPlayerName(), length);
+		if (runActivationHooks) clone.announcePerk(user.getPlayerName(), length);
 
-		plugin.getMcperksServerData()
+		if (runActivationHooks) plugin.getMcperksServerData()
 				.addPerkHistory(user.getPlayerName() + ":" + ArrayUtils.makeStringList(clone.getEffectedPlayers()) + ":"
 						+ perk.getName() + ":" + perk.getPerkType().toString() + ":" + System.currentTimeMillis());
 
 		printActivePerks();
 
-		if (plugin.getConfigFile().getLogActivation() && activationLog != null)
+		if (runActivationHooks && plugin.getConfigFile().getLogActivation() && activationLog != null)
 
 		{
 

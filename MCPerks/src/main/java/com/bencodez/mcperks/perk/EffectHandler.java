@@ -46,7 +46,14 @@ public class EffectHandler implements Listener {
 			.synchronizedList(new ArrayList<PlayerInteractEvent>());
 
 	public void activate(Perk perk, MCPerksUser user) {
+		activate(perk, user, true);
+	}
+
+	/** Applies persistent effects while optionally suppressing activation-only hooks. */
+	public void activate(Perk perk, MCPerksUser user, boolean runActivationHooks) {
 		for (Effect effect : perk.getEffects()) {
+			if (!runActivationHooks && (effect == Effect.Rewards || effect == Effect.Commands
+					|| effect == Effect.GlobalCommands)) continue;
 			effect.runEffect(plugin, perk, user, perk.getEffectedPlayers());
 		}
 		if (!perk.isTimed() && !perk.isLastForever()) {

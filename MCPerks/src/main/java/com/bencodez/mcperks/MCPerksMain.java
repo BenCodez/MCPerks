@@ -533,9 +533,8 @@ public class MCPerksMain extends AdvancedCorePlugin {
                     }
 					if (activate) {
 						debug("Activating perk from shutdown " + perk + "/" + uuid + "/" + timeLast);
-						getPerkHandler().activePerk(definition,
-								getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)),
-								(int) timeLast, timestamp);
+						getPerkHandler().restoreActivePerk(definition,
+							getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)), timestamp);
 					}
 					getMcperksServerData().removeOfflinePerkIfMatches(uuid, perk, persistedExpiration);
 
