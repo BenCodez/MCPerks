@@ -517,19 +517,14 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 					long timeLast = getMcperksServerData().getData()
 							.getLong("OfflinePerk." + uuid + "." + perk + ".Experiaton");
+					long persistedExpiration = timeLast;
 					debug(uuid + "/" + perk + "/" + timeLast);
 					Timestamp timestamp = null;
 					if (timeLast > 0) {
 						timestamp = new Timestamp(timeLast);
 						timeLast = 0;
 					}
-					boolean activate = true;
-					if (timestamp != null) {
-						if (timestamp.after(new Timestamp(Calendar.getInstance().getTime().getTime()))) {
-							// not activating
-							activate = false;
-						}
-					}
+					boolean activate = timestamp == null || timestamp.after(new Timestamp(Calendar.getInstance().getTime().getTime()));
 					var definition = getPerkHandler().getPerk(perk);
                     if (definition == null || !definition.isEnabled()) {
                         getLogger().warning("Skipping shutdown record for unavailable perk: " + perk);
@@ -541,13 +536,13 @@ public class MCPerksMain extends AdvancedCorePlugin {
 								getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)),
 								(int) timeLast, timestamp);
 					}
+					getMcperksServerData().removeOfflinePerkIfMatches(uuid, perk, persistedExpiration);
 
 				}
 			}
 		}
 	}
 
-	getMcperksServerData().clearOfflinePerks();
 	getMcperksServerData().saveData();
     }
 

@@ -498,6 +498,25 @@ public class ServerData {
         getData().set("Experation." + perk.getPerk(), time); saveData();
     }
     public synchronized void clearOfflinePerks() { getData().set("OfflinePerk", null); }
+    /** Removes one shutdown record only while it still contains the value read by the restorer. */
+    public synchronized boolean removeOfflinePerkIfMatches(String uuid, String perk, long expectedExpiration) {
+        String path = "OfflinePerk." + uuid + "." + perk + ".Experiaton";
+        if (!getData().contains(path) || getData().getLong(path) != expectedExpiration) return false;
+        getData().set(path, null);
+        if (getData().isConfigurationSection("OfflinePerk." + uuid + "." + perk)
+                && getData().getConfigurationSection("OfflinePerk." + uuid + "." + perk).getKeys(false).isEmpty()) {
+            getData().set("OfflinePerk." + uuid + "." + perk, null);
+        }
+        if (getData().isConfigurationSection("OfflinePerk." + uuid)
+                && getData().getConfigurationSection("OfflinePerk." + uuid).getKeys(false).isEmpty()) {
+            getData().set("OfflinePerk." + uuid, null);
+        }
+        if (getData().isConfigurationSection("OfflinePerk")
+                && getData().getConfigurationSection("OfflinePerk").getKeys(false).isEmpty()) {
+            getData().set("OfflinePerk", null);
+        }
+        return true;
+    }
     public synchronized void saveOfflinePerk(Perk perk) {
         getData().set("OfflinePerk." + perk.getActivater().getUUID() + "." + perk.getPerk() + ".Experiaton",
                 perk.isLastForever() ? -1 : perk.getExperation(perk.getActivater()));

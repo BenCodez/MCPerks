@@ -2,6 +2,7 @@ package com.bencodez.mcperks.perk;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.nio.file.*;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -578,7 +579,8 @@ class QueuePlannerTest {
         });
         planner.check(); Objects.requireNonNull(tasks.poll(5, TimeUnit.SECONDS)).run(); restored.get(5, TimeUnit.SECONDS);
         assertTrue(finished.get()); assertTrue(actual.isRestorationReady()); assertEquals(List.of(legacy), actual.getActivePerks());
-        verify(actual).activePerk(legacy, user, -1, null); verify(plugin.getMcperksServerData()).clearOfflinePerks();
+        verify(actual).activePerk(legacy, user, -1, null);
+        verify(plugin.getMcperksServerData()).removeOfflinePerkIfMatches(owner.toString(), "permanent", -1L);
         planner.check(); assertEquals(FeatureState.Stage.WAITING, state.queue().getFirst().stage()); assertEquals(1, personal.get());
         verify(dataManager, never()).withAtomicUserTransaction(any(), any(), anyMap(), any());
     }
@@ -595,7 +597,77 @@ class QueuePlannerTest {
         Objects.requireNonNull(tasks.poll(5, TimeUnit.SECONDS)).run(); restored.get(5, TimeUnit.SECONDS);
         assertTrue(actual.isRestorationReady()); assertEquals(List.of(legacy),actual.getActivePerks());
         verify(actual).activePerk(legacy,user,-1,null); verify(actual,never()).activePerk(eq(disabled),any(),anyInt(),any());
-        verify(plugin.getMcperksServerData()).clearOfflinePerks();
+        verify(plugin.getMcperksServerData(), never()).removeOfflinePerkIfMatches(owner.toString(), "missing", -1L);
+        verify(plugin.getMcperksServerData(), never()).removeOfflinePerkIfMatches(owner.toString(), "disabled", -1L);
+        verify(plugin.getMcperksServerData()).removeOfflinePerkIfMatches(owner.toString(), "permanent", -1L);
+    }
+    @Test void skippedShutdownRecordsSurviveSerializedRestartAndRestoreAfterDefinitionsReturn() throws Exception {
+        var nativeFile = runtimeFile();
+        var runtime = plugin.getMcperksServerData();
+        var yaml = runtime.getData();
+        for (String key : List.of("missing", "disabled", "permanent"))
+            yaml.set("OfflinePerk." + owner + "." + key + ".Experiaton", -1L);
+        var legacy = permanent(); var actual = restorer(new LinkedBlockingQueue<>(), legacy);
+        var disabled = mock(Perk.class); doReturn(disabled).when(actual).getPerk("disabled");
+        doNothing().when(actual).activePerk(any(), any(), anyInt(), any());
+        var shutdown = MCPerksMain.class.getDeclaredMethod("restoreOfflinePerks"); shutdown.setAccessible(true);
+        shutdown.invoke(plugin);
+        assertFalse(yaml.contains("OfflinePerk." + owner + ".permanent"));
+        assertEquals(-1L, yaml.getLong("OfflinePerk." + owner + ".missing.Experiaton"));
+        assertEquals(-1L, yaml.getLong("OfflinePerk." + owner + ".disabled.Experiaton"));
+        state.storage(() -> null).get(5, TimeUnit.SECONDS);
+        var recovered = new org.bukkit.configuration.file.YamlConfiguration();
+        recovered.loadFromString(Files.readString(directory.resolve("ServerData.yml")));
+        when(nativeFile.getData()).thenReturn(recovered);
+        when(disabled.isEnabled()).thenReturn(true); doReturn(disabled).when(actual).getPerk("missing");
+        shutdown.invoke(plugin);
+        assertFalse(recovered.contains("OfflinePerk"));
+        verify(actual, times(1)).activePerk(legacy, user, -1, null);
+        verify(actual, times(2)).activePerk(disabled, user, -1, null);
+        shutdown.invoke(plugin);
+        verify(actual, times(2)).activePerk(disabled, user, -1, null);
+    }
+    @Test void shutdownRecordRetirementCannotEraseAReplacementOrUnrelatedMetadata() throws Exception {
+        runtimeFile(); var runtime = plugin.getMcperksServerData(); var yaml = runtime.getData();
+        String record = "OfflinePerk." + owner + ".permanent";
+        yaml.set(record + ".Experiaton", 123L);
+        assertFalse(runtime.removeOfflinePerkIfMatches(owner.toString(), "permanent", -1L));
+        assertEquals(123L, yaml.getLong(record + ".Experiaton"));
+        yaml.set(record + ".FutureMetadata", "preserved");
+        assertTrue(runtime.removeOfflinePerkIfMatches(owner.toString(), "permanent", 123L));
+        assertEquals("preserved", yaml.getString(record + ".FutureMetadata"));
+        assertFalse(runtime.removeOfflinePerkIfMatches(owner.toString(), "permanent", 123L));
+    }
+    @Test void futureShutdownExpirationRestoresWithOriginalExpirationAndExpiredRecordIsRetired() throws Exception {
+        long future = System.currentTimeMillis() + 60_000L;
+        plugin.getMcperksServerData().getData().set("OfflinePerk." + owner + ".permanent.Experiaton", future);
+        var tasks = new LinkedBlockingQueue<Runnable>(); var legacy = permanent(); var actual = restorer(tasks, legacy);
+        when(actual.getPerk("permanent")).thenReturn(legacy);
+        doAnswer(i -> { actual.getActivePerks().add(legacy); return null; }).when(actual)
+                .activePerk(eq(legacy), eq(user), eq(0), any(Timestamp.class));
+        var shutdown = MCPerksMain.class.getDeclaredMethod("restoreOfflinePerks"); shutdown.setAccessible(true);
+        shutdown.invoke(plugin);
+        verify(actual).activePerk(eq(legacy), eq(user), eq(0), argThat(value -> value != null && value.getTime() == future));
+        verify(plugin.getMcperksServerData()).removeOfflinePerkIfMatches(owner.toString(), "permanent", future);
+
+        reset(actual, plugin.getMcperksServerData());
+        when(plugin.getMcperksServerData().getData()).thenReturn(new org.bukkit.configuration.file.YamlConfiguration());
+        long expired = System.currentTimeMillis() - 60_000L;
+        plugin.getMcperksServerData().getData().set("OfflinePerk." + owner + ".permanent.Experiaton", expired);
+        when(actual.getPerk("permanent")).thenReturn(legacy);
+        shutdown.invoke(plugin);
+        verify(actual, never()).activePerk(any(), any(), anyInt(), any());
+        verify(plugin.getMcperksServerData()).removeOfflinePerkIfMatches(owner.toString(), "permanent", expired);
+    }
+    @Test void failedShutdownActivationRetainsRecordForRetry() throws Exception {
+        plugin.getMcperksServerData().getData().set("OfflinePerk." + owner + ".permanent.Experiaton", -1L);
+        var legacy = permanent(); var actual = restorer(new LinkedBlockingQueue<>(), legacy);
+        when(actual.getPerk("permanent")).thenReturn(legacy);
+        doThrow(new IllegalStateException("activation unavailable")).when(actual)
+                .activePerk(eq(legacy), eq(user), eq(-1), isNull());
+        var shutdown = MCPerksMain.class.getDeclaredMethod("restoreOfflinePerks"); shutdown.setAccessible(true);
+        assertThrows(java.lang.reflect.InvocationTargetException.class, () -> shutdown.invoke(plugin));
+        verify(plugin.getMcperksServerData(), never()).removeOfflinePerkIfMatches(owner.toString(), "permanent", -1L);
     }
     @Test void failedLegacyRestorationLeavesPersistedQueueAndCreditUntouched() throws Exception {
         var entry = state.enqueue(owner, "vein", "PerkActivations_vein", 1).get(5, TimeUnit.SECONDS);
