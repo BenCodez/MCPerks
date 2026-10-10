@@ -81,7 +81,8 @@ public class Perk {
 
 	private ArrayList<Effect> effects = new ArrayList<Effect>();
 
-	private boolean active;
+	private volatile boolean active;
+    private boolean shutdownPrepared;
 
 	private volatile long experation;
 
@@ -394,7 +395,49 @@ public class Perk {
 		return new Perk(this);
 	}
 
+    /** Disable-time game cleanup is synchronous on Bukkit's owner and performs no user-data lookup. */
+    public synchronized boolean detachForShutdown() {
+        if (shutdownPrepared || !active) return false;
+        if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Perk shutdown requires the Bukkit owner");
+        shutdownPrepared = true;
+        active = false;
+        for (Effect effect : getEffects()) {
+            try {
+                effect.removeEffectForShutdown(plugin, this, getEffectedPlayers());
+            } catch (Throwable failure) {
+                plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                        "Failed to remove shutdown effect " + effect + " for perk " + getPerk(), failure);
+            }
+        }
+        if (getBossBar() != null) {
+            try { getBossBar().hide(); }
+            catch (Throwable failure) {
+                plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                        "Failed to hide shutdown boss bar for perk " + getPerk(), failure);
+            } finally { setBossBar(null); }
+        }
+        plugin.getPerkHandler().getActivePerks().remove(this);
+        return true;
+    }
+
+    /** First acknowledge the legacy restart record; only then clear the native live expiration. */
+    public java.util.concurrent.CompletableFuture<Void> persistForShutdown() {
+        var state = plugin.getFeatureState();
+        var data = plugin.getMcperksServerData();
+        return data.confirmedActivation(() -> data.saveOfflinePerk(this))
+                .thenCompose(ignored -> state.runtimeStorage(() -> data.confirmedActivation(
+                        () -> setExperation(getActivater(), 0))).thenCompose(stage -> stage))
+                .thenCompose(ignored -> state.runtimeStorage(() -> {
+                    if (getPerkType() == PerkSystemType.ALL) return java.util.concurrent.CompletableFuture.<Void>completedFuture(null);
+                    var flushed = new java.util.concurrent.CompletableFuture<Void>();
+                    plugin.getUserManager().getDataManager().getCache(UUID.fromString(getActivater().getUUID()))
+                            .flushChangesAndRun(() -> flushed.complete(null));
+                    return flushed;
+                }).thenCompose(stage -> stage));
+    }
+
 	public synchronized void deactivatePerk(MCPerksUser user) {
+        if (shutdownPrepared) return;
         if (plugin.getBankedPerks() != null && plugin.getBankedPerks().deactivate(this)) return;
 		setExperation(user, 0);
 		setActive(false);
@@ -644,7 +687,7 @@ public class Perk {
 
 	public long getExperation(MCPerksUser user) {
 		if (getPerkType().equals(PerkSystemType.ALL)) {
-			experation = MCPerksMain.plugin.getMcperksServerData().getPerkExperation(this);
+			experation = plugin.getMcperksServerData().getPerkExperation(this);
 		} else {
 			experation = user.getPerkExperation(this);
 		}
@@ -1099,7 +1142,7 @@ public class Perk {
 
 	public void setExperation(MCPerksUser user, long experation) {
 		if (getPerkType().equals(PerkSystemType.ALL)) {
-			MCPerksMain.plugin.getMcperksServerData().setPerkExperation(this, experation);
+			plugin.getMcperksServerData().setPerkExperation(this, experation);
 		} else {
 			user.setPerkExperation(this, experation);
 		}

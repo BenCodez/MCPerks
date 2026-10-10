@@ -16,6 +16,10 @@ public final class BankedPerks implements Listener {
     private final FeatureState state;
     private final Map<BankKey, Perk> attached = new ConcurrentHashMap<>();
     private final Map<BankKey, BankedClock> clocks = new ConcurrentHashMap<>();
+    // At most one unsettled debit per persisted bank. Retain it across a
+    // rejected worker/publication so reconnect retries the same interval.
+    private final Map<BankKey, BankedClock.Debit> pendingDebits = new ConcurrentHashMap<>();
+    private final Map<BankKey, CompletableFuture<?>> debitSubmissions = new ConcurrentHashMap<>();
     private final Set<BankKey> pausing = ConcurrentHashMap.newKeySet();
     private final java.util.function.LongSupplier monotonic;
     private final Map<UUID, Player> sessions = new ConcurrentHashMap<>();
@@ -23,6 +27,7 @@ public final class BankedPerks implements Listener {
     private final java.util.concurrent.atomic.AtomicLong tickIds = new java.util.concurrent.atomic.AtomicLong();
     private volatile int generation;
     private volatile boolean retired;
+    private CompletableFuture<Void> retirement;
     // Per-perk admission also covers a server-wide cooldown shared by different players.
     private final Set<String> directAdmissions = ConcurrentHashMap.newKeySet();
     public synchronized boolean beginDirect(Perk perk) {
@@ -214,11 +219,12 @@ public final class BankedPerks implements Listener {
         // Only reversible persistent effects are eligible; command/reward effects are rejected at load/grant.
         // Supported effects are read by gameplay listeners; there is no activation hook to replay.
     }
-    private void suspend(BankKey key) {
-        checkpoint(key);
-        Perk perk = attached.remove(key); if (perk == null) return;
+    private CompletableFuture<?> suspend(BankKey key) {
+        var completion = checkpoint(key);
+        Perk perk = attached.remove(key); if (perk == null) return completion;
         perk.setActive(false);
         plugin.getPerkHandler().getActivePerks().remove(perk); plugin.getQueuePlanner().check();
+        return completion;
     }
     private CompletableFuture<?> checkpoint(BankKey key) {
         ClockDebit checkpoint = reserve(key, false, false);
@@ -230,18 +236,62 @@ public final class BankedPerks implements Listener {
         return state.bankCheckpoint(() -> {
             BankedClock clock = create ? clocks.computeIfAbsent(key, k -> new BankedClock(() -> state.bankReplacementVersion(k))) : clocks.get(key);
             if (clock == null) return null;
+            BankedClock.Debit pending = pendingDebits.get(key);
+            if (pending != null) {
+                if (clock.owns(pending)) {
+                    long additional = clock.checkpoint(monotonic.getAsLong(), eligible, () -> {
+                        var current = state.banks().get(key); return current == null ? 0 : current.milliseconds();
+                    });
+                    if (additional > 0) {
+                        pending = new BankedClock.Debit(pending.milliseconds() + additional,
+                                pending.replacement(), pending.publication());
+                        pendingDebits.put(key, pending);
+                    }
+                    return new ClockDebit(clock, pending);
+                }
+                pendingDebits.remove(key, pending);
+            }
             var debit = clock.reserveCheckpoint(monotonic.getAsLong(), eligible, () -> {
                 var current = state.banks().get(key); return current == null ? 0 : current.milliseconds();
             });
+            if (debit.milliseconds() > 0) pendingDebits.put(key, debit);
             return new ClockDebit(clock, debit);
         });
     }
     private CompletableFuture<?> debitElapsed(BankKey key, BankedClock clock, BankedClock.Debit debit) {
-        return state.elapsed(key, debit.milliseconds(), () -> clock.owns(debit)).thenRun(() -> clock.acknowledge(debit));
+        synchronized (debitSubmissions) {
+            CompletableFuture<?> existing = debitSubmissions.get(key);
+            if (existing != null) return existing;
+            var submission = new CompletableFuture<Object>();
+            debitSubmissions.put(key, submission);
+            submitDebit(key, clock, debit, submission);
+            return submission;
+        }
+    }
+    /** One completion stage covers the full bounded aggregate, including a final interval added in flight. */
+    private void submitDebit(BankKey key, BankedClock clock, BankedClock.Debit debit,
+            CompletableFuture<Object> submission) {
+        state.elapsed(key, debit.milliseconds(), () -> clock.owns(debit)).whenComplete((updated, failure) -> {
+            BankedClock.Debit remainder = state.bankCheckpoint(() -> {
+                if (!clock.owns(debit)) { pendingDebits.remove(key, debit); return null; }
+                if (failure != null) return null;
+                pendingDebits.computeIfPresent(key, (ignored, current) -> {
+                    if (current.replacement() != debit.replacement() || current.publication() != debit.publication()) return current;
+                    long remaining = Math.max(0, current.milliseconds() - debit.milliseconds());
+                    return remaining == 0 ? null : new BankedClock.Debit(remaining, current.replacement(), current.publication());
+                });
+                clock.acknowledge(debit);
+                var pending = pendingDebits.get(key);
+                return pending != null && clock.owns(pending) ? pending : null;
+            });
+            if (failure == null && remainder != null) { submitDebit(key, clock, remainder, submission); return; }
+            debitSubmissions.remove(key, submission);
+            if (failure == null) submission.complete(updated); else submission.completeExceptionally(failure);
+        });
     }
     public synchronized CompletableFuture<FeatureState.Bank> pause(BankKey key, boolean paused) {
-        pausing.add(key); suspend(key);
-        return state.pauseBank(key, paused).whenComplete((bank, error) -> { pausing.remove(key); if (error == null) refresh(key.owner()); });
+        pausing.add(key); var checkpoint = suspend(key);
+        return checkpoint.thenCompose(ignored -> state.pauseBank(key, paused)).whenComplete((bank, error) -> { pausing.remove(key); if (error == null) refresh(key.owner()); });
     }
     public synchronized boolean deactivate(Perk perk) {
         BankKey key = attached.entrySet().stream().filter(e -> e.getValue() == perk).map(Map.Entry::getKey).findFirst().orElse(null);
@@ -252,23 +302,37 @@ public final class BankedPerks implements Listener {
     private synchronized void stopIfCurrent(UUID owner, long token) { if (Objects.equals(ticking.get(owner), token)) stop(owner); }
     private synchronized void stop(UUID owner) {
         ticking.remove(owner); sessions.remove(owner); for (BankKey key : List.copyOf(clocks.keySet())) if (key.owner().equals(owner)) suspend(key);
-        clocks.keySet().removeIf(key -> key.owner().equals(owner));
+        // Keep each owner clock until its asynchronous checkpoint settles.  A
+        // rejected/full worker can leave the debit reservation in the clock;
+        // dropping it here lets a reconnect create a fresh clock and spend the
+        // same elapsed interval again.  The map is bounded by the persisted
+        // bank cardinality (FeatureState caps it), and replacement epochs
+        // fence reservations from an older published balance.
     }
     public synchronized void reload() {
         Set<UUID> owners = new HashSet<>(ticking.keySet());
         for (BankKey key : clocks.keySet()) owners.add(key.owner());
         generation++; ticking.clear(); sessions.clear();
         for (BankKey key : List.copyOf(clocks.keySet())) suspend(key);
-        clocks.clear();
         for (UUID owner : owners) {
             Player player = Bukkit.getPlayer(owner);
             if (player != null) OwnerTasks.run(plugin, player, () -> start(player), () -> stopSession(player));
         }
     }
-    public synchronized void retire() {
+    public synchronized void retire() { retireAsync(); }
+    public synchronized CompletableFuture<Void> retireAsync() {
+        if (retirement != null) return retirement;
         retired = true; generation++; ticking.clear(); sessions.clear();
-        for (BankKey key : List.copyOf(clocks.keySet())) suspend(key);
-        clocks.clear(); attached.clear();
+        retirement = new CompletableFuture<>();
+        var checkpoints = new ArrayList<CompletableFuture<?>>();
+        for (BankKey key : List.copyOf(clocks.keySet())) checkpoints.add(suspend(key));
+        CompletableFuture.allOf(checkpoints.toArray(CompletableFuture[]::new)).whenComplete((ignored, failure) -> {
+            if (failure == null) {
+                clocks.clear(); pendingDebits.clear(); debitSubmissions.clear(); attached.clear();
+                retirement.complete(null);
+            } else retirement.completeExceptionally(failure);
+        });
+        return retirement;
     }
     public boolean available(Perk perk) {
         if (!attached.containsValue(perk)) return true;

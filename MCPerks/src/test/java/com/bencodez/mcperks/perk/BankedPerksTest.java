@@ -384,6 +384,10 @@ class BankedPerksTest {
         when(plugin.getMcperksServerData()).thenReturn(new ServerData(plugin));
         var users=mock(com.bencodez.advancedcore.api.user.UserManager.class); when(plugin.getUserManager()).thenReturn(users);
         var data=mock(com.bencodez.advancedcore.api.user.usercache.UserDataManager.class); when(users.getDataManager()).thenReturn(data);
+        var storageWorker = mock(java.util.concurrent.ScheduledExecutorService.class);
+        doAnswer(call -> { call.getArgument(0, Runnable.class).run(); return null; })
+                .when(storageWorker).execute(any(Runnable.class));
+        when(data.getTimer()).thenReturn(storageWorker);
         var cache=mock(com.bencodez.advancedcore.api.user.usercache.UserDataCache.class); when(data.getCache(any())).thenReturn(cache);
         doAnswer(i -> { i.getArgument(0,Runnable.class).run(); return null; }).when(cache).flushChangesAndRun(any());
         doCallRealMethod().when(source).runPerk(any()); doCallRealMethod().when(source).executeConfirmed(any(),anyInt());
@@ -454,7 +458,14 @@ class BankedPerksTest {
         when(source.isNotInDisabledWorld("world")).thenReturn(false); banked.start(player); nextOwner(); assertTrue(active.isEmpty()); banked.reload(); nextOwner(); nextOwner(); assertTrue(active.isEmpty());
         when(source.isNotInDisabledWorld("world")).thenReturn(true); Objects.requireNonNull(scheduler.timers.poll(5,TimeUnit.SECONDS)).run(); // stale timer is fenced
         Objects.requireNonNull(scheduler.timers.poll(5,TimeUnit.SECONDS)).run(); nextOwner(); assertEquals(1,active.size());
-        time.addAndGet(500_000_000); active.getFirst().deactivatePerk(user); barrier(); assertTrue(active.isEmpty()); assertTrue(state.banks().get(key).paused()); assertEquals(9500,state.banks().get(key).milliseconds()); verify(user,never()).setPerkExperation(any(),anyLong());
+        time.addAndGet(500_000_000); active.getFirst().deactivatePerk(user);
+        assertTrue(active.isEmpty());
+        // Pause publication follows the elapsed checkpoint's completion callback;
+        // one file-worker barrier may precede that callback's next admitted write.
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (!state.banks().get(key).paused() && System.nanoTime() < deadline) barrier();
+        assertTrue(state.banks().get(key).paused()); assertEquals(9500,state.banks().get(key).milliseconds());
+        verify(user,never()).setPerkExperation(any(),anyLong());
     }
     @Test void stalePositiveBankCannotAuthorizeEffectsAfterStorageFailure() throws Exception {
         banked.start(player); nextOwner(); Perk attached=active.getFirst(); Files.delete(directory.resolve("features.dat")); Files.createDirectory(directory.resolve("features.dat")); assertThrows(ExecutionException.class,()->state.setBank(key,10000).get());
@@ -548,6 +559,65 @@ class BankedPerksTest {
         assertTrue(entered.await(5,TimeUnit.SECONDS)); List<CompletableFuture<?>> queued=new ArrayList<>(); for(int i=0;i<256;i++) queued.add(state.storage(()->null));
         checkpoint.run(); assertTrue(state.available()); assertEquals(10000,state.banks().get(key).milliseconds()); assertTrue(active.isEmpty()); assertTrue(scheduler.timers.isEmpty());
         release.countDown(); CompletableFuture.allOf(queued.toArray(CompletableFuture[]::new)).get(5,TimeUnit.SECONDS); barrier();
+    }
+    @Test void retirementDrainsAdditionalElapsedReservedWhileDebitIsInFlight() throws Exception {
+        banked.start(player); nextOwner(); time.addAndGet(1_000_000_000L);
+        scheduler.timers.remove().run();
+        Runnable checkpoint = Objects.requireNonNull(scheduler.tasks.poll(5, TimeUnit.SECONDS));
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        state.storage(() -> { entered.countDown(); try { assertTrue(release.await(5, TimeUnit.SECONDS)); }
+            catch (InterruptedException failure) { Thread.currentThread().interrupt(); throw new RuntimeException(failure); }
+            return null; });
+        assertTrue(entered.await(5, TimeUnit.SECONDS));
+        try {
+            checkpoint.run(); time.addAndGet(1_000_000_000L);
+            var retirement = banked.retireAsync();
+            assertSame(retirement, banked.retireAsync()); assertFalse(retirement.isDone());
+            release.countDown(); retirement.get(5, TimeUnit.SECONDS);
+            assertEquals(8000, state.banks().get(key).milliseconds());
+            assertTrue(active.isEmpty());
+        } finally { release.countDown(); }
+    }
+    @Test void retirementSurfacesFinalDebitFailureInsteadOfAcknowledgingIt() throws Exception {
+        banked.start(player); nextOwner(); time.addAndGet(1_000_000_000L);
+        banked.retireAsync().get(5, TimeUnit.SECONDS);
+        state = spy(state);
+        when(plugin.getFeatureState()).thenReturn(state);
+        // The controller must capture the failing persistence owner at construction.
+        doReturn(CompletableFuture.failedFuture(new IllegalStateException("checkpoint rejected")))
+                .when(state).elapsed(eq(key), anyLong(), any(java.util.function.BooleanSupplier.class));
+        banked = new BankedPerks(plugin, state, time::get); when(plugin.getBankedPerks()).thenReturn(banked);
+        banked.start(player); nextOwner(); time.addAndGet(1_000_000_000L);
+        var retirement = banked.retireAsync();
+        assertThrows(ExecutionException.class, () -> retirement.get(5, TimeUnit.SECONDS));
+        assertSame(retirement, banked.retireAsync());
+        assertEquals(9000, state.banks().get(key).milliseconds());
+    }
+    @Test void reconnectRetainsAnInFlightDisconnectDebitReservation() throws Exception {
+        banked.start(player); nextOwner(); time.addAndGet(1_000_000_000L);
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        state.storage(() -> { entered.countDown(); try { assertTrue(release.await(5, TimeUnit.SECONDS)); }
+            catch (InterruptedException failure) { Thread.currentThread().interrupt(); throw new RuntimeException(failure); }
+            return null; });
+        assertTrue(entered.await(5, TimeUnit.SECONDS));
+        banked.quit(new PlayerQuitEvent(player, "quit"));
+        banked.start(player);
+        release.countDown();
+        Runnable reconnectPulse = Objects.requireNonNull(scheduler.tasks.poll(5, TimeUnit.SECONDS));
+        reconnectPulse.run(); barrier();
+        assertEquals(9000, state.banks().get(key).milliseconds(), "the reserved interval must debit once across reconnect");
+    }
+    @Test void reconnectRetriesARejectedDisconnectDebitWithoutRemintingElapsedTime() throws Exception {
+        var reject = new java.util.concurrent.atomic.AtomicBoolean(true);
+        state = spy(state); when(plugin.getFeatureState()).thenReturn(state); when(plugin.getQueuePlanner()).thenReturn(new QueuePlanner(plugin, state));
+        doAnswer(call -> reject.getAndSet(false)
+                ? CompletableFuture.failedFuture(new IllegalStateException("checkpoint rejected"))
+                : call.callRealMethod()).when(state).elapsed(eq(key), anyLong(), any(java.util.function.BooleanSupplier.class));
+        banked = new BankedPerks(plugin, state, time::get); when(plugin.getBankedPerks()).thenReturn(banked);
+        banked.start(player); nextOwner(); time.addAndGet(1_000_000_000L); banked.quit(new PlayerQuitEvent(player, "quit"));
+        banked.start(player); nextOwner(); barrier();
+        assertEquals(9000, state.banks().get(key).milliseconds(), "a failed debit must be retried once, not replaced by a fresh interval");
+        assertTrue(banked.available(active.getFirst()));
     }
     @Test void storageDelayBeforeInitialAttachAndResumeDoesNotSpendUnavailableTime() throws Exception {
         CountDownLatch entered=new CountDownLatch(1), release=new CountDownLatch(1);

@@ -53,7 +53,8 @@ public class EffectHandler implements Listener {
 	public void activate(Perk perk, MCPerksUser user, boolean runActivationHooks) {
 		for (Effect effect : perk.getEffects()) {
 			if (!runActivationHooks && (effect == Effect.Rewards || effect == Effect.Commands
-					|| effect == Effect.GlobalCommands)) continue;
+					|| effect == Effect.GlobalCommands || effect == Effect.CureHunger
+                    || effect == Effect.CureSpells || effect == Effect.HealAll)) continue;
 			effect.runEffect(plugin, perk, user, perk.getEffectedPlayers());
 		}
 		if (!perk.isTimed() && !perk.isLastForever()) {

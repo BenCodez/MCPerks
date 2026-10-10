@@ -151,34 +151,78 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	 * 
 	 * @see org.bukkit.plugin.java.JavaPlugin#onDisable()
 	 */
+    private volatile java.util.concurrent.CompletableFuture<Void> shutdownPreparation;
     @Override
     public void onDisable() {
-        try { super.onDisable(); }
-        finally {
-            // AdvancedCore permission cleanup performs its final ServerData save after onUnLoad.
-            if (featureState != null) featureState.close();
+        prepareShutdown();
+        super.onDisable();
+    }
+
+    /** Capture and remove native effects on the disable owner, before any asynchronous retirement. */
+    private synchronized void prepareShutdown() {
+        if (shutdownPreparation != null) return;
+        shutdownPreparation = new java.util.concurrent.CompletableFuture<>();
+        try {
+            featureLifecycle++;
+            var legacy = new ArrayList<Perk>();
+            if (getPerkHandler() != null) for (Perk perk : getPerkHandler().getActivePerks()) {
+                if (bankedPerks == null || !bankedPerks.attached(perk)) legacy.add(perk);
+            }
+            if (queuePlanner != null) queuePlanner.retire();
+            var bankRetirement = bankedPerks == null ? java.util.concurrent.CompletableFuture.<Void>completedFuture(null)
+                    : bankedPerks.retireAsync();
+            if (usageEffects != null) usageEffects.retireAndClose();
+            else if (usageCharges != null) usageCharges.close();
+            if (getPerkHandler() != null) getPerkHandler().retireTimers();
+            legacy.removeIf(perk -> !perk.detachForShutdown());
+            if (legacy.isEmpty()) {
+                bankRetirement.whenComplete((ignored, failure) -> {
+                    if (failure == null) shutdownPreparation.complete(null);
+                    else shutdownPreparation.completeExceptionally(failure);
+                });
+                return;
+            }
+            if (featureState == null) throw new IllegalStateException("Shutdown persistence owner unavailable");
+            featureState.runtimeStorage(() -> legacy.stream().map(Perk::persistForShutdown).toList())
+                    .thenCompose(stages -> java.util.concurrent.CompletableFuture.allOf(
+                            java.util.stream.Stream.concat(stages.stream(), java.util.stream.Stream.of(bankRetirement))
+                                    .toArray(java.util.concurrent.CompletableFuture[]::new)))
+                    .whenComplete((ignored, failure) -> {
+                        if (failure == null) shutdownPreparation.complete(null);
+                        else shutdownPreparation.completeExceptionally(failure);
+                    });
+        } catch (Throwable failure) { shutdownPreparation.completeExceptionally(failure); }
+    }
+
+    @Override public java.util.concurrent.CompletionStage<Void> onBeforeStorageShutdown() {
+        var preparation = shutdownPreparation;
+        return preparation == null ? java.util.concurrent.CompletableFuture.failedFuture(
+                new IllegalStateException("Shutdown owner preparation was not admitted")) : preparation;
+    }
+
+    @Override public void onShutdownComplete() {
+        // Deferred native cleanup can reach this hook before the pre-storage stage settles.
+        // Keep this exact file owner open for all admitted persistence continuations;
+        // the final native PermissionHandler snapshot has already been admitted here.
+        var owner = featureState;
+        var preparation = shutdownPreparation;
+        if (owner != null) {
+            if (preparation == null) owner.close();
+            else preparation.whenComplete((ignored, failure) -> owner.close());
         }
     }
 
 	@Override
 	public void onUnLoad() {
-        featureLifecycle++;
-        if (queuePlanner != null) queuePlanner.retire();
-        if (bankedPerks != null) bankedPerks.retire();
-        if (usageEffects != null) usageEffects.retireAndClose();
-        else if (usageCharges != null) usageCharges.close();
-		for (Perk perk : getPerkHandler().getActivePerks()) {
-			if (bankedPerks != null && bankedPerks.attached(perk)) continue;
-            getMcperksServerData().saveOfflinePerk(perk);
-			perk.deactivatePerk(perk.getActivater());
-		}
-        getMcperksServerData().saveData();
+        // Native user storage is retired here; all user work belongs to the earlier stage.
+        if (getMcperksServerData() != null) getMcperksServerData().saveData();
 		HandlerList.unregisterAll(plugin);
 		plugin = null;
 	}
 
 	@Override
 	public void onPostLoad() {
+        shutdownPreparation = null;
         int featureEpoch = ++featureLifecycle;
         localStatistics.enabled(getConfigFile().getData().getBoolean("LocalStatistics.Enabled", false));
         usageCharges = new com.bencodez.mcperks.userapi.UsageCharges(getDataFolder().toPath().resolve("usage-charges.dat"));

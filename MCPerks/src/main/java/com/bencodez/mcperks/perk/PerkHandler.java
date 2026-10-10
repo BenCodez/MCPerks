@@ -757,6 +757,8 @@ public class PerkHandler {
 
 	}
 
+    public synchronized void retireTimers() { timer.cancel(); }
+
 	public synchronized void remove(Perk pe, MCPerksUser user) {
 		getActivePerks().remove(pe);
 		checkQue();

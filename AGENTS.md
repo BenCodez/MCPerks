@@ -53,8 +53,10 @@ The supported scope values are `ALL`, `PLAYER`, `TOWNY`, `FACTIONS`, and `PERMIS
     Grant publication must retain concurrent pause/eligibility transitions. Every acknowledged queue/bank state file
     must remain within the same 3,000,000 serialized-byte recovery bound; capacity rejection preserves usable prior state and must precede irreversible activation consumption.
     A clock first attached during an additive publication can debit only the pre-grant balance for that wait.
-12. Keep the ordered feature worker open through AdvancedCore final permission-data cleanup. Retire gameplay
-    admissions in onUnLoad, but seal/drain the file owner only after super.onDisable returns.
+12. Retire gameplay admissions and detach owner-thread effects before AdvancedCore storage retirement. Persist legacy
+    restart records before clearing native expirations. Keep the ordered feature worker open through both that
+    completion stage and AdvancedCore final permission-data cleanup; deferred shutdown may return before storage
+    preparation settles. Cleanup failures remain observable and must not prevent other perks from being persisted.
 
 ## Drop-in upgrade and compatibility contract
 

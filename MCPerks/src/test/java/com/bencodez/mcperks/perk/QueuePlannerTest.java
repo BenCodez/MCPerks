@@ -36,6 +36,10 @@ class QueuePlannerTest {
         com.bencodez.mcperks.userapi.UserManager manager = mock(com.bencodez.mcperks.userapi.UserManager.class); when(plugin.getMcperksUserManager()).thenReturn(manager); when(manager.getMCPerksUser(owner)).thenReturn(user); when(manager.getMCPerksUser(player)).thenReturn(user);
         com.bencodez.advancedcore.api.user.UserManager baseManager = mock(com.bencodez.advancedcore.api.user.UserManager.class); when(plugin.getUserManager()).thenReturn(baseManager);
         dataManager = mock(UserDataManager.class); when(baseManager.getDataManager()).thenReturn(dataManager); when(dataManager.hasSharedRuntime()).thenReturn(true); var cache = mock(com.bencodez.advancedcore.api.user.usercache.UserDataCache.class);
+        var storageWorker = mock(java.util.concurrent.ScheduledExecutorService.class);
+        doAnswer(call -> { call.getArgument(0, Runnable.class).run(); return null; })
+                .when(storageWorker).execute(any(Runnable.class));
+        when(dataManager.getTimer()).thenReturn(storageWorker);
         when(dataManager.getPublishedCache(owner)).thenReturn(cache); when(dataManager.getCache(owner)).thenReturn(cache);
         doAnswer(i -> { i.getArgument(0, Runnable.class).run(); return null; }).when(cache).flushChangesAndRun(any(Runnable.class));
         personal = new AtomicInteger(1); global = new AtomicInteger(5); activated = new AtomicInteger(); when(user.getData()).thenReturn(mock(UserData.class));
@@ -52,7 +56,12 @@ class QueuePlannerTest {
         state = new FeatureState(directory.resolve("features.dat")); state.ready().get(5,TimeUnit.SECONDS); when(plugin.getFeatureState()).thenReturn(state);
         planner = new QueuePlanner(plugin,state); when(plugin.getQueuePlanner()).thenReturn(planner); when(plugin.getBankedPerks()).thenReturn(new BankedPerks(plugin,state));
     }
-    @AfterEach void close() { planner.retire(); state.close(); }
+    @AfterEach void close() throws Exception {
+        planner.retire(); state.close();
+        // Closing admits worker retirement; await actual termination before JUnit removes its owned files.
+        var worker = FeatureState.class.getDeclaredField("worker"); worker.setAccessible(true);
+        assertTrue(((ExecutorService) worker.get(state)).awaitTermination(5, TimeUnit.SECONDS));
+    }
     private Runnable next() throws Exception { return Objects.requireNonNull(scheduler.tasks.poll(5, TimeUnit.SECONDS)); }
     private void drainUntil(java.util.function.BooleanSupplier done) throws Exception { drainUntil(done, 5); }
     private void drainUntil(java.util.function.BooleanSupplier done, int timeoutSeconds) throws Exception {
@@ -592,7 +601,13 @@ class QueuePlannerTest {
             assertTrue(releaseEligibility.await(5,TimeUnit.SECONDS)); return 0L;
         });
         doAnswer(call->{ activated.incrementAndGet(); runtime.setPerkExperation(perk,123456); return null; }).when(perk).activatePerk(eq(user),eq(10),nullable(Timestamp.class));
-        planner.enqueue(user,perk); next().run(); next().run(); assertTrue(eligibilityEntered.await(5,TimeUnit.SECONDS));
+        planner.enqueue(user,perk);
+        long eligibilityDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        while (eligibilityEntered.getCount() != 0 && System.nanoTime() < eligibilityDeadline) {
+            Runnable ownerTask = scheduler.tasks.poll(20, TimeUnit.MILLISECONDS);
+            if (ownerTask != null) ownerTask.run();
+        }
+        assertEquals(0, eligibilityEntered.getCount(), "production eligibility did not start");
         var blockedByCalendar=new java.util.concurrent.atomic.AtomicBoolean();
         var live=(org.bukkit.configuration.file.YamlConfiguration)nativeFile.getData();
         doAnswer(call->{
@@ -717,6 +732,7 @@ class QueuePlannerTest {
         var nativeFile=runtimeFile(); MCPerksMain previous=MCPerksMain.plugin; MCPerksMain.plugin=plugin;
         var actual=spy(new PerkHandler(plugin,List.of())); doReturn(perk).when(actual).getPerk("vein"); when(plugin.getPerkHandler()).thenReturn(actual);
         var clone=mock(Perk.class); when(perk.clone()).thenReturn(clone); when(perk.getPerkType()).thenReturn(PerkSystemType.ALL);
+        field(clone, "plugin", plugin); // A real Perk constructor captures its owning plugin.
         when(perk.getEffects()).thenReturn(new ArrayList<>()); when(perk.getName()).thenReturn("Vein");
         when(clone.getPerkType()).thenReturn(PerkSystemType.ALL); when(clone.getPerk()).thenReturn("vein");
         when(clone.getEffectedPlayers()).thenReturn(new ArrayList<>()); when(clone.getEffects()).thenReturn(new ArrayList<>());
@@ -742,6 +758,96 @@ class QueuePlannerTest {
             var timer=PerkHandler.class.getDeclaredField("timer"); timer.setAccessible(true); ((Timer)timer.get(actual)).cancel(); MCPerksMain.plugin=previous;
         }
     }
+    @Test void activeLegacyShutdownReadsExpirationAndDeactivatesBeforeNativeStorageRetirement() throws Exception {
+        runtimeFile();
+        MCPerksMain previous = MCPerksMain.plugin; MCPerksMain.plugin = plugin;
+        var stateField = MCPerksMain.class.getDeclaredField("featureState");
+        stateField.setAccessible(true); stateField.set(plugin, state);
+        var retired = new java.util.concurrent.atomic.AtomicBoolean();
+        var deactivated = new AtomicInteger();
+        // Bukkit marks a plugin disabled before calling onDisable; do not rely on isEnabled.
+        when(plugin.isEnabled()).thenReturn(false);
+        when(perk.getActivater()).thenReturn(user);
+        when(perk.getKnownExpiration()).thenReturn(1000L);
+        when(perk.getExperation(user)).thenAnswer(call -> {
+            assertFalse(retired.get(), "expiration read after native storage retirement");
+            return 987654L; // Authoritative extension, deliberately different from an old cached value.
+        });
+        when(perk.detachForShutdown()).thenAnswer(call -> {
+            assertFalse(retired.get(), "effect cleanup admitted after native storage retirement");
+            deactivated.incrementAndGet(); return true;
+        });
+        doCallRealMethod().when(perk).persistForShutdown();
+        doCallRealMethod().when(perk).setExperation(user, 0);
+        when(handler.getActivePerks()).thenReturn(new CopyOnWriteArrayList<>(List.of(perk)));
+        try (var lifecycle = mockConstruction(com.bencodez.advancedcore.lifecycle.AdvancedCoreLifecycle.class,
+                (cleanup, context) -> doAnswer(call -> {
+                    plugin.onBeforeStorageShutdown().toCompletableFuture().get(5, TimeUnit.SECONDS);
+                    retired.set(true); plugin.onUnLoad(); plugin.onShutdownComplete(); return null;
+                }).when(cleanup).shutdown())) {
+            doCallRealMethod().when(plugin).onUnLoad(); doCallRealMethod().when(plugin).onDisable();
+            doCallRealMethod().when(plugin).onBeforeStorageShutdown(); doCallRealMethod().when(plugin).onShutdownComplete();
+            assertDoesNotThrow(plugin::onDisable);
+            assertEquals(1, deactivated.get());
+            assertEquals(987654L, plugin.getMcperksServerData().getData().getLong(
+                    "OfflinePerk." + owner + ".vein.Experiaton"));
+            verify(perk, times(1)).detachForShutdown(); verify(perk, never()).deactivatePerk(any());
+            verify(perk, times(1)).getExperation(user); verify(user).setPerkExperation(perk, 0);
+        } finally { MCPerksMain.plugin = previous; }
+    }
+
+    @Test void deferredNativeCleanupKeepsFileOwnerOpenUntilLegacyShutdownPersistenceSettles() throws Exception {
+        verifyDeferredShutdownPersistence(false);
+    }
+
+    @Test void deferredSharedPerkShutdownUsesCapturedOwnerAfterStaticPluginIsCleared() throws Exception {
+        verifyDeferredShutdownPersistence(true);
+    }
+
+    private void verifyDeferredShutdownPersistence(boolean shared) throws Exception {
+        runtimeFile();
+        MCPerksMain previous = MCPerksMain.plugin; MCPerksMain.plugin = plugin;
+        var stateField = MCPerksMain.class.getDeclaredField("featureState");
+        stateField.setAccessible(true); stateField.set(plugin, state);
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        state.runtimeStorage(() -> {
+            entered.countDown();
+            try { if (!release.await(5, TimeUnit.SECONDS)) throw new IllegalStateException("timeout"); }
+            catch (InterruptedException error) { throw new RuntimeException(error); }
+            return null;
+        });
+        assertTrue(entered.await(5, TimeUnit.SECONDS));
+        when(plugin.isEnabled()).thenReturn(false);
+        when(perk.getActivater()).thenReturn(user);
+        if (shared) {
+            when(perk.getPerkType()).thenReturn(PerkSystemType.ALL);
+            plugin.getMcperksServerData().setPerkExperation(perk, 987654L);
+            doCallRealMethod().when(perk).getExperation(user);
+        } else when(perk.getExperation(user)).thenReturn(987654L);
+        when(perk.detachForShutdown()).thenReturn(true);
+        doCallRealMethod().when(perk).persistForShutdown();
+        doCallRealMethod().when(perk).setExperation(user, 0);
+        when(handler.getActivePerks()).thenReturn(new CopyOnWriteArrayList<>(List.of(perk)));
+        try (var lifecycle = mockConstruction(com.bencodez.advancedcore.lifecycle.AdvancedCoreLifecycle.class,
+                (cleanup, context) -> doAnswer(call -> {
+                    assertFalse(plugin.onBeforeStorageShutdown().toCompletableFuture().isDone());
+                    // Native primary-thread cleanup does not synchronously wait for storage.
+                    plugin.onUnLoad(); plugin.onShutdownComplete(); return null;
+                }).when(cleanup).shutdown())) {
+            doCallRealMethod().when(plugin).onUnLoad(); doCallRealMethod().when(plugin).onDisable();
+            doCallRealMethod().when(plugin).onBeforeStorageShutdown(); doCallRealMethod().when(plugin).onShutdownComplete();
+            plugin.onDisable();
+            release.countDown();
+            plugin.onBeforeStorageShutdown().toCompletableFuture().get(5, TimeUnit.SECONDS);
+            assertEquals(987654L, plugin.getMcperksServerData().getData().getLong(
+                    "OfflinePerk." + owner + ".vein.Experiaton"));
+            if (shared) {
+                assertEquals(0, plugin.getMcperksServerData().getPerkExperation(perk));
+                verify(user, never()).setPerkExperation(any(), anyLong());
+            } else verify(user).setPerkExperation(perk, 0);
+        } finally { release.countDown(); MCPerksMain.plugin = previous; }
+    }
+
     @Test void gracefulPluginDisableRetainsTheWorkerThroughInheritedFinalRuntimeSave() throws Exception {
         var nativeFile = runtimeFile(); MCPerksMain previous=MCPerksMain.plugin; MCPerksMain.plugin=plugin;
         var stateField=MCPerksMain.class.getDeclaredField("featureState"); stateField.setAccessible(true); stateField.set(plugin,state);
@@ -759,10 +865,12 @@ class QueuePlannerTest {
                     // The native PermissionHandler has this additional save after onUnLoad.
                     runtime.setServerCooldown("vein", 5678);
                     plugin.getServerDataFile().saveData();
+                    plugin.onShutdownComplete();
                     return null;
                 }).when(cleanup).shutdown())) {
             assertTrue(entered.await(5,TimeUnit.SECONDS));
-            doCallRealMethod().when(plugin).onUnLoad(); doCallRealMethod().when(plugin).onDisable(); plugin.onDisable();
+            doCallRealMethod().when(plugin).onUnLoad(); doCallRealMethod().when(plugin).onDisable();
+            doCallRealMethod().when(plugin).onShutdownComplete(); plugin.onDisable();
             assertEquals(1, lifecycle.constructed().size());
             assertFalse(Files.exists(directory.resolve("ServerData.yml")));
             try(FeatureState successor=new FeatureState(directory.resolve("features.dat"))) {

@@ -271,7 +271,7 @@
         <dependency>
             <groupId>com.bencodez</groupId>
             <artifactId>advancedcore</artifactId>
-            <version>LATEST</version>
+            <version>3.8.2-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

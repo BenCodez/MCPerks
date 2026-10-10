@@ -11,10 +11,20 @@ public final class UserStorageConfirmation {
     public static CompletableFuture<Void> confirm(MCPerksMain plugin, MCPerksUser user) {
         var confirmed = new CompletableFuture<Void>();
         plugin.getFeatureState().runtimeStorage(() -> {
-            var cache = plugin.getUserManager().getDataManager().getCache(UUID.fromString(user.getUUID()));
-            if (cache == null) throw new IllegalStateException("Activation user cache unavailable");
-            // The callback follows the actual exclusive flush, not its scheduling or a timed guess.
-            cache.flushChangesAndRun(() -> confirmed.complete(null));
+            var manager = plugin.getUserManager().getDataManager();
+            UUID owner = UUID.fromString(user.getUUID());
+            // Owner-thread setters can defer the entire mutation while their canonical
+            // cache is still a placeholder. Join that same ordered worker before flushing;
+            // a flush on our independent file worker can otherwise confirm an empty cache.
+            manager.getTimer().execute(() -> {
+                try {
+                    var cache = manager.getCache(owner);
+                    if (cache == null) throw new IllegalStateException("Activation user cache unavailable");
+                    cache.flushChangesAndRun(() -> confirmed.complete(null));
+                } catch (RuntimeException | Error failure) {
+                    confirmed.completeExceptionally(failure);
+                }
+            });
             return null;
         }).whenComplete((ignored, error) -> { if (error != null) confirmed.completeExceptionally(error); });
         // A deferred backend that cannot report failure must retain the uncertain start fence.
