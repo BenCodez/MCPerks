@@ -192,6 +192,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		effectHandler = new EffectHandler(this);
         usageEffects = new com.bencodez.mcperks.listeners.UsageEffectListener(this);
         getServer().getPluginManager().registerEvents(usageEffects, this);
+        usageEffects.synchronizeOnlinePlayers();
         bankedPerks = new com.bencodez.mcperks.perk.BankedPerks(this, featureState);
         getServer().getPluginManager().registerEvents(bankedPerks, this);
         runtimeReady.thenRun(() -> {
@@ -580,6 +581,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		Lang.getInstance().reloadData();
 		mcperksServerData.reloadData();
 		getPerkHandler().reload();
+        if (usageEffects != null) usageEffects.synchronizeOnlinePlayers();
         if (bankedPerks != null) bankedPerks.reload();
 		commandLoader.loadTabComplete();
 		updateHook();

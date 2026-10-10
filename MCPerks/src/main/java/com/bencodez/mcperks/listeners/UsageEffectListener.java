@@ -45,6 +45,10 @@ public final class UsageEffectListener implements Listener {
     }
     private volatile int generation;
     private volatile boolean retired;
+    private record SneakingSession(long token, Player player) {}
+    private final ConcurrentMap<UUID, SneakingSession> sneakingSessions = new ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicLong nextSneakingSession = new java.util.concurrent.atomic.AtomicLong();
+    private final Object sneakingLock = new Object();
     private final Method ownedRegion;
     public UsageEffectListener(MCPerksMain plugin) {
         this.plugin = plugin;
@@ -53,9 +57,59 @@ public final class UsageEffectListener implements Listener {
         try { method = Bukkit.class.getMethod("isOwnedByCurrentRegion", Location.class); } catch (ReflectiveOperationException ignored) {}
         ownedRegion = method;
     }
-    public void invalidate() { generation++; }
+    public void invalidate() { synchronized (sneakingLock) { generation++; } }
+    /** Re-sample a connected player on that player's Bukkit/Folia owner. */
+    public void synchronizeSneaking(Player player) {
+        if (player == null || retired || !plugin.isEnabled()) return;
+        UUID owner = player.getUniqueId();
+        long session;
+        int version;
+        synchronized (sneakingLock) {
+            if (retired) return;
+            session = nextSneakingSession.incrementAndGet();
+            sneakingSessions.put(owner, new SneakingSession(session, player));
+            version = generation;
+        }
+        OwnerTasks.run(plugin, player, () -> {
+            boolean sneaking = player.isSneaking();
+            synchronized (sneakingLock) {
+                if (!retired && version == generation && isCurrent(owner, player, session)
+                        && plugin.isEnabled() && player.isOnline()) {
+                    plugin.getPerkHandler().setPrecisionSneaking(owner, sneaking);
+                }
+            }
+        }, () -> clearSneaking(owner, player, version, session));
+    }
+    /** Clear only the session that requested cleanup; a rejoined player remains authoritative. */
+    public void clearSneaking(Player player) {
+        if (player != null) {
+            synchronized (sneakingLock) {
+                SneakingSession current = sneakingSessions.get(player.getUniqueId());
+                if (current != null && current.player() == player) clearSneaking(player.getUniqueId(), player, generation, current.token());
+            }
+        }
+    }
+    private boolean isCurrent(UUID owner, Player player, long session) {
+        SneakingSession current = sneakingSessions.get(owner);
+        return current != null && current.token() == session && current.player() == player;
+    }
+    private void clearSneaking(UUID owner, Player player, int version, long session) {
+        synchronized (sneakingLock) {
+            SneakingSession current = sneakingSessions.get(owner);
+            if (version == generation && current != null && current.token() == session && current.player() == player
+                    && sneakingSessions.remove(owner, current)) {
+                plugin.getPerkHandler().setPrecisionSneaking(owner, false);
+            }
+        }
+    }
+    /** Resample all players present at enable/reload without reading player state off-owner. */
+    public void synchronizeOnlinePlayers() {
+        if (retired || !plugin.isEnabled()) return;
+        for (Player player : Bukkit.getOnlinePlayers()) synchronizeSneaking(player);
+    }
     public synchronized CompletableFuture<Void> retire() {
         retired = true; invalidate();
+        synchronized (sneakingLock) { sneakingSessions.clear(); }
         List<Batch> batches = List.copyOf(pending.values());
         batches.forEach(batch -> batch.cancel.run());
         return CompletableFuture.allOf(batches.stream().map(batch -> batch.settled).toArray(CompletableFuture[]::new));
@@ -67,12 +121,10 @@ public final class UsageEffectListener implements Listener {
     public boolean isNativeBreak(UUID player) { return nativeBreaks.contains(player); }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true) public void sneak(PlayerToggleSneakEvent event) {
         if (event.isCancelled()) return;
-        Player player = event.getPlayer();
-        OwnerTasks.run(plugin, player, () -> plugin.getPerkHandler().setPrecisionSneaking(player.getUniqueId(), player.isSneaking()),
-                () -> plugin.getPerkHandler().setPrecisionSneaking(player.getUniqueId(), false));
+        synchronizeSneaking(event.getPlayer());
     }
-    @EventHandler public void join(PlayerJoinEvent event) { plugin.getQueuePlanner().check(); }
-    @EventHandler public void quit(PlayerQuitEvent event) { plugin.getPerkHandler().setPrecisionSneaking(event.getPlayer().getUniqueId(), false); recentSkips.remove(event.getPlayer().getUniqueId()); }
+    @EventHandler public void join(PlayerJoinEvent event) { synchronizeSneaking(event.getPlayer()); plugin.getQueuePlanner().check(); }
+    @EventHandler public void quit(PlayerQuitEvent event) { clearSneaking(event.getPlayer()); recentSkips.remove(event.getPlayer().getUniqueId()); }
 
     private Perk eligible(Player player, Effect effect) {
         return eligible(player, effect, candidate -> true);

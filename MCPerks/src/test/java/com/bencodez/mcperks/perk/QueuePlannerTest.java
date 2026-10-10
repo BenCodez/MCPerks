@@ -105,7 +105,7 @@ class QueuePlannerTest {
         planner.check(); Runnable initialStart = next();
         if (retireInitialOwner) {
             scheduler.retirement.get(initialStart).run(); initialStart.run();
-            state.storage(() -> null).get(5, TimeUnit.SECONDS);
+            drainUntil(() -> !planner.isStarting() && state.queue().isEmpty());
             assertFalse(planner.isStarting()); assertTrue(handler.getActivePerks().isEmpty()); assertTrue(state.queue().isEmpty());
             assertEquals(10000, state.banks().get(new FeatureState.BankKey(owner, "vein")).milliseconds());
             verify(perk, times(1)).executePublishedBank(user); verify(dataManager, never()).withAtomicUserTransaction(any(), any(), anyMap(), any());
@@ -114,7 +114,7 @@ class QueuePlannerTest {
         initialStart.run(); // only schedules the storage->owner attachment
         state.storage(() -> null).get(5, TimeUnit.SECONDS);
         assertTrue(planner.isStarting()); assertTrue(handler.getActivePerks().isEmpty()); planner.check();
-        next().run(); state.storage(() -> null).get(5, TimeUnit.SECONDS);
+        next().run(); drainUntil(() -> !planner.isStarting() && state.queue().isEmpty());
         assertEquals(1, handler.getActivePerks().size()); assertFalse(planner.isStarting());
         assertTrue(state.queue().isEmpty()); assertEquals(10000, state.banks().get(new FeatureState.BankKey(owner, "vein")).milliseconds());
         verify(perk, times(1)).executePublishedBank(user); verify(dataManager, never()).withAtomicUserTransaction(any(), any(), anyMap(), any());

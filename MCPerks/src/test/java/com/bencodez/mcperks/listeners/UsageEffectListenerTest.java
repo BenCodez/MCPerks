@@ -219,6 +219,94 @@ class UsageEffectListenerTest {
         listener.sneak(event); when(player.isSneaking()).thenReturn(true); next().run(); verify(handler).setPrecisionSneaking(owner,true);
     }
 
+    @Test void alreadySneakingPlayerIsResampledThroughTheOwnerOnListenerStartup() throws Exception {
+        when(player.isSneaking()).thenReturn(true);
+        listener.synchronizeSneaking(player);
+        verify(handler, never()).setPrecisionSneaking(any(), anyBoolean());
+        next().run();
+        verify(handler).setPrecisionSneaking(owner, true);
+    }
+
+    @Test void actualOnlinePlayerResampleSuppressesARealLegacyEffectDecision() throws Exception {
+        when(player.isSneaking()).thenReturn(true);
+        Perk precision = mock(Perk.class), legacy = mock(Perk.class);
+        when(precision.getEffects()).thenReturn(new ArrayList<>(List.of(Effect.PrecisionMode)));
+        when(precision.getEffectedPlayers()).thenReturn(new ArrayList<>(List.of(owner.toString())));
+        when(precision.getInteractionOptions()).thenReturn(new InteractionOptions(false, false, 16, 8, List.of(), List.of(), List.of(), List.of("NoFallDamage")));
+        when(precision.isNotInDisabledWorld(anyString())).thenReturn(true);
+        when(legacy.getEffects()).thenReturn(new ArrayList<>(List.of(Effect.NoFallDamage)));
+        when(legacy.getEffectedPlayers()).thenReturn(new ArrayList<>(List.of(owner.toString())));
+        when(legacy.isNotInDisabledWorld(anyString())).thenReturn(true);
+        var constructor = PerkHandler.class.getDeclaredConstructor(MCPerksMain.class, List.class);
+        constructor.setAccessible(true);
+        PerkHandler realHandler = constructor.newInstance(plugin, List.of(precision, legacy));
+        when(plugin.getPerkHandler()).thenReturn(realHandler);
+        try (var mockedBukkit = mockStatic(Bukkit.class)) {
+            mockedBukkit.when(Bukkit::getOnlinePlayers).thenReturn(List.of(player));
+            listener.synchronizeOnlinePlayers();
+        }
+        next().run();
+        assertEquals(PerkHandler.Decision.PRECISION_SUPPRESSED,
+                realHandler.effectDecision(Effect.NoFallDamage, owner.toString(), "world"));
+    }
+
+    @Test void staleSneakingResampleCannotPublishAfterReloadOrReplaceAConnection() throws Exception {
+        when(player.isSneaking()).thenReturn(true);
+        listener.synchronizeSneaking(player); Runnable oldGeneration = next();
+        listener.invalidate(); oldGeneration.run();
+        verify(handler, never()).setPrecisionSneaking(any(), anyBoolean());
+
+        listener.synchronizeSneaking(player); Runnable oldConnection = next();
+        listener.synchronizeSneaking(player); Runnable currentConnection = next();
+        oldConnection.run(); verify(handler, never()).setPrecisionSneaking(any(), anyBoolean());
+        currentConnection.run(); verify(handler).setPrecisionSneaking(owner, true);
+    }
+
+    @Test void staleRetirementCleanupCannotClearARejoinedPlayer() throws Exception {
+        when(player.isSneaking()).thenReturn(true);
+        listener.synchronizeSneaking(player); Runnable old = next();
+        listener.synchronizeSneaking(player); next();
+        ownerScheduler.retirement.get(old).run();
+        verify(handler, never()).setPrecisionSneaking(owner, false);
+    }
+
+    @Test void oldQuitCannotClearReplacementPlayerWithTheSameUuid() throws Exception {
+        when(player.isSneaking()).thenReturn(true);
+        listener.synchronizeSneaking(player); Runnable old = next();
+        Player replacement = mock(Player.class); when(replacement.getUniqueId()).thenReturn(owner);
+        when(replacement.isOnline()).thenReturn(true); when(replacement.isSneaking()).thenReturn(true);
+        var replacementScheduler = new com.bencodez.mcperks.scheduling.OwnerTaskHarness(plugin, replacement);
+        when(plugin.getBukkitScheduler()).thenReturn(replacementScheduler.scheduler);
+        listener.synchronizeSneaking(replacement); Runnable current = replacementScheduler.tasks.poll(5, TimeUnit.SECONDS);
+        assertNotNull(current);
+        listener.clearSneaking(player);
+        ownerScheduler.retirement.get(old).run();
+        verify(handler, never()).setPrecisionSneaking(owner, false);
+        current.run(); verify(handler).setPrecisionSneaking(owner, true);
+    }
+
+    @Test void quitThenRejoinDoesNotReuseAnOldSessionToken() throws Exception {
+        when(player.isSneaking()).thenReturn(true);
+        listener.synchronizeSneaking(player); Runnable old = next();
+        listener.clearSneaking(player);
+        clearInvocations(handler);
+        listener.synchronizeSneaking(player); Runnable current = next();
+        old.run(); ownerScheduler.retirement.get(old).run();
+        verify(handler, never()).setPrecisionSneaking(any(), anyBoolean());
+        current.run(); verify(handler).setPrecisionSneaking(owner, true);
+    }
+
+    @Test void offlineAndRetiredResamplesCannotPublishSneakingState() throws Exception {
+        listener.synchronizeSneaking(player); Runnable old = next();
+        when(player.isOnline()).thenReturn(false); old.run();
+        verify(handler, never()).setPrecisionSneaking(any(), anyBoolean());
+        listener.retire().get(5, TimeUnit.SECONDS);
+        when(player.isOnline()).thenReturn(true);
+        listener.synchronizeOnlinePlayers(); listener.synchronizeSneaking(player);
+        assertTrue(tasks.isEmpty());
+        verify(handler, never()).setPrecisionSneaking(any(), anyBoolean());
+    }
+
     @Test void finalInteractionProtectionDenialPreventsReservationSeedsAndNativeBreakEvenWhenBreakingIsAllowed() throws Exception {
         charges.set(owner,Kind.RightClickHarvest,1).get(); items[0]=new ItemStack(Material.STONE); items[1]=new ItemStack(Material.WHEAT_SEEDS,3); Block block=crop(); when(player.breakBlock(block)).thenReturn(true);
         var event=harvest(block); listener.harvest(event); verify(event,never()).setUseInteractedBlock(any()); verify(event,never()).setUseItemInHand(any());
