@@ -64,6 +64,8 @@ public class PerkHandler {
 	private MCPerksMain plugin;
 
 	private Timer timer = new Timer();
+    private volatile java.util.concurrent.CompletableFuture<Void> restoration = new java.util.concurrent.CompletableFuture<>();
+    public boolean isRestorationReady() { var current = restoration; return current.isDone() && !current.isCompletedExceptionally(); }
 
 	public Map<Integer, Perk> invPerks = new HashMap<Integer, Perk>();
 
@@ -84,14 +86,19 @@ public class PerkHandler {
 				e.printStackTrace();
 			}
 		}
-		loadEnabledPerks(true);
+		loadEnabledPerks(false);
 		if (plugin.getConfigFile().getLogActivation()) {
 			activationLog = new Logger(plugin, new File(plugin.getDataFolder(), "ActivationLog.txt"));
 		}
 	}
 
+    PerkHandler(MCPerksMain plugin, List<Perk> initial) {
+        this.plugin = plugin; activePerks.addAll(initial); restoration.complete(null);
+    }
+
 	public void activePerk(Perk perk, MCPerksUser user, int length, Timestamp timestamp) {
 		final Perk clone = perk.clone();
+        plugin.getLocalStatistics().activation();
 		clone.setActivater(user);
 		clone.getEffectedPlayers().clear();
 		ArrayList<Integer> times = new ArrayList<Integer>();
@@ -441,16 +448,17 @@ public class PerkHandler {
 		{
 
 			String str = new SimpleDateFormat("EEE, d MMM yyyy HH:mm").format(Calendar.getInstance().getTime());
-			activationLog
-					.logToFile(str + " Activated perk " + perk.getName() + " by " + clone.getActivater().getPlayerName()
-							+ ". Affected users: " + ArrayUtils.makeStringList(clone.getEffectedPlayers())
-							+ ". Lasted for " + length + " Perk type: " + clone.getPerkType().toString());
+            String message = str + " Activated perk " + perk.getName() + " by " + clone.getActivater().getPlayerName()
+                    + ". Affected users: " + ArrayUtils.makeStringList(clone.getEffectedPlayers())
+                    + ". Lasted for " + length + " Perk type: " + clone.getPerkType().toString();
+            Logger writer = activationLog;
+            plugin.getMcperksServerData().activationLog(() -> writer.logToFile(message));
 		}
 	}
 
 	public void addQue(MCPerksUser user, Perk perk) {
-		que.put(user, perk);
-	}
+        plugin.getQueuePlanner().enqueue(user, perk);
+    }
 
 	/**
 	 * Adds the to list.
@@ -462,20 +470,13 @@ public class PerkHandler {
 		loadedPerks.put(key, p);
 	}
 
-	public void checkQue() {
-		if (!que.isEmpty() && activePerks.size() == 0) {
-			for (Entry<MCPerksUser, Perk> entry : que.entrySet()) {
-				entry.getValue().runPerk(entry.getKey());
-				que.remove(entry.getKey());
-				return;
-			}
+	public void checkQue() { plugin.getQueuePlanner().check(); }
 
-		}
-	}
-
-	public void clearQueue() {
-		que.clear();
-	}
+    public void clearQueue() { clearQueueConfirmed(); }
+    /** Completion means the waiting entries were durably removed; legacy void API remains additive. */
+    public java.util.concurrent.CompletableFuture<Void> clearQueueConfirmed() {
+        return plugin.getFeatureState().clearWaiting().thenRun(() -> plugin.getQueuePlanner().refreshLegacyView());
+    }
 
 	public void copyPerks() throws IOException {
 		File file = new File(plugin.getDataFolder(), "Perks");
@@ -512,27 +513,50 @@ public class PerkHandler {
 		}
 	}
 
-	public boolean effectActive(Effect effect, String uuid, String world) {
-		ListIterator<Perk> it = activePerks.listIterator();
-		while (it.hasNext()) {
-			Perk perk = it.next();
-			if (perk.getEffects().contains(effect)) {
-				if (uuid == null || perk.getEffectedPlayers().contains(uuid)) {
-					// plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
-					if (perk.isNotInDisabledWorld(world)) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
+	private final java.util.concurrent.ConcurrentHashMap<UUID, Boolean> precisionSneaking = new java.util.concurrent.ConcurrentHashMap<>();
+    public void setPrecisionSneaking(UUID owner, boolean sneaking) {
+        if (sneaking) precisionSneaking.put(owner, true); else precisionSneaking.remove(owner);
+    }
+    private boolean precisionSuppresses(Effect effect, String uuid, String world) {
+        if (uuid == null || !precisionSneaking.containsKey(UUID.fromString(uuid)) || effect == Effect.PrecisionMode) return false;
+        for (Perk perk : activePerks) {
+            if (!perk.getEffects().contains(Effect.PrecisionMode) || !perk.getEffectedPlayers().contains(uuid) || !perk.isNotInDisabledWorld(world)
+                    || (plugin.getBankedPerks() != null && !plugin.getBankedPerks().available(perk))) continue;
+            List<String> targets = perk.getInteractionOptions().precisionTargets();
+            if (targets.isEmpty()) {
+                if (effect == Effect.AutoBlockRefill || effect == Effect.VeinMining || effect == Effect.RightClickHarvest) return true;
+            } else if (targets.stream().anyMatch(target -> effect.name().equalsIgnoreCase(target))) return true;
+        }
+        return false;
+    }
+
+    public boolean effectAllowed(Perk perk, Effect effect, String uuid, String world) {
+        return (uuid == null || perk.getEffectedPlayers().contains(uuid))
+                && perk.isNotInDisabledWorld(world) && !precisionSuppresses(effect, uuid, world)
+                && (plugin.getBankedPerks() == null || plugin.getBankedPerks().available(perk));
+    }
+
+    public enum Decision { ACTIVE, INACTIVE, OUTSIDE_AUDIENCE, DISABLED_WORLD, PRECISION_SUPPRESSED, BANKED_PAUSED }
+    public Decision effectDecision(Effect effect, String uuid, String world) {
+        if (precisionSuppresses(effect, uuid, world)) return Decision.PRECISION_SUPPRESSED;
+        Decision decision = Decision.INACTIVE;
+        for (Perk perk : activePerks) {
+            if (!perk.getEffects().contains(effect)) continue;
+            if (uuid != null && !perk.getEffectedPlayers().contains(uuid)) { decision = Decision.OUTSIDE_AUDIENCE; continue; }
+            if (!perk.isNotInDisabledWorld(world)) { decision = Decision.DISABLED_WORLD; continue; }
+            if (plugin.getBankedPerks() != null && !plugin.getBankedPerks().available(perk)) { decision = Decision.BANKED_PAUSED; continue; }
+            return Decision.ACTIVE;
+        }
+        return decision;
+    }
+    public boolean effectActive(Effect effect, String uuid, String world) { return effectDecision(effect, uuid, world) == Decision.ACTIVE; }
 
 	public double effectActiveModifier(Effect effect, String uuid, int defaultValue, String world) {
+        if (precisionSuppresses(effect, uuid, world)) return defaultValue;
 		ListIterator<Perk> it = activePerks.listIterator();
 		while (it.hasNext()) {
 			Perk perk = it.next();
-			if (perk.getEffects().contains(effect)) {
+			if (perk.getEffects().contains(effect) && (plugin.getBankedPerks() == null || plugin.getBankedPerks().available(perk))) {
 				if (uuid == null || perk.getEffectedPlayers().contains(uuid)) {
 					// plugin.debug("Effect active, " + effect.toString() + " for " + uuid);
 
@@ -587,31 +611,42 @@ public class PerkHandler {
 		return p;
 	}
 
-	public void loadActivePerks() {
-		Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+    public void loadActivePerks() { loadActivePerksConfirmed(() -> {}); }
 
-			@Override
-			public void run() {
-				ArrayList<MCPerksUser> users = new ArrayList<MCPerksUser>();
-				for (String uuid : plugin.getUserManager().getAllUUIDs()) {
-					MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid));
-					user.userDataFetechMode(UserDataFetchMode.NO_CACHE);
-					users.add(user);
-				}
-				for (Perk perk : getLoadedPerks().values()) {
-					for (MCPerksUser user : users) {
-						user.userDataFetechMode(UserDataFetchMode.NO_CACHE);
-						if (perk.getExperation(user) < 0) {
-							perk.activatePerk(user, perk.getTime());
-						} else {
-							perk.scheduleDeactivation(user);
-						}
-
-					}
-				}
-			}
-		});
-	}
+    /** Completes only after legacy active state and the caller's shutdown records are restored. */
+    public synchronized java.util.concurrent.CompletableFuture<Void> loadActivePerksConfirmed(Runnable shutdownRecords) {
+        var completed = new java.util.concurrent.CompletableFuture<Void>();
+        restoration = completed;
+        try {
+            plugin.getBukkitScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    requireCurrentRestoration(completed);
+                    var users = new ArrayList<MCPerksUser>();
+                    for (String uuid : plugin.getUserManager().getAllUUIDs()) {
+                        requireCurrentRestoration(completed);
+                        MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid));
+                        user.userDataFetechMode(UserDataFetchMode.NO_CACHE); users.add(user);
+                    }
+                    for (Perk perk : List.copyOf(getLoadedPerks().values())) {
+                        for (MCPerksUser user : users) {
+                            requireCurrentRestoration(completed);
+                            user.userDataFetechMode(UserDataFetchMode.NO_CACHE);
+                            if (perk.getExperation(user) < 0) perk.activatePerk(user, perk.getTime());
+                            else perk.scheduleDeactivation(user);
+                        }
+                    }
+                    requireCurrentRestoration(completed);
+                    shutdownRecords.run();
+                    completed.complete(null);
+                } catch (Throwable error) { completed.completeExceptionally(error); }
+            });
+        } catch (RuntimeException error) { completed.completeExceptionally(error); }
+        return completed;
+    }
+    private void requireCurrentRestoration(java.util.concurrent.CompletableFuture<Void> completed) {
+        if (restoration != completed || plugin.getPerkHandler() != this || !plugin.isEnabled())
+            throw new IllegalStateException("Legacy restoration lifecycle retired");
+    }
 
 	/**
 	 * Load enabled perks.
@@ -670,6 +705,11 @@ public class PerkHandler {
 	public void loadPerk(String perkName) {
 		try {
 			Perk perk = new Perk(perkName);
+            if (perk.getInteractionOptions().banked() && !BankedPerks.supported(perk)) plugin.getLogger().warning("Perk " + perkName + ": unsupported banked scope/effects; banked grants will be rejected");
+            if (perk.getInteractionOptions().charged()
+                    && perk.getPerkType() != PerkSystemType.PLAYER) {
+                plugin.getLogger().warning("Perk " + perkName + ": usage charges require PLAYER scope; charged automation is disabled for this shared audience");
+            }
 			if (perk.isEnabled()) {
 				plugin.debug("Loading perk: " + perk.getName() + " : " + perk.getPerkType().toString() + " effects: "
 						+ perk.listEffects());

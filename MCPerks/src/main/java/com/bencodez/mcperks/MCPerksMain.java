@@ -60,6 +60,19 @@ import lombok.Setter;
  * The Class Main.
  */
 public class MCPerksMain extends AdvancedCorePlugin {
+    private volatile int featureLifecycle;
+    private final com.bencodez.mcperks.data.LocalStatistics localStatistics = new com.bencodez.mcperks.data.LocalStatistics();
+    public com.bencodez.mcperks.data.LocalStatistics getLocalStatistics() { return localStatistics; }
+    private com.bencodez.mcperks.perk.BankedPerks bankedPerks;
+    public com.bencodez.mcperks.perk.BankedPerks getBankedPerks() { return bankedPerks; }
+    private com.bencodez.mcperks.data.FeatureState featureState;
+    private com.bencodez.mcperks.perk.QueuePlanner queuePlanner;
+    public com.bencodez.mcperks.data.FeatureState getFeatureState() { return featureState; }
+    public com.bencodez.mcperks.perk.QueuePlanner getQueuePlanner() { return queuePlanner; }
+    private com.bencodez.mcperks.userapi.UsageCharges usageCharges;
+    private com.bencodez.mcperks.listeners.UsageEffectListener usageEffects;
+    public com.bencodez.mcperks.userapi.UsageCharges getUsageCharges() { return usageCharges; }
+    public com.bencodez.mcperks.listeners.UsageEffectListener getUsageEffects() { return usageEffects; }
 
 	/** The plugin. */
 	public static MCPerksMain plugin;
@@ -137,21 +150,64 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	 * 
 	 * @see org.bukkit.plugin.java.JavaPlugin#onDisable()
 	 */
+    @Override
+    public void onDisable() {
+        try { super.onDisable(); }
+        finally {
+            // AdvancedCore permission cleanup performs its final ServerData save after onUnLoad.
+            if (featureState != null) featureState.close();
+        }
+    }
+
 	@Override
 	public void onUnLoad() {
+        featureLifecycle++;
+        if (queuePlanner != null) queuePlanner.retire();
+        if (bankedPerks != null) bankedPerks.retire();
+        if (usageEffects != null) usageEffects.retireAndClose();
+        else if (usageCharges != null) usageCharges.close();
 		for (Perk perk : getPerkHandler().getActivePerks()) {
-			getMcperksServerData().saveOfflinePerk(perk);
+			if (bankedPerks != null && bankedPerks.attached(perk)) continue;
+            getMcperksServerData().saveOfflinePerk(perk);
 			perk.deactivatePerk(perk.getActivater());
 		}
+        getMcperksServerData().saveData();
 		HandlerList.unregisterAll(plugin);
 		plugin = null;
 	}
 
 	@Override
 	public void onPostLoad() {
-		loadListeners();
+        int featureEpoch = ++featureLifecycle;
+        localStatistics.enabled(getConfigFile().getData().getBoolean("LocalStatistics.Enabled", false));
+        usageCharges = new com.bencodez.mcperks.userapi.UsageCharges(getDataFolder().toPath().resolve("usage-charges.dat"));
+        usageCharges.ready().exceptionally(error -> { getLogger().severe("Usage charge store unavailable; charged effects fail closed: " + error.getMessage()); return null; });
+		featureState = new com.bencodez.mcperks.data.FeatureState(getDataFolder().toPath().resolve("perk-features.dat"));
+        featureState.ready().exceptionally(error -> { getLogger().severe("Queue/bank store unavailable: " + error.getMessage()); return null; });
+        java.util.concurrent.CompletableFuture<Void> runtimeReady = mcperksServerData.initialize(featureState);
+        runtimeReady.exceptionally(error -> { getLogger().severe("ServerData startup reconciliation failed; queued activations remain unavailable"); return null; });
+        queuePlanner = new com.bencodez.mcperks.perk.QueuePlanner(this, featureState);
+        loadListeners();
 		perkHandler = new PerkHandler(this);
 		effectHandler = new EffectHandler(this);
+        usageEffects = new com.bencodez.mcperks.listeners.UsageEffectListener(this);
+        getServer().getPluginManager().registerEvents(usageEffects, this);
+        bankedPerks = new com.bencodez.mcperks.perk.BankedPerks(this, featureState);
+        getServer().getPluginManager().registerEvents(bankedPerks, this);
+        runtimeReady.thenRun(() -> {
+            if (featureEpoch != featureLifecycle || !isEnabled()) return;
+            getBukkitScheduler().runTask(this, () -> {
+            if (featureEpoch != featureLifecycle || !isEnabled()) return;
+            perkHandler.loadActivePerksConfirmed(this::restoreOfflinePerks).whenComplete((ignored, error) -> {
+                if (error != null) { getLogger().severe("Legacy perk restoration failed; queued starts and bank attachments remain unavailable: " + error.getMessage()); return; }
+                if (featureEpoch != featureLifecycle || !isEnabled()) return;
+                getBukkitScheduler().runTask(this, () -> {
+                    if (featureEpoch != featureLifecycle || !isEnabled()) return;
+                    for (Player player : Bukkit.getOnlinePlayers()) getBukkitScheduler().runTask(this, () -> bankedPerks.start(player), player);
+                    queuePlanner.refreshLegacyView(); queuePlanner.check(); queuePlanner.startChecks();
+                });
+            });
+        }); });
 
 		commandLoader = new CommandLoader(this);
 		commandLoader.loadCommands();
@@ -172,48 +228,6 @@ public class MCPerksMain extends AdvancedCorePlugin {
 			versionHandle = new Post123VersionHandle();
 		}
 
-		getBukkitScheduler().runTaskAsynchronously(this, new Runnable() {
-
-			@Override
-			public void run() {
-				if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk")) {
-					for (String uuid : getMcperksServerData().getData().getConfigurationSection("OfflinePerk")
-							.getKeys(false)) {
-						if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk." + uuid)) {
-							for (String perk : getMcperksServerData().getData()
-									.getConfigurationSection("OfflinePerk." + uuid).getKeys(false)) {
-
-								long timeLast = getMcperksServerData().getData()
-										.getLong("OfflinePerk." + uuid + "." + perk + ".Experiaton");
-								debug(uuid + "/" + perk + "/" + timeLast);
-								Timestamp timestamp = null;
-								if (timeLast > 0) {
-									timestamp = new Timestamp(timeLast);
-									timeLast = 0;
-								}
-								boolean activate = true;
-								if (timestamp != null) {
-									if (timestamp.after(new Timestamp(Calendar.getInstance().getTime().getTime()))) {
-										// not activating
-										activate = false;
-									}
-								}
-								if (activate) {
-									debug("Activating perk from shutdown " + perk + "/" + uuid + "/" + timeLast);
-									getPerkHandler().activePerk(getPerkHandler().getPerk(perk),
-											getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)),
-											(int) timeLast, timestamp);
-								}
-
-							}
-						}
-					}
-				}
-
-				getMcperksServerData().getData().set("OfflinePerk", null);
-				getMcperksServerData().saveData();
-			}
-		});
 
 		getJavascriptEngineRequests().add(new JavascriptPlaceholderRequest("MCPerks") {
 
@@ -476,13 +490,97 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	}
 
-	@Override
-	public void reload() {
+    private volatile com.bencodez.mcperks.data.OrderedServerDataFile orderedServerData;
+    @Override public com.bencodez.advancedcore.data.ServerData getServerDataFile() {
+        var original = super.getServerDataFile();
+        if (featureState == null && mcperksServerData != null && original != null)
+            mcperksServerData.observeNativePermissionSource(original.getData());
+        if (mcperksServerData == null || original == null || original.getData() == null) return original;
+        synchronized (mcperksServerData) {
+            if (orderedServerData == null) orderedServerData = new com.bencodez.mcperks.data.OrderedServerDataFile(this, original, mcperksServerData);
+            return orderedServerData;
+        }
+    }
+    @Override public com.bencodez.advancedcore.api.permissions.PermissionHandler getPermissionHandler() {
+        var handler = super.getPermissionHandler();
+        if (mcperksServerData != null && handler != null) mcperksServerData.observeNativePermissionHandler(handler);
+        return handler;
+    }
+    private void restoreOfflinePerks() {
+	if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk")) {
+		for (String uuid : getMcperksServerData().getData().getConfigurationSection("OfflinePerk")
+				.getKeys(false)) {
+			if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk." + uuid)) {
+				for (String perk : getMcperksServerData().getData()
+						.getConfigurationSection("OfflinePerk." + uuid).getKeys(false)) {
+
+					long timeLast = getMcperksServerData().getData()
+							.getLong("OfflinePerk." + uuid + "." + perk + ".Experiaton");
+					debug(uuid + "/" + perk + "/" + timeLast);
+					Timestamp timestamp = null;
+					if (timeLast > 0) {
+						timestamp = new Timestamp(timeLast);
+						timeLast = 0;
+					}
+					boolean activate = true;
+					if (timestamp != null) {
+						if (timestamp.after(new Timestamp(Calendar.getInstance().getTime().getTime()))) {
+							// not activating
+							activate = false;
+						}
+					}
+					var definition = getPerkHandler().getPerk(perk);
+                    if (definition == null || !definition.isEnabled()) {
+                        getLogger().warning("Skipping shutdown record for unavailable perk: " + perk);
+                        continue;
+                    }
+					if (activate) {
+						debug("Activating perk from shutdown " + perk + "/" + uuid + "/" + timeLast);
+						getPerkHandler().activePerk(definition,
+								getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)),
+								(int) timeLast, timestamp);
+					}
+
+				}
+			}
+		}
+	}
+
+	getMcperksServerData().clearOfflinePerks();
+	getMcperksServerData().saveData();
+    }
+
+    private final java.util.concurrent.atomic.AtomicBoolean reloadPending = new java.util.concurrent.atomic.AtomicBoolean();
+    @Override
+    public void reload() {
+        if (!reloadPending.compareAndSet(false, true)) return;
+        if (usageEffects != null) usageEffects.invalidate();
+        if (queuePlanner != null) queuePlanner.suspend();
+        // ServerData snapshots accepted before reload must publish before AdvancedCore reads its file.
+        var barrier = featureState == null ? java.util.concurrent.CompletableFuture.completedFuture(null) : featureState.runtimeStorage(() -> null);
+        barrier.whenComplete((ignored, error) -> {
+            if (error != null || !isEnabled()) {
+                reloadPending.set(false);
+                if (error != null) getLogger().warning("Reload postponed: pending ServerData publication could not drain");
+                if (queuePlanner != null) queuePlanner.resume();
+                return;
+            }
+            getBukkitScheduler().runTask(this, () -> {
+                try { reloadAfterDrain(); }
+                finally { reloadPending.set(false); if (queuePlanner != null) queuePlanner.resume(); }
+            });
+        });
+    }
+    private void reloadAfterDrain() {
+        if (usageEffects != null) usageEffects.invalidate();
+        if (queuePlanner != null) queuePlanner.invalidate();
 		configFile.reloadData();
+        localStatistics.enabled(getConfigFile().getData().getBoolean("LocalStatistics.Enabled", false));
 		perkSystemType = configFile.getPerkSystemType();
 		Lang.getInstance().reloadData();
 		mcperksServerData.reloadData();
 		getPerkHandler().reload();
+        if (bankedPerks != null) bankedPerks.reload();
 		commandLoader.loadTabComplete();
 		updateHook();
 		reloadAdvancedCore(true);
@@ -492,6 +590,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	 * Setup files.
 	 */
 	private void setupFiles() {
+        orderedServerData = null;
 		configFile = new Config(this);
 		configFile.setup();
 		Lang.getInstance().setup(this);

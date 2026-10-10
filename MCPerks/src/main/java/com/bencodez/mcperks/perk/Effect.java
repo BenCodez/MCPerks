@@ -113,7 +113,19 @@ public enum Effect {
 
 	AllRepair,
 
-	RandomAllRepair;
+	RandomAllRepair,
+
+	/** Refills a depleted held block stack from matching inventory items. */
+	AutoBlockRefill,
+
+	/** Mines a bounded connected group of configured blocks. */
+	VeinMining,
+
+	/** Harvests mature crops on right click and replants when possible. */
+	RightClickHarvest,
+
+	/** Suppresses configured MCPerks effects while sneaking. */
+	PrecisionMode;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {
