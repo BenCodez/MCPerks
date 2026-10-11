@@ -35,6 +35,25 @@ class RefillPlanTest {
         assertTrue(plan.apply()); assertEquals(7, slots[0].getAmount()); assertEquals(1, slots[40].getAmount());
         assertFalse(plan.apply()); // repeated callback cannot move another stack
     }
+    @Test void offhandRefillPreservesCustomMetadataAndNeverOverwritesAReplacement() {
+        ItemMeta metadata = mock(org.bukkit.inventory.meta.Damageable.class);
+        when(metadata.clone()).thenReturn(metadata);
+        when(metadata.hasCustomModelData()).thenReturn(true);
+        when(metadata.getCustomModelData()).thenReturn(1234);
+        ItemStack custom = stack(4); custom.setItemMeta(metadata);
+        slots[2] = custom;
+        ItemStack placed = custom.clone(); placed.setAmount(1);
+        RefillPlan plan = RefillPlan.capture(inventory, EquipmentSlot.OFF_HAND, placed);
+        assertNotNull(plan);
+        slots[40] = new ItemStack(Material.DIRT, 1);
+        assertFalse(plan.apply()); assertEquals(4, slots[2].getAmount());
+        slots[40] = null;
+        assertTrue(plan.apply());
+        assertTrue(placed.isSimilar(slots[40]));
+        assertEquals(1234, slots[40].getItemMeta().getCustomModelData());
+        assertEquals(1, slots[40].getAmount()); assertEquals(3, slots[2].getAmount());
+        assertFalse(plan.apply()); assertEquals(3, slots[2].getAmount());
+    }
     @Test void lastSourceItemIsRemovedAndMainHandRefillsAfterVanillaConsumption() {
         slots[0] = stack(1); slots[2] = stack(1);
         RefillPlan plan = RefillPlan.capture(inventory, EquipmentSlot.HAND, slots[0]);

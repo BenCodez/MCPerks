@@ -151,6 +151,25 @@ class UsageEffectListenerTest {
         assertEquals(2, items[1].getAmount()); assertEquals(1, charges.get(owner, Kind.RightClickHarvest)); assertEquals(1, charges.successful(owner, Kind.RightClickHarvest));
         verify(block).setBlockData(any(Ageable.class)); verify((Ageable) block.getBlockData()).setAge(0); verify(player, times(1)).breakBlock(block);
     }
+    @Test void nativeHarvestReplacementIsPreservedWithoutRefundingAnUncertainSideEffect() throws Exception {
+        charges.set(owner, Kind.RightClickHarvest, 2).get();
+        items[0] = new ItemStack(Material.STONE); items[1] = new ItemStack(Material.WHEAT_SEEDS, 3);
+        Block block = crop();
+        when(player.breakBlock(block)).thenAnswer(i -> {
+            // A different native-break listener owns this replacement after the break succeeds.
+            when(block.getType()).thenReturn(Material.STONE);
+            return true;
+        });
+        listener.harvest(harvest(block)); next().run(); next().run(); barrier(Kind.RightClickHarvest);
+        assertEquals(Material.STONE, block.getType());
+        verify(block, never()).setBlockData(any());
+        verify(player, times(1)).breakBlock(block);
+        assertEquals(2, items[1].getAmount());
+        assertEquals(1, charges.get(owner, Kind.RightClickHarvest));
+        assertEquals(0, charges.successful(owner, Kind.RightClickHarvest));
+        assertEquals(LocalStatistics.Skip.UNCERTAIN, listener.recentSkip(owner).reason());
+        assertTrue(tasks.isEmpty());
+    }
     @Test void ambiguousSharedChargeOwnerIsRejectedWhileLegacyUnlimitedRemainsAvailable() throws Exception {
         when(perk.getPerkType()).thenReturn(PerkSystemType.ALL); items[0] = new ItemStack(Material.STONE, 8);
         listener.refill(place()); assertTrue(tasks.isEmpty());
