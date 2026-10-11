@@ -398,7 +398,17 @@ class BankedPerksTest {
         doCallRealMethod().when(source).runPerk(any()); doCallRealMethod().when(source).executeConfirmed(any(),anyInt());
         return cache;
     }
-    @AfterEach void close() { banked.retire(); state.close(); }
+    @AfterEach void close() throws Exception {
+        // Some cases intentionally fail checkpoint publication. Wait for either outcome
+        // and for the real bounded worker to stop before JUnit removes its directory.
+        try { banked.retireAsync().handle((ignored, failure) -> null).get(5, TimeUnit.SECONDS); }
+        finally {
+            state.close();
+            var field = FeatureState.class.getDeclaredField("worker"); field.setAccessible(true);
+            assertTrue(((ExecutorService) field.get(state)).awaitTermination(5, TimeUnit.SECONDS),
+                    "feature storage worker must stop before temporary-directory cleanup");
+        }
+    }
     @Test void concurrentPauseWaitsForPulseCheckpointDebitAdmission() throws Exception {
         var checkpointEntered = new CountDownLatch(1); var releaseCheckpoint = new CountDownLatch(1);
         state = spy(state); when(plugin.getFeatureState()).thenReturn(state); when(plugin.getQueuePlanner()).thenReturn(new QueuePlanner(plugin, state));

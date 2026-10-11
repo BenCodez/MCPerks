@@ -11,7 +11,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.data.FeatureState;
 import com.bencodez.mcperks.data.ServerData;
@@ -25,6 +24,7 @@ class PerkDiagnosticsTest {
     private Perk perk(String name, UUID owner, boolean charged, Effect effect) {
         Perk perk = mock(Perk.class);
         when(perk.getPerk()).thenReturn(name);
+        doCallRealMethod().when(perk).isActivationLimitReached(anyInt());
         when(perk.getPerkType()).thenReturn(PerkSystemType.PLAYER);
         when(perk.getEffectedPlayers()).thenReturn(new ArrayList<>(List.of(owner.toString())));
         when(perk.getEffects()).thenReturn(new ArrayList<>(List.of(effect)));
@@ -34,8 +34,14 @@ class PerkDiagnosticsTest {
         return perk;
     }
 
-    @ParameterizedTest @ValueSource(booleans = {true, false})
-    void explainUsesRetainedGameplayOptionsAfterReloadAndStaysReadOnly(boolean retainedCharged) throws Exception {
+    private enum ReloadedPolicy { WORLD_BLOCKED, LIMIT_REACHED, WORLD_ALLOWED }
+    private static java.util.stream.Stream<org.junit.jupiter.params.provider.Arguments> reloadedPolicies() {
+        return Arrays.stream(ReloadedPolicy.values()).flatMap(policy -> java.util.stream.Stream.of(false, true)
+                .map(charged -> org.junit.jupiter.params.provider.Arguments.of(charged, policy)));
+    }
+
+    @ParameterizedTest @org.junit.jupiter.params.provider.MethodSource("reloadedPolicies")
+    void explainUsesRetainedGameplayOptionsAfterReloadAndStaysReadOnly(boolean retainedCharged, ReloadedPolicy policy) throws Exception {
         UUID owner = UUID.randomUUID(), other = UUID.randomUUID();
         try (FeatureState state = new FeatureState(directory.resolve("features.dat"));
              UsageCharges charges = new UsageCharges(directory.resolve("charges.dat"))) {
@@ -52,6 +58,13 @@ class PerkDiagnosticsTest {
             Perk retained = perk("refill", owner, retainedCharged, Effect.AutoBlockRefill);
             // Reload can change both options and the effect list; the running clone is authoritative.
             Perk reloaded = perk("refill", owner, !retainedCharged, Effect.NoFallDamage);
+            when(retained.isNotInDisabledWorld("world")).thenReturn(policy != ReloadedPolicy.WORLD_ALLOWED);
+            when(reloaded.isNotInDisabledWorld("world")).thenReturn(policy != ReloadedPolicy.WORLD_BLOCKED);
+            when(reloaded.getLimit()).thenReturn(policy == ReloadedPolicy.LIMIT_REACHED ? 3 : 0);
+            when(user.getPerkTimesUsed(reloaded)).thenReturn(policy == ReloadedPolicy.LIMIT_REACHED ? 3 : 0);
+            // Run the same limit predicate used by actual new activation requests.
+            doCallRealMethod().when(reloaded).checkTimesUsed(user);
+
             Perk unrelated = perk("other", other, true, Effect.AutoBlockRefill);
             Perk configuredOther = perk("other", owner, false, Effect.NoFallDamage);
             PerkHandler handler = mock(PerkHandler.class);
@@ -79,6 +92,12 @@ class PerkDiagnosticsTest {
             verify(player, never()).getWorld(); verify(sender, never()).sendMessage(anyString());
             render.run(); Objects.requireNonNull(replies.poll(5, TimeUnit.SECONDS)).run();
             assertTrue(messages.stream().anyMatch(s -> s.startsWith("refill (retained active grant)")));
+            String activation = messages.stream().filter(s -> s.startsWith("refill (retained active grant)")).findFirst().orElseThrow();
+            String expected = policy == ReloadedPolicy.WORLD_BLOCKED ? "disabled world"
+                    : policy == ReloadedPolicy.LIMIT_REACHED ? "activation limit" : "activation checks passed";
+            assertTrue(activation.contains(expected), activation);
+            assertEquals(policy != ReloadedPolicy.LIMIT_REACHED, reloaded.checkTimesUsed(user));
+
             assertFalse(messages.stream().anyMatch(s -> s.startsWith("refill (configured definition)")));
             assertTrue(messages.stream().anyMatch(s -> s.startsWith("other (configured definition)")));
             String refill = messages.stream().filter(s -> s.startsWith("  AutoBlockRefill:")).findFirst().orElseThrow();

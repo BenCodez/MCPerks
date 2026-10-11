@@ -382,13 +382,13 @@ public class Perk {
 		if (getLimit() == 0) {
 			return true;
 		}
-		int used = user.getPerkTimesUsed(this);
-		if (used >= getLimit()) {
-
-			return false;
-		}
-		return true;
+		return !isActivationLimitReached(user.getPerkTimesUsed(this));
 	}
+
+    /** Read-only activation rule shared with diagnostics using captured storage state. */
+    public boolean isActivationLimitReached(int used) {
+        return getLimit() != 0 && used >= getLimit();
+    }
 
 	@Override
 	public Perk clone() {

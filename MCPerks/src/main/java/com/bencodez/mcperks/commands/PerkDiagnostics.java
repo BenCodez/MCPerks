@@ -33,7 +33,7 @@ public final class PerkDiagnostics {
             List<Stored> stored = new ArrayList<>();
             for (Perk perk : perks) {
                 Perk activation = definitions.getOrDefault(perk.getPerk(), perk);
-                stored.add(new Stored(perk, Math.max(user.getPerkCoolDown(perk), plugin.getMcperksServerData().getData().getLong(perk.getPerk()+".CoolDown", 0)), user.getPerkTimesUsed(perk), user.getActivations(perk.getPerk()), retained.contains(perk), activation, activation.isPerkActive(user)));
+                stored.add(new Stored(perk, Math.max(user.getPerkCoolDown(perk), plugin.getMcperksServerData().getData().getLong(perk.getPerk()+".CoolDown", 0)), user.getPerkTimesUsed(activation), user.getActivations(perk.getPerk()), retained.contains(perk), activation, activation.isPerkActive(user)));
             }
             return new Object[] { stored, user.getActivations(), user.isIgnorePerkEffects() };
         }).whenComplete((result, error) -> {
@@ -56,10 +56,10 @@ public final class PerkDiagnostics {
                     boolean duplicate = !plugin.getConfigFile().getAllowDuplicatePerksActive()
                             && (data.alreadyActive() || bank != null && bank.milliseconds() > 0
                                 && data.activation().getInteractionOptions().banked());
-                    String reason = !permission ? "missing activation permission" : !perk.isNotInDisabledWorld(player.getWorld().getName()) ? "disabled world"
+                    String reason = !permission ? "missing activation permission" : !data.activation().isNotInDisabledWorld(player.getWorld().getName()) ? "disabled world"
                             : duplicate ? "already active; duplicate activations disabled"
                             : !bypass && data.cooldown() > System.currentTimeMillis() ? "cooldown " + (data.cooldown()-System.currentTimeMillis())/1000 + "s"
-                            : perk.getLimit() > 0 && data.used() >= perk.getLimit() ? "activation limit"
+                            : data.activation().isActivationLimitReached(data.used()) ? "activation limit"
                             : plugin.getConfigFile().getLimitPermission() && permissionLimit >= 0
                                 && plugin.getPerkHandler().getActivePerks().stream().filter(p -> p.getEffectedPlayers().contains(owner.toString())).count() >= permissionLimit ? "permission perk limit"
                             : plugin.getConfigFile().getLimitActivations() && personal <= 0 && global <= 0 ? "no unreserved activation" : "activation checks passed";
