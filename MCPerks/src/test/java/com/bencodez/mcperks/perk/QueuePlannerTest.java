@@ -784,7 +784,7 @@ class QueuePlannerTest {
                 (cleanup, context) -> doAnswer(call -> {
                     plugin.onBeforeStorageShutdown().toCompletableFuture().get(5, TimeUnit.SECONDS);
                     retired.set(true); plugin.onUnLoad(); plugin.onShutdownComplete(); return null;
-                }).when(cleanup).shutdown())) {
+                }).when(cleanup).shutdown(anyLong()))) {
             doCallRealMethod().when(plugin).onUnLoad(); doCallRealMethod().when(plugin).onDisable();
             doCallRealMethod().when(plugin).onBeforeStorageShutdown(); doCallRealMethod().when(plugin).onShutdownComplete();
             assertDoesNotThrow(plugin::onDisable);
@@ -833,7 +833,7 @@ class QueuePlannerTest {
                     assertFalse(plugin.onBeforeStorageShutdown().toCompletableFuture().isDone());
                     // Native primary-thread cleanup does not synchronously wait for storage.
                     plugin.onUnLoad(); plugin.onShutdownComplete(); return null;
-                }).when(cleanup).shutdown())) {
+                }).when(cleanup).shutdown(anyLong()))) {
             doCallRealMethod().when(plugin).onUnLoad(); doCallRealMethod().when(plugin).onDisable();
             doCallRealMethod().when(plugin).onBeforeStorageShutdown(); doCallRealMethod().when(plugin).onShutdownComplete();
             plugin.onDisable();
@@ -867,7 +867,7 @@ class QueuePlannerTest {
                     plugin.getServerDataFile().saveData();
                     plugin.onShutdownComplete();
                     return null;
-                }).when(cleanup).shutdown())) {
+                }).when(cleanup).shutdown(anyLong()))) {
             assertTrue(entered.await(5,TimeUnit.SECONDS));
             doCallRealMethod().when(plugin).onUnLoad(); doCallRealMethod().when(plugin).onDisable();
             doCallRealMethod().when(plugin).onShutdownComplete(); plugin.onDisable();

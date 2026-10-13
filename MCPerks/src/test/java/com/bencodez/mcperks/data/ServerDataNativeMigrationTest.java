@@ -198,6 +198,59 @@ class ServerDataNativeMigrationTest {
         live.loadFromString(Files.readString(file())); var restarted = restoreNative();
         assertFalse(restarted.getPermsToAdd().containsKey(revoked)); assertTrue(restarted.getPermsToAdd().containsKey(retained));
     }
+    @Test void actualAsyncFinalPermissionSaveUsesOrderedOwnerAndRetainsPendingNodesWithoutRevocationReplay() throws Exception {
+        UUID retained = UUID.randomUUID(), revoked = UUID.randomUUID(), online = UUID.randomUUID();
+        long now = System.currentTimeMillis();
+        var yaml = permissionRows(retained, "perk.retained", now + 600_000);
+        yaml.set("TimedPermissions." + revoked, List.of("perk.revoked%line%" + (now + 600_000)));
+        yaml.set("TimedPermissions." + online, List.of("perk.online%line%" + (now + 600_000)));
+        legacy(yaml); var handler = restoreNative(); login(handler, online);
+        await(runtime.initialize(state));
+        handler.removePermission(revoked, null, "perk.revoked");
+        handler.addPermission(retained, "perk.retained", com.bencodez.simpleapi.time.ParsedDuration.ofMillis(1_200_000));
+        assertTrue(nativePending(handler, retained).containsKey("perk.retained"));
+        byte[] before = Files.readAllBytes(file());
+        var entered = new CountDownLatch(1); var release = new CountDownLatch(1);
+        var blocker = state.runtimeStorage(() -> {
+            entered.countDown();
+            try { if (!release.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("test timeout"); }
+            catch (InterruptedException failure) { throw new CompletionException(failure); }
+            return null;
+        });
+        try {
+            assertTrue(entered.await(10, TimeUnit.SECONDS));
+            var finalWorker = new ArrayDeque<Runnable>();
+            var finalFiles = handler.shutDownAsync(finalWorker::add).toCompletableFuture();
+            assertTrue(handler.getTimer().isShutdown());
+            assertFalse(finalFiles.isDone()); assertEquals(1, finalWorker.size());
+            var ownerField = MCPerksMain.class.getDeclaredField("featureState"); ownerField.setAccessible(true); ownerField.set(plugin, state);
+            var preparationField = MCPerksMain.class.getDeclaredField("shutdownPreparation"); preparationField.setAccessible(true);
+            preparationField.set(plugin, CompletableFuture.completedFuture(null));
+            doCallRealMethod().when(plugin).onShutdownComplete(any(java.util.concurrent.CompletionStage.class));
+            doCallRealMethod().when(plugin).onShutdownComplete();
+            plugin.onShutdownComplete(finalFiles);
+            finalWorker.remove().run(); // Production PermissionHandler -> OrderedServerDataFile -> runtime owner.
+            assertFalse(finalFiles.isDone()); assertArrayEquals(before, Files.readAllBytes(file()));
+            var laterAccepted = state.runtimeStorage(() -> null);
+            release.countDown(); await(blocker); await(finalFiles); await(laterAccepted);
+            var written = disk();
+            assertTrue(written.getStringList("TimedPermissions." + revoked).isEmpty());
+            var pending = written.getStringList("TimedPermissions." + retained);
+            assertEquals(1, pending.size()); assertTrue(pending.getFirst().startsWith("perk.retained%line%"));
+            assertTrue(Long.parseLong(pending.getFirst().split("%line%")[1]) >= now + 1_200_000);
+            assertEquals(1, written.getStringList("TimedPermissions." + online).size());
+            assertTrue(Files.readString(file()).startsWith("# MCPerks ordered ServerData v1"));
+            assertEquals(1234, written.getLong("Experation.legacy"));
+            assertEquals(5678, written.getLong("legacy.CoolDown"));
+            try (FeatureState successor = new FeatureState(directory.resolve("features.dat"))) { await(successor.ready()); }
+            live.loadFromString(Files.readString(file())); var restarted = restoreNative();
+            assertFalse(restarted.getPermsToAdd().containsKey(revoked));
+            assertTrue(nativePending(restarted, retained).containsKey("perk.retained"));
+            assertTrue(nativePending(restarted, online).containsKey("perk.online"));
+            verify(originalFile, never()).saveData(); verify(originalFile, never()).saveDataChecked();
+        } finally { release.countDown(); }
+    }
+
     @Test void genericEmptyCacheWithoutNativeHandlerDoesNotClearRecoveredPermissions() throws Exception {
         UUID owner = UUID.randomUUID(); legacy(permissionRows(owner, "perk.recovered", System.currentTimeMillis() + 600_000));
         live.set("TimedPermissions", null); await(runtime.initialize(state));

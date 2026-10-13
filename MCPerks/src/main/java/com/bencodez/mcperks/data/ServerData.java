@@ -88,7 +88,11 @@ public class ServerData {
             return Collections.unmodifiableMap(copy);
         }
         if (value instanceof List<?> list) return Collections.unmodifiableList(list.stream().map(ServerData::snapshotValue).toList());
-        if (value instanceof java.util.Date date) return date.toInstant();
+        // YAML narrows small integral values to Integer. Compare their exact
+        // 64-bit meaning without coercing floating-point values or large Longs.
+        if (value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long)
+            return ((Number) value).longValue();
+        if (value instanceof java.util.Date date) return new java.util.Date(date.getTime());
         return value;
     }
     private record CalendarChange(int field, long edit, Object after) {}
@@ -370,13 +374,141 @@ public class ServerData {
             return;
         }
         if (plugin.getFeatureState() == null) { plugin.getServerDataFile().saveData(); return; }
+        confirmedFinalMutation(data -> {}).exceptionally(error -> {
+            plugin.getLogger().warning("ServerData persistence failed: " + error.getMessage()); return null;
+        });
+    }
+
+    /** Stages private mutations; only successful ordered publication changes the live YAML. */
+    public synchronized CompletableFuture<Void> confirmedFinalMutation(
+            java.util.function.Consumer<FileConfiguration> mutation) {
+        if (!canonicalLoaded || plugin.getFeatureState() == null)
+            return CompletableFuture.failedFuture(new IllegalStateException("ServerData persistence owner unavailable"));
+        if (activationWrites.get() != null)
+            return CompletableFuture.failedFuture(new IllegalStateException("Final save inside activation persistence"));
+        if (pendingUpdates.size() >= 256)
+            return CompletableFuture.failedFuture(new IllegalStateException("Snapshot staging capacity exceeded"));
+        try {
+            String serialized = getData().saveToString();
+            var baseline = parse(serialized);
+            var candidate = new FinalMutationYaml();
+            candidate.loadFromString(serialized);
+            candidate.recording = true;
+            try {
+                java.util.Objects.requireNonNull(mutation, "mutation").accept(candidate);
+                reconcileFinalPermissions(candidate);
+            } finally { candidate.recording = false; }
+            byte[] snapshot = snapshotBytes(candidate);
+            var values = new LinkedHashMap<String, Object>();
+            // An explicit same-value write still owns its path. Ordinary empty saves
+            // own no paths, so confirmed predecessors remain available for rebasing.
+            candidate.writtenPaths.forEach(path -> values.put(path, snapshotValue(candidate.get(path))));
+            var paths = new HashSet<>(baseline.getKeys(false)); paths.addAll(candidate.getKeys(false));
+            for (String path : paths) collectFinalChanges(path, snapshotValue(baseline.get(path)),
+                    snapshotValue(candidate.get(path)), candidate.writtenPaths, values);
+            var update = new SnapshotUpdate(values, getData(), true);
+            pendingUpdates.add(update);
+            return publishSnapshot(snapshot, List.of(), pendingCalendar, calendarEdits.clone(), null, update);
+        } catch (Throwable failure) { return CompletableFuture.failedFuture(failure); }
+    }
+
+    /** Mutation intent is local to one private candidate, never another storage owner. */
+    private static final class FinalMutationYaml extends org.bukkit.configuration.file.YamlConfiguration {
+        private final NavigableSet<String> writtenPaths = new TreeSet<>();
+        private long writtenPathBytes;
+        private boolean recording;
+        private int internalWrites;
+        private <T> T write(org.bukkit.configuration.ConfigurationSection section, String path,
+                java.util.function.Supplier<T> action) {
+            if (recording && internalWrites == 0) {
+                String fullPath = org.bukkit.configuration.MemorySection.createPath(section, path);
+                recordPath(fullPath);
+            }
+            internalWrites++;
+            try { return action.get(); }
+            finally { internalWrites--; }
+        }
+        private void recordPath(String path) {
+            writtenPathBytes = captureMutationPath(writtenPaths, writtenPathBytes, path, true);
+        }
+        private org.bukkit.configuration.ConfigurationSection trackedSection(org.bukkit.configuration.ConfigurationSection section) {
+            if (section instanceof FinalMutationSection) return section;
+            var tracked = new FinalMutationSection(section.getParent(), section.getName(), this);
+            section.getParent().set(section.getName(), tracked);
+            return tracked;
+        }
+        @Override public void set(String path, Object value) {
+            write(this, path, () -> { super.set(path, value); return null; });
+        }
+        @Override public org.bukkit.configuration.ConfigurationSection createSection(String path) {
+            return write(this, path, () -> trackedSection(super.createSection(path)));
+        }
+    }
+    private static long captureMutationPath(NavigableSet<String> paths, long bytes, String path, boolean record) {
+        if (ownsPath(paths, path)) return bytes;
+        String prefix = path.isEmpty() ? "" : path + ".";
+        long retainedBytes = bytes;
+        for (String field : paths.tailSet(prefix, true)) {
+            if (!field.startsWith(prefix)) break;
+            retainedBytes -= mutationPathBytes(field);
+        }
+        long nextBytes = retainedBytes + mutationPathBytes(path);
+        // Bound even repeated absent clears, whose final YAML contains no values.
+        if (nextBytes > MAX_SNAPSHOT_BYTES) throw new IllegalStateException("Mutation path capacity exceeded");
+        if (record) {
+            var descendants = paths.tailSet(prefix, true).iterator();
+            while (descendants.hasNext()) {
+                if (!descendants.next().startsWith(prefix)) break;
+                descendants.remove();
+            }
+            paths.add(path);
+        }
+        return nextBytes;
+    }
+    private static long mutationPathBytes(String path) {
+        return (long) path.getBytes(StandardCharsets.UTF_8).length + 16;
+    }
+    private static boolean ownsPath(Set<String> paths, String path) {
+        if (paths.contains("") || paths.contains(path)) return true;
+        for (int end = path.indexOf('.'); end >= 0; end = path.indexOf('.', end + 1))
+            if (paths.contains(path.substring(0, end))) return true;
+        return false;
+    }
+
+    private static final class FinalMutationSection extends org.bukkit.configuration.MemorySection {
+        private final FinalMutationYaml owner;
+        private FinalMutationSection(org.bukkit.configuration.ConfigurationSection parent, String path, FinalMutationYaml owner) {
+            super(parent, path); this.owner = owner;
+        }
+        @Override public void set(String path, Object value) {
+            owner.write(this, path, () -> { super.set(path, value); return null; });
+        }
+        @Override public org.bukkit.configuration.ConfigurationSection createSection(String path) {
+            return owner.write(this, path, () -> owner.trackedSection(super.createSection(path)));
+        }
+    }
+    private static void collectFinalChanges(String path, Object before, Object after,
+            Set<String> explicitPaths, Map<String, Object> values) {
+        if (Objects.equals(before, after) || explicitPaths.stream()
+                .anyMatch(field -> path.equals(field) || path.startsWith(field + "."))) return;
+        // Descend only where the consumer made narrower writes. In particular,
+        // advisory-history pruning remains one bounded section replacement.
+        if (explicitPaths.stream().anyMatch(field -> field.startsWith(path + "."))
+                && (before == null || before instanceof Map<?, ?>) && after instanceof Map<?, ?> next) {
+            Map<?, ?> previous = before instanceof Map<?, ?> map ? map : Map.of();
+            var keys = new LinkedHashSet<Object>(previous.keySet()); keys.addAll(next.keySet());
+            for (Object key : keys) collectFinalChanges(path + "." + key, previous.get(key), next.get(key), explicitPaths, values);
+        } else values.put(path, after);
+    }
+
+    private void reconcileFinalPermissions(FileConfiguration candidate) {
         // Native final save omits still-offline relative reservations from its timed-only snapshot.
         // Preserve those native-owned rows (and remove revoked ones) after its timer is retired.
         var handler = plugin.getPermissionHandler();
         if (handler != null && handler == observedNativeHandler && handler.getTimer().isShutdown()) {
             try {
                 var snapshot = nativePermissionSnapshot(handler); long now = System.currentTimeMillis();
-                getData().set("TimedPermissions", null);
+                candidate.set("TimedPermissions", null);
                 for (var owner : snapshot.entrySet()) {
                     Map<String, Long> timed = new HashMap<>(owner.getValue().timed());
                     owner.getValue().pending().forEach((node, duration) -> {
@@ -384,13 +516,12 @@ public class ServerData {
                     });
                     List<String> rows = new ArrayList<>();
                     timed.forEach((node, expiry) -> { if (expiry > now) rows.add(node + "%line%" + expiry); });
-                    if (!rows.isEmpty()) getData().set("TimedPermissions." + owner.getKey(), rows);
+                    if (!rows.isEmpty()) candidate.set("TimedPermissions." + owner.getKey(), rows);
                 }
             } catch (RuntimeException failure) {
-                plugin.getLogger().warning("ServerData persistence failed: native final permission snapshot unavailable: " + failure.getMessage()); return;
+                throw new IllegalStateException("Native final permission snapshot unavailable", failure);
             }
         }
-        persistSnapshot(List.of()).exceptionally(error -> { plugin.getLogger().warning("ServerData persistence failed: " + error.getMessage()); return null; });
     }
     /** Gameplay stays on the caller's owner. No mutable YAML reaches the worker. */
     public synchronized CompletableFuture<Void> confirmedActivation(Runnable gameplay) {
@@ -402,38 +533,140 @@ public class ServerData {
         finally { activationWrites.remove(); }
     }
 
+    // Admission metadata for this owner's existing ordered worker, shared by
+    // activations and final mutations. It is not another persistence queue.
+    private final List<SnapshotUpdate> pendingUpdates = new ArrayList<>();
+    private static final class SnapshotUpdate {
+        private final Map<String, Object> values;
+        private final Map<String, Object> before;
+        private final boolean candidateIncludesChanges;
+        private final NavigableSet<String> edited = new TreeSet<>();
+        private long editedPathBytes;
+        private volatile boolean published;
+        private SnapshotUpdate(Map<String, ?> values, FileConfiguration live, boolean candidateIncludesChanges) {
+            var copied = new LinkedHashMap<String, Object>();
+            values.forEach((path, value) -> copied.put(path, snapshotValue(value)));
+            this.values = Collections.unmodifiableMap(copied);
+            this.before = new HashMap<>();
+            this.candidateIncludesChanges = candidateIncludesChanges;
+            values.keySet().forEach(path -> before.put(path, snapshotValue(live.get(path))));
+        }
+        private void apply(FileConfiguration target, Set<String> capturedEdits) {
+            values.forEach((path, value) -> {
+                if (!ownsPath(capturedEdits, path) && Objects.equals(snapshotValue(target.get(path)), before.get(path))) {
+                    target.set(path, null);
+                    if (value instanceof Map<?, ?> map) setSection(target.createSection(path), map);
+                    else if (value != null) target.set(path, value);
+                }
+            });
+        }
+        private void commit(FileConfiguration target, List<SnapshotView> predecessors) {
+            values.forEach((path, value) -> {
+                if (ownsPath(edited, path)) return;
+                Set<String> protectedPaths = descendantsOf(edited, path);
+                // A newer child edit protects only that child; the acknowledged
+                // parent can still publish all of its unrelated siblings.
+                if (matchesBeforeOrPredecessor(target, path, predecessors, protectedPaths))
+                    putRetainingPaths(target, path, value, protectedPaths, target);
+            });
+        }
+        private void rebase(FileConfiguration target, Set<String> capturedEdits,
+                List<SnapshotView> predecessors, SnapshotUpdate candidate) {
+            values.forEach((path, value) -> {
+                if (ownsPath(capturedEdits, path)) return;
+                Set<String> protectedPaths = descendantsOf(capturedEdits, path);
+                if (candidate != null && candidate.candidateIncludesChanges) {
+                    // A later parent replacement owns this whole field. Narrower later
+                    // writes protect only their own paths, retaining unrelated siblings.
+                    if (ownsPath(candidate.values.keySet(), path)) return;
+                    protectedPaths.addAll(descendantsOf(candidate.values.keySet(), path));
+                }
+                if (matchesBeforeOrPredecessor(target, path, predecessors, protectedPaths))
+                    putRetainingPaths(target, path, value, protectedPaths, target);
+            });
+        }
+        private static Set<String> descendantsOf(Set<String> paths, String path) {
+            return paths.stream().filter(field -> field.startsWith(path + "."))
+                    .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        }
+        private static void putRetainingPaths(FileConfiguration target, String path, Object value,
+                Set<String> protectedPaths, FileConfiguration source) {
+            var retained = new LinkedHashMap<String, Object>();
+            protectedPaths.forEach(field -> retained.put(field, snapshotValue(source.get(field))));
+            putValue(target, path, value);
+            retained.forEach((field, retainedValue) -> putValue(target, field, retainedValue));
+        }
+        private boolean matchesBeforeOrPredecessor(FileConfiguration target, String path, List<SnapshotView> predecessors) {
+            return matchesBeforeOrPredecessor(target, path, predecessors, Set.of());
+        }
+        private boolean matchesBeforeOrPredecessor(FileConfiguration target, String path,
+                List<SnapshotView> predecessors, Set<String> protectedPaths) {
+            Object current = withoutProtectedPaths(snapshotValue(target.get(path)), path, protectedPaths);
+            if (Objects.equals(current, withoutProtectedPaths(before.get(path), path, protectedPaths))) return true;
+            // Parent and child mutations can overlap without sharing an exact map key.
+            // Project only successfully published predecessors over our original value.
+            var expected = new org.bukkit.configuration.file.YamlConfiguration();
+            putValue(expected, path, before.get(path));
+            for (SnapshotView view : predecessors) {
+                if (view.update() == this) break;
+                if (!view.update().published) continue;
+                view.update().values.forEach((field, value) -> {
+                    if (!ownsPath(view.edits(), field) && (field.equals(path)
+                            || field.startsWith(path + ".") || path.startsWith(field + ".")))
+                        putRetainingPaths(expected, field, value, descendantsOf(view.edits(), field), target);
+                });
+                if (Objects.equals(current, withoutProtectedPaths(snapshotValue(expected.get(path)), path, protectedPaths))) return true;
+            }
+            return false;
+        }
+        private static Object withoutProtectedPaths(Object value, String path, Set<String> protectedPaths) {
+            if (protectedPaths.isEmpty()) return value;
+            if (ownsPath(protectedPaths, path)) return null;
+            if (!(value instanceof Map<?, ?> map)) return value;
+            var remaining = new LinkedHashMap<Object, Object>();
+            map.forEach((key, child) -> {
+                Object retained = withoutProtectedPaths(child, path + "." + key, protectedPaths);
+                if (retained != null) remaining.put(key, retained);
+            });
+            // Empty parents created only for a protected child do not change its siblings.
+            return remaining.isEmpty() ? null : remaining;
+        }
+        private static void putValue(FileConfiguration target, String path, Object value) {
+            target.set(path, null);
+            if (value instanceof Map<?, ?> map) setSection(target.createSection(path), map);
+            else if (value != null) target.set(path, value);
+        }
+        private static void setSection(org.bukkit.configuration.ConfigurationSection target, Map<?, ?> values) {
+            values.forEach((key, value) -> {
+                String path = key.toString();
+                if (value instanceof Map<?, ?> map) setSection(target.createSection(path), map);
+                else target.set(path, value);
+            });
+        }
+    }
+    private record SnapshotView(SnapshotUpdate update, Set<String> edits) {}
+    private void activationEdited(String path) {
+        // Check every owner before recording intent: rejected writes cannot leave
+        // partial edit fences on an earlier acknowledged publication.
+        for (SnapshotUpdate update : pendingUpdates) {
+            if (update.values.keySet().stream().anyMatch(field -> path.isEmpty() || field.equals(path)
+                    || field.startsWith(path + ".") || path.startsWith(field + ".")))
+                captureMutationPath(update.edited, update.editedPathBytes, path, false);
+        }
+        for (SnapshotUpdate update : pendingUpdates) {
+            if (update.values.keySet().stream().anyMatch(field -> path.isEmpty() || field.equals(path)
+                    || field.startsWith(path + ".") || path.startsWith(field + ".")))
+                update.editedPathBytes = captureMutationPath(update.edited, update.editedPathBytes, path, true);
+        }
+    }
+    private List<SnapshotView> snapshotViews() {
+        return pendingUpdates.stream().map(update -> new SnapshotView(update, Set.copyOf(update.edited))).toList();
+    }
     /**
      * Publishes activation admission before running any effect, reward, or command hook.
      * The gameplay callback is returned to the Bukkit/Folia owner after storage has
      * acknowledged both the shared snapshot and any caller-owned state.
      */
-    private final List<ActivationUpdate> pendingActivations = new ArrayList<>();
-    private static final class ActivationUpdate {
-        private final Map<String, Long> values;
-        private final Map<String, Object> before;
-        private final Set<String> edited = new HashSet<>();
-        private volatile boolean published;
-        private ActivationUpdate(Map<String, Long> values, FileConfiguration live) {
-            this.values = Map.copyOf(values);
-            this.before = new HashMap<>();
-            values.keySet().forEach(path -> before.put(path, live.get(path)));
-        }
-        private void apply(FileConfiguration target, Set<String> capturedEdits) {
-            values.forEach((path, value) -> {
-                if (!capturedEdits.contains(path) && Objects.equals(target.get(path), before.get(path)))
-                    target.set(path, value);
-            });
-        }
-    }
-    private record ActivationView(ActivationUpdate update, Set<String> edits) {}
-    private void activationEdited(String path) {
-        for (ActivationUpdate update : pendingActivations)
-            for (String field : update.values.keySet())
-                if (path.isEmpty() || field.equals(path) || field.startsWith(path + ".")) update.edited.add(field);
-    }
-    private List<ActivationView> activationViews() {
-        return pendingActivations.stream().map(update -> new ActivationView(update, Set.copyOf(update.edited))).toList();
-    }
     public synchronized CompletableFuture<Void> confirmedActivationBeforeGameplay(Map<String, Long> fields,
             java.util.function.Supplier<CompletableFuture<Void>> callerStorage, Runnable gameplay,
             org.bukkit.entity.Entity owner) {
@@ -449,16 +682,16 @@ public class ServerData {
     private synchronized CompletableFuture<Void> prepareActivation(Map<String, Long> fields,
             java.util.function.Supplier<CompletableFuture<Void>> callerStorage, org.bukkit.entity.Entity owner) {
         if (!isReady()) return CompletableFuture.failedFuture(new IllegalStateException("ServerData initialization unavailable"));
-        if (pendingActivations.size() >= 256 || fields.size() > 2)
+        if (pendingUpdates.size() >= 256 || fields.size() > 2)
             return CompletableFuture.failedFuture(new IllegalStateException("Activation staging capacity exceeded"));
-        final ActivationUpdate update;
+        final SnapshotUpdate update;
         final CompletableFuture<Void> published;
         try {
-            update = new ActivationUpdate(fields, getData());
+            update = new SnapshotUpdate(fields, getData(), false);
             // Validate size on a private copy. A rejected admission changes neither live store.
             var copy = parse(getData().saveToString()); update.apply(copy, Set.of()); snapshotBytes(copy);
             byte[] snapshot = snapshotBytes(getData());
-            pendingActivations.add(update);
+            pendingUpdates.add(update);
             published = publishSnapshot(snapshot, List.of(), pendingCalendar,
                     calendarEdits.clone(), null, update);
         } catch (Throwable error) { return CompletableFuture.failedFuture(error); }
@@ -555,8 +788,8 @@ public class ServerData {
         return publishSnapshot(snapshot, writes, overlay, edits, commit, null);
     }
     private CompletableFuture<Void> publishSnapshot(byte[] snapshot, List<Runnable> writes, CalendarUpdate overlay,
-            long[] edits, CalendarUpdate commit, ActivationUpdate activation) {
-        List<ActivationView> activations = activationViews();
+            long[] edits, CalendarUpdate commit, SnapshotUpdate update) {
+        List<SnapshotView> updates = snapshotViews();
 
         Path file = plugin.getServerDataFile().getdFile().toPath();
         pendingSnapshots.incrementAndGet();
@@ -571,12 +804,12 @@ public class ServerData {
                     var copy = parse(new String(snapshot, StandardCharsets.UTF_8)); overlay.apply(copy, edits);
                     confirmed = snapshotBytes(copy);
                 }
-                if (!activations.isEmpty()) {
+                if (!updates.isEmpty()) {
                     var copy = parse(new String(confirmed, StandardCharsets.UTF_8));
-                    for (ActivationView view : activations) {
+                    for (SnapshotView view : updates) {
                         // The worker is serial: a following snapshot observes the prior publication result.
-                        if (view.update() == activation || view.update().published)
-                            view.update().apply(copy, view.edits());
+                        if (view.update() == update || view.update().published)
+                            view.update().rebase(copy, view.edits(), updates, update);
                     }
                     confirmed = snapshotBytes(copy);
                 }
@@ -588,9 +821,9 @@ public class ServerData {
                     commit.apply(getData(), calendarEdits); commit.published = true;
                     if (pendingCalendar == commit) pendingCalendar = null;
                 }
-                if (activation != null) synchronized (ServerData.this) {
-                    activation.apply(getData(), activation.edited);
-                    activation.published = true;
+                if (update != null) synchronized (ServerData.this) {
+                    update.commit(getData(), updates);
+                    update.published = true;
                 }
                 for (Runnable write : writes) write.run();
                 return null;
@@ -598,7 +831,7 @@ public class ServerData {
             finally { if (staged != null) try { Files.deleteIfExists(staged); } catch (IOException ignored) {} }
         }).whenComplete((ignored, error) -> {
             pendingSnapshots.decrementAndGet();
-            if (activation != null) synchronized (ServerData.this) { pendingActivations.remove(activation); }
+            if (update != null) synchronized (ServerData.this) { pendingUpdates.remove(update); }
             if (commit != null) synchronized (ServerData.this) { if (pendingCalendar == commit) pendingCalendar = null; }
         });
     }

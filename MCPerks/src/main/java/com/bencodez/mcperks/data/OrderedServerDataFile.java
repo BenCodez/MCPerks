@@ -21,6 +21,11 @@ public final class OrderedServerDataFile extends com.bencodez.advancedcore.data.
     @Override public File getdFile() { return delegate.getdFile(); }
     @Override public boolean isFailedToRead() { return delegate.isFailedToRead(); }
     @Override public void saveData() { runtime.saveData(); }
+    @Override public java.util.concurrent.CompletionStage<Void> mutateFinalData(
+            java.util.function.Consumer<FileConfiguration> mutation) {
+        return runtime.confirmedFinalMutation(mutation);
+    }
+
     // Only calendar callers share this monitor. Inherited mutation/rollback operates on a private
     // view; gameplay never acquires this monitor or waits for calendar file publication.
     private <T> T calendar(java.util.function.Function<TransitionFile, T> operation) {

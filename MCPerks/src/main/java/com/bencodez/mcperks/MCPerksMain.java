@@ -152,6 +152,9 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	 * @see org.bukkit.plugin.java.JavaPlugin#onDisable()
 	 */
     private volatile java.util.concurrent.CompletableFuture<Void> shutdownPreparation;
+    private volatile java.util.concurrent.CompletionStage<Void> shutdownFinalFiles;
+    private boolean shutdownCompletionHookDispatched;
+
     @Override
     public void onDisable() {
         prepareShutdown();
@@ -200,15 +203,29 @@ public class MCPerksMain extends AdvancedCorePlugin {
                 new IllegalStateException("Shutdown owner preparation was not admitted")) : preparation;
     }
 
+    @Override public void onShutdownComplete(java.util.concurrent.CompletionStage<Void> finalFilesStage) {
+        synchronized (this) {
+            // A duplicate/reentrant hook cannot replace the admitted final-file fence.
+            if (shutdownFinalFiles == null) shutdownFinalFiles = java.util.Objects.requireNonNull(finalFilesStage, "finalFilesStage");
+            if (shutdownCompletionHookDispatched) return;
+            shutdownCompletionHookDispatched = true;
+        }
+        onShutdownComplete(); // Preserve virtual dispatch to existing subclass hooks once.
+    }
+
     @Override public void onShutdownComplete() {
-        // Deferred native cleanup can reach this hook before the pre-storage stage settles.
-        // Keep this exact file owner open for all admitted persistence continuations;
-        // the final native PermissionHandler snapshot has already been admitted here.
         var owner = featureState;
         var preparation = shutdownPreparation;
+        var files = shutdownFinalFiles;
         if (owner != null) {
-            if (preparation == null) owner.close();
-            else preparation.whenComplete((ignored, failure) -> owner.close());
+            var prepared = preparation == null ? java.util.concurrent.CompletableFuture.<Void>completedFuture(null)
+                    : preparation;
+            var finalFiles = files == null ? java.util.concurrent.CompletableFuture.<Void>completedFuture(null)
+                    : files.toCompletableFuture();
+            // allOf waits for every settlement, including exceptional ones. Termination is
+            // deliberately outside these stages: closing the worker must not wait on itself.
+            java.util.concurrent.CompletableFuture.allOf(prepared, finalFiles)
+                    .whenComplete((ignored, failure) -> owner.close());
         }
     }
 
@@ -223,6 +240,8 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	@Override
 	public void onPostLoad() {
         shutdownPreparation = null;
+        shutdownFinalFiles = null;
+        shutdownCompletionHookDispatched = false;
         int featureEpoch = ++featureLifecycle;
         localStatistics.enabled(getConfigFile().getData().getBoolean("LocalStatistics.Enabled", false));
         usageCharges = new com.bencodez.mcperks.userapi.UsageCharges(getDataFolder().toPath().resolve("usage-charges.dat"));
