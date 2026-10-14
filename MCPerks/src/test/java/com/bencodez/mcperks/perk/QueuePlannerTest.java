@@ -30,6 +30,7 @@ class QueuePlannerTest {
         owner = UUID.randomUUID(); player = mock(Player.class); when(Bukkit.getServer().getPlayer(owner)).thenReturn(player); when(player.getUniqueId()).thenReturn(owner); when(player.isOnline()).thenReturn(true); when(player.hasPermission(anyString())).thenReturn(true);
         World world = mock(World.class); when(world.getName()).thenReturn("world"); when(player.getWorld()).thenReturn(world);
         plugin = mock(MCPerksMain.class); when(plugin.isEnabled()).thenReturn(true); when(plugin.getLocalStatistics()).thenReturn(new LocalStatistics()); when(plugin.getLogger()).thenReturn(Logger.getLogger("test"));
+        initializeAdvancedCoreLifecycleLock(plugin);
         ServerData serverData = mock(ServerData.class); when(serverData.isReady()).thenReturn(true); when(serverData.getData()).thenReturn(new org.bukkit.configuration.file.YamlConfiguration()); when(plugin.getMcperksServerData()).thenReturn(serverData);
         config = mock(Config.class); when(config.getLimitActivations()).thenReturn(true); when(plugin.getConfigFile()).thenReturn(config);
         user = mock(MCPerksUser.class); when(user.getUUID()).thenReturn(owner.toString()); when(user.getActivations("vein")).thenReturn(1); when(user.getActivations()).thenReturn(5); when(user.getPerkLimit()).thenReturn(-1);
@@ -55,6 +56,16 @@ class QueuePlannerTest {
         scheduler = new OwnerTaskHarness(plugin, player);
         state = new FeatureState(directory.resolve("features.dat")); state.ready().get(5,TimeUnit.SECONDS); when(plugin.getFeatureState()).thenReturn(state);
         planner = new QueuePlanner(plugin,state); when(plugin.getQueuePlanner()).thenReturn(planner); when(plugin.getBankedPerks()).thenReturn(new BankedPerks(plugin,state));
+    }
+
+    private static void initializeAdvancedCoreLifecycleLock(MCPerksMain plugin) throws Exception {
+        try {
+            var lock = com.bencodez.advancedcore.AdvancedCorePlugin.class.getDeclaredField("lifecycleLock");
+            lock.setAccessible(true);
+            lock.set(plugin, new Object());
+        } catch (NoSuchFieldException ignored) {
+            // Older AdvancedCore artifacts do not have the split lifecycle lock.
+        }
     }
     @AfterEach void close() throws Exception {
         planner.retire(); state.close();
