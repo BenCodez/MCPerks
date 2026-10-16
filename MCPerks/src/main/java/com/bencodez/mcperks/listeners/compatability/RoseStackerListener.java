@@ -83,7 +83,8 @@ public class RoseStackerListener implements Listener {
 		if (plugin.getPerkHandler().effectActive(Effect.InstantSmelt, player.getUniqueId().toString(),
 				player.getWorld().getName())) {
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
-				if (active.getEffects().contains(Effect.InstantSmelt)) {
+				if (active.getEffects().contains(Effect.InstantSmelt) && plugin.getPerkHandler().effectAllowed(active,
+                        Effect.InstantSmelt, player.getUniqueId().toString(), player.getWorld().getName())) {
 					for (ItemStack item : items) {
 						ItemStack smeltedItem = null;
 						Iterator<Recipe> recipeIterator = plugin.getServer().recipeIterator();

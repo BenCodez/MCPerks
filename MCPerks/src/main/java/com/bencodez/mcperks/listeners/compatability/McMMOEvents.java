@@ -28,7 +28,8 @@ public class McMMOEvents implements Listener {
 				player.getWorld().getName())) {
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
 				if (active.getEffects().contains(Effect.McmmoXP)
-						&& active.getEffectedPlayers().contains(player.getUniqueId().toString())) {
+						&& plugin.getPerkHandler().effectAllowed(active, Effect.McmmoXP,
+								player.getUniqueId().toString(), player.getWorld().getName())) {
 					if (active.isNotInDisabledWorld(player.getWorld().getName())) {
 						ArrayList<String> skills = active.getMcmmoSkills();
 						boolean boost = false;
