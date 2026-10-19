@@ -24,6 +24,12 @@ public final class BankedPerks implements Listener {
     private final java.util.function.LongSupplier monotonic;
     private final Map<UUID, Player> sessions = new ConcurrentHashMap<>();
     private final Map<UUID, Long> ticking = new ConcurrentHashMap<>();
+    // Live-session setter observations supersede user reads already queued on storage.
+    private final Map<UUID, Boolean> ignoreChanges = new ConcurrentHashMap<>();
+    // At most one mutation epoch per persisted bank owner (the state has a fixed bank bound).
+    private final Map<UUID, IgnoreMutation> ignoreMutations = new ConcurrentHashMap<>();
+    private static final class IgnoreMutation { volatile long version; int active; boolean uncertain; }
+    private final Set<UUID> changingIgnoreEffects = ConcurrentHashMap.newKeySet();
     private final java.util.concurrent.atomic.AtomicLong tickIds = new java.util.concurrent.atomic.AtomicLong();
     private volatile int generation;
     private volatile boolean retired;
@@ -154,6 +160,53 @@ public final class BankedPerks implements Listener {
             }
         }, () -> stopSession(player));
     }
+    /** Checkpoint the setter boundary without Bukkit access, including asynchronous API calls. */
+    public void changeIgnoreEffects(UUID owner, boolean ignored, Runnable mutation) {
+        if (state.banks().keySet().stream().noneMatch(key -> key.owner().equals(owner))) {
+            mutation.run(); return;
+        }
+        IgnoreMutation observation = ignoreMutations.computeIfAbsent(owner, key -> new IgnoreMutation());
+        // Checkpoint before a setter can expose its flag, but never hold either
+        // controller or per-player admission across user storage. Concurrent
+        // setters retain suspension until all finish and a fresh read settles order.
+        synchronized (this) {
+            observation.version++;
+            if (observation.active++ == 0) observation.uncertain = false;
+            else observation.uncertain = true;
+            changingIgnoreEffects.add(owner); ignoreEffectsChanged(owner, true);
+        }
+        Boolean stored = null;
+        try { mutation.run(); stored = ignored; }
+        finally {
+            synchronized (this) {
+                observation.version++; observation.uncertain |= stored == null;
+                if (--observation.active == 0) changingIgnoreEffects.remove(owner);
+                ignoreEffectsChanged(owner, observation.active != 0 || observation.uncertain || stored == null || stored);
+            }
+        }
+    }
+    private synchronized void ignoreEffectsChanged(UUID owner, boolean ignored) {
+        Player player = sessions.get(owner);
+        Long token = ticking.get(owner);
+        if (retired || player == null || token == null) return;
+        ignoreChanges.put(owner, ignored);
+        for (BankKey key : List.copyOf(clocks.keySet())) if (key.owner().equals(owner)) {
+            var bank = state.banks().get(key);
+            boolean eligible = !ignored && attached.containsKey(key) && !pausing.contains(key)
+                    && state.available() && bank != null && !bank.paused() && bank.milliseconds() > 0;
+            ClockDebit checkpoint = reserve(key, eligible, false);
+            if (checkpoint != null && checkpoint.debit().milliseconds() > 0)
+                debitElapsed(key, checkpoint.clock(), checkpoint.debit());
+        }
+        int version = generation;
+        // Re-evaluate attachment on the captured session's owner. Existing timer ownership stays intact.
+        OwnerTasks.run(plugin, player, () -> {
+            synchronized (BankedPerks.this) {
+                if (retired || version != generation || !Objects.equals(ticking.get(owner), token)) return;
+                pulse(player, version, token, null, false);
+            }
+        }, () -> stopIfCurrent(owner, token));
+    }
     private record Context(MCPerksUser user, boolean ignored) {}
     private void pulse(Player player, int version, long token) {
         pulse(player, version, token, null, true);
@@ -165,16 +218,30 @@ public final class BankedPerks implements Listener {
         var ownedBanks = state.banks().entrySet().stream().filter(e -> e.getKey().owner().equals(owner)).limit(64).toList();
         if (ownedBanks.stream().noneMatch(e -> e.getValue().milliseconds() > 0)) { stopIfCurrent(owner, token); settled(attachment); return; }
         // User ignore state can require SQL. Fetch on the bounded feature worker before returning to owner.
+        IgnoreMutation observation = ignoreMutations.get(owner);
+        long observedVersion = observation == null ? 0 : observation.version;
         state.storage(() -> { MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(owner); return new Context(user, user.isIgnorePerkEffects()); }).whenComplete((context, readError) -> {
             if (retired || version != generation || !Objects.equals(ticking.get(owner), token) || !plugin.isEnabled()) { settled(attachment); return; }
             OwnerTasks.run(plugin, player, () -> {
                 try { synchronized (BankedPerks.this) {
                     if (retired || version != generation || !Objects.equals(ticking.get(owner), token)) { settled(attachment); return; }
                     if (!player.isOnline()) { stopIfCurrent(owner, token); settled(attachment); return; }
+                    IgnoreMutation currentObservation = ignoreMutations.get(owner);
+                    boolean currentRead = observation == currentObservation && (observation == null || observedVersion == observation.version);
+                    if (!currentRead && !changingIgnoreEffects.contains(owner) && !Boolean.TRUE.equals(ignoreChanges.get(owner))) {
+                        settled(attachment);
+                        if (repeat && !retired && plugin.isEnabled()) OwnerTasks.later(plugin, player, () -> pulse(player, version, token), () -> stopIfCurrent(owner, token), 20);
+                        return;
+                    }
+                    if (currentRead && observation != null && observation.uncertain && !changingIgnoreEffects.contains(owner)
+                            && readError == null && context != null) {
+                        observation.uncertain = false;
+                        ignoreChanges.remove(owner);
+                    }
                     List<CompletableFuture<?>> checkpoints = new ArrayList<>();
                     for (var entry : ownedBanks) {
                         BankKey key = entry.getKey(); Perk perk = plugin.getPerkHandler().getPerk(key.perk()); var bank = state.banks().get(key);
-                        boolean eligible = plugin.getPerkHandler().isRestorationReady() && state.available() && !pausing.contains(key) && readError == null && context != null && !context.ignored() && bank != null && !bank.paused() && bank.milliseconds() > 0
+                        boolean eligible = plugin.getPerkHandler().isRestorationReady() && state.available() && !pausing.contains(key) && readError == null && context != null && !changingIgnoreEffects.contains(owner) && !ignoreChanges.getOrDefault(owner, context.ignored()) && bank != null && !bank.paused() && bank.milliseconds() > 0
                                 && withinActiveLimit(context.user(), key) && perk != null && perk.getInteractionOptions().banked() && supported(perk) && perk.isNotInDisabledWorld(player.getWorld().getName())
                                 && plugin.getPerkHandler().getActivePerks().stream().noneMatch(active -> !attached.containsValue(active) && active.getPerk().equals(key.perk()) && active.getEffectedPlayers().contains(owner.toString()));
                         if (eligible) eligible = plugin.getQueuePlanner().attachBank(key, attached.get(key), () -> {
@@ -301,7 +368,7 @@ public final class BankedPerks implements Listener {
     private synchronized void stopSession(Player player) { if (sessions.get(player.getUniqueId()) == player) stop(player.getUniqueId()); }
     private synchronized void stopIfCurrent(UUID owner, long token) { if (Objects.equals(ticking.get(owner), token)) stop(owner); }
     private synchronized void stop(UUID owner) {
-        ticking.remove(owner); sessions.remove(owner); for (BankKey key : List.copyOf(clocks.keySet())) if (key.owner().equals(owner)) suspend(key);
+        ticking.remove(owner); sessions.remove(owner); ignoreChanges.remove(owner); for (BankKey key : List.copyOf(clocks.keySet())) if (key.owner().equals(owner)) suspend(key);
         // Keep each owner clock until its asynchronous checkpoint settles.  A
         // rejected/full worker can leave the debit reservation in the clock;
         // dropping it here lets a reconnect create a fresh clock and spend the
@@ -312,7 +379,7 @@ public final class BankedPerks implements Listener {
     public synchronized void reload() {
         Set<UUID> owners = new HashSet<>(ticking.keySet());
         for (BankKey key : clocks.keySet()) owners.add(key.owner());
-        generation++; ticking.clear(); sessions.clear();
+        generation++; ticking.clear(); sessions.clear(); ignoreChanges.clear();
         for (BankKey key : List.copyOf(clocks.keySet())) suspend(key);
         for (UUID owner : owners) {
             Player player = Bukkit.getPlayer(owner);
@@ -322,7 +389,7 @@ public final class BankedPerks implements Listener {
     public synchronized void retire() { retireAsync(); }
     public synchronized CompletableFuture<Void> retireAsync() {
         if (retirement != null) return retirement;
-        retired = true; generation++; ticking.clear(); sessions.clear();
+        retired = true; generation++; ticking.clear(); sessions.clear(); ignoreChanges.clear();
         retirement = new CompletableFuture<>();
         var checkpoints = new ArrayList<CompletableFuture<?>>();
         for (BankKey key : List.copyOf(clocks.keySet())) checkpoints.add(suspend(key));
@@ -337,7 +404,7 @@ public final class BankedPerks implements Listener {
     public boolean available(Perk perk) {
         if (!attached.containsValue(perk)) return true;
         UUID owner = UUID.fromString(perk.getActivater().getUUID());
-        if (!state.available() || !ticking.containsKey(owner)) return false;
+        if (!state.available() || !ticking.containsKey(owner) || changingIgnoreEffects.contains(owner) || Boolean.TRUE.equals(ignoreChanges.get(owner))) return false;
         BankKey key = new BankKey(owner, perk.getPerk());
         BankedClock clock = clocks.get(key);
         return clock != null && clock.remaining(() -> {

@@ -154,7 +154,11 @@ public class MCPerksUser extends com.bencodez.advancedcore.api.user.AdvancedCore
 	}
 
 	public void setIgnoreEffects(boolean value) {
-		getData().setBoolean("IgnoreEffects", value);
+		var data = getData();
+		var banks = plugin.getBankedPerks();
+		if (banks == null) data.setBoolean("IgnoreEffects", value);
+		else banks.changeIgnoreEffects(UUID.fromString(getUUID()), value,
+				() -> data.setBoolean("IgnoreEffects", value));
 	}
 
 }

@@ -49,6 +49,171 @@ class BankedPerksTest {
             if (admissions.get(perk) == null) admissions.set(perk, new LinkedHashMap<String, Long>());
         }
     }
+    private void enableRealIgnoreSetter() throws Exception {
+        var data = mock(com.bencodez.advancedcore.api.user.UserData.class);
+        when(user.getData()).thenReturn(data);
+        var flag = new java.util.concurrent.atomic.AtomicBoolean();
+        doAnswer(call -> { flag.set(call.getArgument(1)); return null; }).when(data).setBoolean(eq("IgnoreEffects"), anyBoolean());
+        when(user.isIgnorePerkEffects()).thenAnswer(call -> flag.get());
+        var field = MCPerksUser.class.getDeclaredField("plugin"); field.setAccessible(true); field.set(user, plugin);
+        doCallRealMethod().when(user).setIgnoreEffects(anyBoolean());
+    }
+    @Test void actualIgnoreSetterCheckpointsBeforeDisconnectWithoutWaitingForPulse() throws Exception {
+        enableRealIgnoreSetter(); banked.start(player); nextOwner();
+        time.addAndGet(100_000_000L); user.setIgnoreEffects(true);
+        time.addAndGet(400_000_000L); banked.quit(new PlayerQuitEvent(player, "quit")); barrier();
+        assertEquals(9900, state.banks().get(key).milliseconds()); assertTrue(active.isEmpty());
+    }
+    @Test void repeatedIgnoreSettersAndImmediateResumeChargeOnlyEligibleIntervals() throws Exception {
+        enableRealIgnoreSetter(); banked.start(player); nextOwner();
+        time.addAndGet(100_000_000L); user.setIgnoreEffects(true);
+        time.addAndGet(200_000_000L); user.setIgnoreEffects(true);
+        time.addAndGet(200_000_000L); user.setIgnoreEffects(false);
+        time.addAndGet(100_000_000L); banked.quit(new PlayerQuitEvent(player, "quit")); barrier();
+        // An earlier in-flight debit may enqueue the resumed interval after a worker barrier.
+        banked.retireAsync().get(5, TimeUnit.SECONDS);
+        assertEquals(9800, state.banks().get(key).milliseconds());
+    }
+    @Test void asyncIgnoreSetterDoesNotReadBukkitOrPlayerState() throws Exception {
+        enableRealIgnoreSetter(); banked.start(player); nextOwner();
+        time.addAndGet(100_000_000L); clearInvocations(player, Bukkit.getServer());
+        var executor = Executors.newSingleThreadExecutor();
+        try { executor.submit(() -> user.setIgnoreEffects(true)).get(5, TimeUnit.SECONDS); }
+        finally { executor.shutdownNow(); }
+        verifyNoInteractions(player, Bukkit.getServer());
+        time.addAndGet(400_000_000L); banked.quit(new PlayerQuitEvent(player, "quit")); barrier();
+        assertEquals(9900, state.banks().get(key).milliseconds());
+    }
+    @Test void userStorageWaitDoesNotHoldTheBankControllerMonitor() throws Exception {
+        enableRealIgnoreSetter(); banked.start(player); nextOwner();
+        var entered = new CountDownLatch(1); var release = new CountDownLatch(1);
+        var data = user.getData();
+        doAnswer(call -> {
+            entered.countDown(); assertTrue(release.await(5, TimeUnit.SECONDS)); return null;
+        }).when(data).setBoolean(eq("IgnoreEffects"), eq(true));
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var setter = executor.submit(() -> user.setIgnoreEffects(true));
+            assertTrue(entered.await(5, TimeUnit.SECONDS));
+            var pause = executor.submit(() -> banked.pause(key, true).get(5, TimeUnit.SECONDS));
+            assertTrue(pause.get(2, TimeUnit.SECONDS).paused(), "owner lifecycle cannot wait for another storage setter");
+            release.countDown(); setter.get(5, TimeUnit.SECONDS);
+        } finally { release.countDown(); executor.shutdownNow(); }
+    }
+    @Test void delayedPulseReadCannotReenableBankAfterIgnoreSetter() throws Exception {
+        enableRealIgnoreSetter(); banked.start(player); nextOwner();
+        Objects.requireNonNull(scheduler.timers.poll(5, TimeUnit.SECONDS)).run();
+        Runnable stale = Objects.requireNonNull(scheduler.tasks.poll(5, TimeUnit.SECONDS));
+        time.addAndGet(100_000_000L); user.setIgnoreEffects(true);
+        time.addAndGet(400_000_000L); stale.run(); barrier();
+        assertTrue(active.isEmpty()); assertEquals(9900, state.banks().get(key).milliseconds());
+        banked.quit(new PlayerQuitEvent(player, "quit")); barrier(); assertEquals(9900, state.banks().get(key).milliseconds());
+    }
+    @Test void ignoredSessionObservationCannotLeakAcrossReconnect() throws Exception {
+        enableRealIgnoreSetter(); banked.start(player); nextOwner();
+        time.addAndGet(100_000_000L); user.setIgnoreEffects(true);
+        banked.quit(new PlayerQuitEvent(player, "quit")); barrier();
+        user.setIgnoreEffects(false); scheduler.tasks.clear(); scheduler.timers.clear();
+        banked.start(player); nextOwner(); assertEquals(1, active.size());
+        time.addAndGet(200_000_000L); banked.quit(new PlayerQuitEvent(player, "quit")); barrier();
+        assertEquals(9700, state.banks().get(key).milliseconds());
+    }
+    @ParameterizedTest @ValueSource(strings = {"quit", "reload", "reconnect"})
+    void visibleIgnoreSetterWaitPreservesBalanceAcrossLifecycle(String lifecycle) throws Exception {
+        enableRealIgnoreSetter(); banked.start(player); nextOwner();
+        var visible = new java.util.concurrent.atomic.AtomicBoolean();
+        when(user.isIgnorePerkEffects()).thenAnswer(call -> visible.get());
+        var entered = new CountDownLatch(1); var release = new CountDownLatch(1);
+        var data = user.getData();
+        doAnswer(call -> {
+            visible.set(true); entered.countDown();
+            assertTrue(release.await(5, TimeUnit.SECONDS)); return null;
+        }).when(data).setBoolean(eq("IgnoreEffects"), eq(true));
+        var executor = Executors.newSingleThreadExecutor();
+        try {
+            time.addAndGet(100_000_000L);
+            var setter = executor.submit(() -> user.setIgnoreEffects(true));
+            assertTrue(entered.await(5, TimeUnit.SECONDS));
+            time.addAndGet(400_000_000L);
+            if (lifecycle.equals("reload")) {
+                banked.reload(); nextOwner(); nextOwner(); nextOwner();
+            } else {
+                banked.quit(new PlayerQuitEvent(player, "quit")); barrier();
+                if (lifecycle.equals("reconnect")) { banked.start(player); nextOwner(); nextOwner(); }
+            }
+            assertTrue(active.isEmpty());
+            banked.quit(new PlayerQuitEvent(player, "quit")); barrier();
+            assertEquals(9900, state.banks().get(key).milliseconds());
+            release.countDown(); setter.get(5, TimeUnit.SECONDS);
+            barrier(); assertEquals(9900, state.banks().get(key).milliseconds());
+        } finally { release.countDown(); executor.shutdownNow(); }
+    }
+    @Test void failedIgnoreSetterRereadsVisibleStorageBeforeReattaching() throws Exception {
+        enableRealIgnoreSetter(); banked.start(player); nextOwner();
+        var visible = new java.util.concurrent.atomic.AtomicBoolean();
+        when(user.isIgnorePerkEffects()).thenAnswer(call -> visible.get());
+        var data = user.getData();
+        doAnswer(call -> { visible.set(true); throw new IllegalStateException("uncertain user save"); })
+                .when(data).setBoolean(eq("IgnoreEffects"), eq(true));
+        time.addAndGet(100_000_000L);
+        assertThrows(IllegalStateException.class, () -> user.setIgnoreEffects(true));
+        nextOwner(); nextOwner(); nextOwner(); nextOwner(); barrier();
+        assertTrue(active.isEmpty());
+        time.addAndGet(400_000_000L); banked.quit(new PlayerQuitEvent(player, "quit")); barrier();
+        assertEquals(9900, state.banks().get(key).milliseconds());
+    }
+    @Test void failedSetterCannotRestoreEligibilityFromAnEarlierQueuedRead() throws Exception {
+        enableRealIgnoreSetter(); banked.start(player); nextOwner();
+        var attached = active.getFirst();
+        Objects.requireNonNull(scheduler.timers.poll(5, TimeUnit.SECONDS)).run();
+        Runnable stale = Objects.requireNonNull(scheduler.tasks.poll(5, TimeUnit.SECONDS));
+        var visible = new java.util.concurrent.atomic.AtomicBoolean();
+        when(user.isIgnorePerkEffects()).thenAnswer(call -> visible.get());
+        var data = user.getData();
+        doAnswer(call -> { visible.set(true); throw new IllegalStateException("uncertain user save"); })
+                .when(data).setBoolean(eq("IgnoreEffects"), eq(true));
+        time.addAndGet(100_000_000L);
+        assertThrows(IllegalStateException.class, () -> user.setIgnoreEffects(true));
+        assertFalse(banked.available(attached), "failed setter needs a fresh storage observation");
+        stale.run();
+        assertTrue(active.isEmpty(), "a pre-setter read can suspend but cannot restore eligibility");
+        nextOwner(); nextOwner(); nextOwner(); nextOwner(); barrier();
+        assertTrue(active.isEmpty());
+        time.addAndGet(400_000_000L); banked.quit(new PlayerQuitEvent(player, "quit")); barrier();
+        assertEquals(9900, state.banks().get(key).milliseconds());
+    }
+    @ParameterizedTest @ValueSource(booleans = {true, false})
+    void concurrentSettersReachStorageWithoutWaitingAndResolveTheActualFinalFlag(boolean firstValue) throws Exception {
+        enableRealIgnoreSetter(); banked.start(player); nextOwner();
+        var attached = active.getFirst();
+        var visible = new java.util.concurrent.atomic.AtomicBoolean();
+        when(user.isIgnorePerkEffects()).thenAnswer(call -> visible.get());
+        var entered = new CountDownLatch(1); var release = new CountDownLatch(1);
+        var data = user.getData();
+        doAnswer(call -> {
+            boolean value = call.getArgument(1); visible.set(value);
+            if (value == firstValue) { entered.countDown(); assertTrue(release.await(5, TimeUnit.SECONDS)); }
+            return null;
+        }).when(data).setBoolean(eq("IgnoreEffects"), anyBoolean());
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            time.addAndGet(100_000_000L);
+            var first = executor.submit(() -> user.setIgnoreEffects(firstValue));
+            assertTrue(entered.await(5, TimeUnit.SECONDS));
+            time.addAndGet(400_000_000L);
+            // The second caller must reach its storage deferral before the first returns.
+            executor.submit(() -> user.setIgnoreEffects(!firstValue)).get(1, TimeUnit.SECONDS);
+            assertFalse(banked.available(attached));
+            assertEquals(!firstValue, user.isIgnorePerkEffects());
+            release.countDown(); first.get(5, TimeUnit.SECONDS);
+            assertFalse(banked.available(attached), "finish order alone cannot establish the final stored flag");
+            for (int i = 0; i < 8; i++) nextOwner();
+            if (firstValue) assertEquals(1, active.size()); else assertTrue(active.isEmpty());
+            time.addAndGet(100_000_000L); banked.quit(new PlayerQuitEvent(player, "quit"));
+            banked.retireAsync().get(5, TimeUnit.SECONDS);
+            assertEquals(firstValue ? 9800 : 9900, state.banks().get(key).milliseconds());
+        } finally { release.countDown(); executor.shutdownNow(); }
+    }
     private void nextOwner() throws Exception { Objects.requireNonNull(scheduler.tasks.poll(5,TimeUnit.SECONDS)).run(); }
     private void barrier() throws Exception { state.storage(() -> null).get(5,TimeUnit.SECONDS); }
     @ParameterizedTest @ValueSource(strings = {"omitted", "-1", "-12", "0", "1", "60"})

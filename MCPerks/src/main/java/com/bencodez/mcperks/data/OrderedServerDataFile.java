@@ -20,6 +20,7 @@ public final class OrderedServerDataFile extends com.bencodez.advancedcore.data.
     @Override public FileConfiguration getData() { return delegate.getData(); }
     @Override public File getdFile() { return delegate.getdFile(); }
     @Override public boolean isFailedToRead() { return delegate.isFailedToRead(); }
+    @Override public Object publicationMonitor() { return runtime; }
     @Override public void saveData() { runtime.saveData(); }
     @Override public java.util.concurrent.CompletionStage<Void> mutateFinalData(
             java.util.function.Consumer<FileConfiguration> mutation) {

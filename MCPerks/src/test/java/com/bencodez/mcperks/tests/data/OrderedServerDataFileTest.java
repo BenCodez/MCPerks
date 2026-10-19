@@ -67,6 +67,10 @@ class OrderedServerDataFileTest {
     }
     private YamlConfiguration disk() { return YamlConfiguration.loadConfiguration(directory.resolve("ServerData.yml").toFile()); }
 
+    @Test void nativePublicationMonitorIsTheActualBackingOwner() {
+        assertSame(runtime, ordered.publicationMonitor());
+    }
+
     @Test void ordinarySnapshotDoesNotRewriteUnchangedLiveLongSubtrees() throws Exception {
         var live = original.getData();
         synchronized (runtime) {
@@ -184,13 +188,17 @@ class OrderedServerDataFileTest {
     private final class Gate implements AutoCloseable {
         private final CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
         private final AtomicBoolean first = new AtomicBoolean(true);
-        private Gate(boolean fail) {
+        private Gate(boolean fail) { this(fail, false); }
+        private Gate(boolean fail, boolean visible) {
             publication.set((staged, file) -> {
                 if (first.compareAndSet(true, false)) {
                     entered.countDown();
                     try { if (!release.await(5, TimeUnit.SECONDS)) throw new IOException("test publication timeout"); }
                     catch (InterruptedException error) { Thread.currentThread().interrupt(); throw new IOException(error); }
-                    if (fail) throw new IOException("calendar publication rejected");
+                    if (fail) {
+                        if (visible) DurableFeatureFiles.publish(staged, file);
+                        throw new IOException("calendar publication rejected");
+                    }
                 }
                 DurableFeatureFiles.publish(staged, file);
             });
@@ -676,6 +684,57 @@ class OrderedServerDataFileTest {
         public static PersistedOverflowItem deserialize(Map<String, Object> values) { return new PersistedOverflowItem(); }
         @Override public boolean equals(Object value) { return value instanceof PersistedOverflowItem; }
         @Override public int hashCode() { return 1; }
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"success", "before", "after"})
+    void actualRuntimeOverflowAcknowledgesOnlyConfirmedDiskPublication(String outcome) throws Exception {
+        boolean fail = !outcome.equals("success"), visible = outcome.equals("after");
+        org.bukkit.configuration.serialization.ConfigurationSerialization.registerClass(PersistedOverflowItem.class, "MCFinalOverflowTestItem");
+        var scheduler = mock(com.bencodez.simpleapi.scheduler.BukkitScheduler.class);
+        when(plugin.getBukkitScheduler()).thenReturn(scheduler); when(plugin.isEnabled()).thenReturn(true);
+        when(plugin.getOptions()).thenReturn(mock(com.bencodez.advancedcore.AdvancedCoreConfigOptions.class));
+        UUID owner = UUID.randomUUID(); var player = mock(org.bukkit.entity.Player.class);
+        var slots = mock(org.bukkit.inventory.PlayerInventory.class); var item = new PersistedOverflowItem();
+        when(player.getUniqueId()).thenReturn(owner); when(player.isOnline()).thenReturn(true); when(player.getInventory()).thenReturn(slots);
+        when(slots.addItem(item)).thenReturn(new HashMap<>(Map.of(0, item)));
+        var ownerTasks = new LinkedBlockingQueue<Runnable>();
+        doAnswer(call -> { ownerTasks.add(call.getArgument(1)); return null; })
+                .when(scheduler).runTask(eq(plugin), any(Runnable.class), eq(player));
+        var inventory = new com.bencodez.advancedcore.api.item.FullInventoryHandler(plugin);
+        inventory.getLastMessageTime().put(owner, System.currentTimeMillis());
+        byte[] previous = Files.readAllBytes(directory.resolve("ServerData.yml"));
+        try (var bukkit = mockStatic(Bukkit.class); Gate gate = new Gate(fail, visible)) {
+            bukkit.when(() -> Bukkit.getPlayer(owner)).thenReturn(player);
+            var receipt = inventory.giveItemAsync(player, item).toCompletableFuture();
+            Objects.requireNonNull(ownerTasks.poll(5, TimeUnit.SECONDS)).run(); gate.entered();
+            assertFalse(receipt.isDone(), "native delivery cannot acknowledge a queued file save");
+            assertFalse(inventory.getItems().containsKey(owner), "unpublished overflow is not sweepable");
+            assertArrayEquals(previous, Files.readAllBytes(directory.resolve("ServerData.yml")));
+            if (!fail) assertFalse(inventory.saveDurably(), "a second queued snapshot is not a durable acknowledgement");
+            assertFalse(receipt.isDone()); gate.close();
+            if (fail) {
+                await(state.runtimeStorage(() -> null));
+                inventory.getTimer().submit(() -> {}).get(5, TimeUnit.SECONDS);
+                assertFalse(receipt.isDone()); assertFalse(inventory.getItems().containsKey(owner));
+                assertTrue(ownerTasks.isEmpty(), "an uncertain visible save cannot fall back to dropping the same item");
+                if (visible) assertEquals(item, disk().getItemStack("FullInventory." + owner + ".Items.0"));
+                else assertArrayEquals(previous, Files.readAllBytes(directory.resolve("ServerData.yml")));
+                publication.set(DurableFeatureFiles::publish);
+                inventory.saveDurably(); await(state.runtimeStorage(() -> null)); await(receipt);
+                assertEquals(List.of(item), inventory.getItems().get(owner));
+                assertEquals(item, disk().getItemStack("FullInventory." + owner + ".Items.0"));
+                verify(slots, times(1)).addItem(item);
+            } else {
+                await(receipt); await(state.runtimeStorage(() -> null));
+                assertEquals(List.of(item), inventory.getItems().get(owner));
+                assertEquals(item, disk().getItemStack("FullInventory." + owner + ".Items.0"));
+                assertFalse(disk().contains("FullInventory." + owner + ".Items.1"));
+            }
+        } finally {
+            inventory.getTimer().shutdownNow();
+            org.bukkit.configuration.serialization.ConfigurationSerialization.unregisterClass(PersistedOverflowItem.class);
+        }
     }
 
     @org.junit.jupiter.params.ParameterizedTest
