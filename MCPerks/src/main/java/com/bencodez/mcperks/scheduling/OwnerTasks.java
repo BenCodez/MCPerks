@@ -14,7 +14,10 @@ public final class OwnerTasks {
         if (!plugin.isEnabled() || player == null) { unavailable.run(); return; }
         try {
             plugin.getBukkitScheduler().getFoliaLib().getImpl().runAtEntityWithFallback(player,
-                    task -> { if (decided.compareAndSet(false, true)) action.run(); }, unavailable)
+                    task -> {
+                        if (!plugin.isEnabled() || !player.isValid()) { unavailable.run(); return; }
+                        if (decided.compareAndSet(false, true)) action.run();
+                    }, unavailable)
                     .whenComplete((result, error) -> { if (error != null || result != EntityTaskResult.SUCCESS) unavailable.run(); });
         } catch (RuntimeException failure) { unavailable.run(); }
     }

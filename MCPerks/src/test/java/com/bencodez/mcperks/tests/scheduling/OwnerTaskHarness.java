@@ -7,7 +7,7 @@ import org.bukkit.entity.Player;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.simpleapi.scheduler.BukkitScheduler;
 import com.bencodez.simpleapi.folialib.FoliaLib;
-import com.bencodez.simpleapi.folialib.impl.ServerImplementation;
+import com.bencodez.simpleapi.folialib.impl.PlatformScheduler;
 import com.bencodez.simpleapi.folialib.enums.EntityTaskResult;
 import com.bencodez.simpleapi.folialib.wrapper.task.WrappedTask;
 /** Exercises production owner dispatch, including scheduler rejection/retirement completions. */
@@ -15,7 +15,7 @@ public final class OwnerTaskHarness {
     public final BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>(), timers = new LinkedBlockingQueue<>(), retired = new LinkedBlockingQueue<>();
     public final java.util.Map<Runnable,Runnable> retirement = new ConcurrentHashMap<>();
     public final BukkitScheduler scheduler = mock(BukkitScheduler.class);
-    public final ServerImplementation implementation = mock(ServerImplementation.class);
+    public final PlatformScheduler implementation = mock(PlatformScheduler.class);
     public OwnerTaskHarness(MCPerksMain plugin, Player player) {
         this(plugin, player, false);
     }
@@ -24,6 +24,7 @@ public final class OwnerTaskHarness {
         // select Folia; real Spigot/Paper code is exercised by BundledOwnerTaskHarness.
         when(player.isValid()).thenReturn(true);
         FoliaLib folia = mock(FoliaLib.class); when(folia.isFolia()).thenReturn(foliaPlatform); when(scheduler.getFoliaLib()).thenReturn(folia); when(folia.getImpl()).thenReturn(implementation); when(plugin.getBukkitScheduler()).thenReturn(scheduler);
+        when(folia.getScheduler()).thenReturn(implementation);
         when(implementation.runAtEntityWithFallback(eq(player), any(), any())).thenAnswer(invocation -> {
             Consumer<WrappedTask> action = invocation.getArgument(1); Runnable fallback = invocation.getArgument(2);
             CompletableFuture<EntityTaskResult> result = new CompletableFuture<>();

@@ -10,7 +10,7 @@ import org.bukkit.scheduler.BukkitTask;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.simpleapi.folialib.FoliaLib;
 import com.bencodez.simpleapi.folialib.impl.PaperImplementation;
-import com.bencodez.simpleapi.folialib.impl.ServerImplementation;
+import com.bencodez.simpleapi.folialib.impl.PlatformScheduler;
 import com.bencodez.simpleapi.folialib.impl.SpigotImplementation;
 
 /** Real bundled implementation; only the native Bukkit scheduling boundary is controlled. */
@@ -18,7 +18,7 @@ public final class BundledOwnerTaskHarness {
     public final BlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
     public final BlockingQueue<Runnable> timers = new LinkedBlockingQueue<>();
     public final org.bukkit.scheduler.BukkitScheduler nativeScheduler = mock(org.bukkit.scheduler.BukkitScheduler.class);
-    public final ServerImplementation implementation;
+    public final PlatformScheduler implementation;
 
     @SuppressWarnings("unchecked")
     public BundledOwnerTaskHarness(MCPerksMain plugin, boolean paper) {
@@ -27,8 +27,10 @@ public final class BundledOwnerTaskHarness {
         when(server.getScheduler()).thenReturn(nativeScheduler);
         FoliaLib folia = mock(FoliaLib.class);
         when(folia.getPlugin()).thenReturn(plugin);
+        when(folia.getOptions()).thenReturn(new com.bencodez.simpleapi.folialib.util.FoliaLibOptions());
         implementation = paper ? new PaperImplementation(folia) : new SpigotImplementation(folia);
         when(folia.getImpl()).thenReturn(implementation);
+        when(folia.getScheduler()).thenReturn(implementation);
         var scheduler = mock(com.bencodez.simpleapi.scheduler.BukkitScheduler.class);
         when(scheduler.getFoliaLib()).thenReturn(folia);
         when(plugin.getBukkitScheduler()).thenReturn(scheduler);

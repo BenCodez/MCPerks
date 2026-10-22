@@ -57,7 +57,7 @@ class MCPerksReloadLifecycleTest {
         AtomicReference<Runnable> scheduled = new AtomicReference<>();
         var scheduler = mock(com.bencodez.simpleapi.scheduler.BukkitScheduler.class);
         var folia = mock(com.bencodez.simpleapi.folialib.FoliaLib.class);
-        var implementation = mock(com.bencodez.simpleapi.folialib.impl.ServerImplementation.class);
+        var implementation = mock(com.bencodez.simpleapi.folialib.impl.PlatformScheduler.class);
         CompletableFuture<Void> dispatch = new CompletableFuture<>();
         when(scheduler.getFoliaLib()).thenReturn(folia);
         when(folia.getImpl()).thenReturn(implementation);
@@ -93,7 +93,7 @@ class MCPerksReloadLifecycleTest {
         CompletableFuture<Void> dispatch = new CompletableFuture<>();
         var scheduler = mock(com.bencodez.simpleapi.scheduler.BukkitScheduler.class);
         var folia = mock(com.bencodez.simpleapi.folialib.FoliaLib.class);
-        var implementation = mock(com.bencodez.simpleapi.folialib.impl.ServerImplementation.class);
+        var implementation = mock(com.bencodez.simpleapi.folialib.impl.PlatformScheduler.class);
         when(scheduler.getFoliaLib()).thenReturn(folia);
         when(folia.getImpl()).thenReturn(implementation);
         when(implementation.runNextTick(any())).thenReturn(dispatch);

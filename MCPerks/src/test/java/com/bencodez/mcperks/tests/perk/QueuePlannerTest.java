@@ -238,6 +238,7 @@ class QueuePlannerTest {
         var first=state.enqueue(owner,"vein","PerkActivations_vein",1).get();
         UUID nextOwner=UUID.randomUUID(); Player nextPlayer=mock(Player.class); World world=player.getWorld();
         when(nextPlayer.isOnline()).thenReturn(true); when(nextPlayer.getUniqueId()).thenReturn(nextOwner);
+        when(nextPlayer.isValid()).thenReturn(true);
         when(nextPlayer.getWorld()).thenReturn(world); when(nextPlayer.hasPermission(anyString())).thenReturn(true);
         when(Bukkit.getServer().getPlayer(nextOwner)).thenReturn(nextPlayer);
         MCPerksUser nextUser=mock(MCPerksUser.class); when(plugin.getMcperksUserManager().getMCPerksUser(nextOwner)).thenReturn(nextUser);

@@ -75,6 +75,18 @@ class OwnerTasksTest {
         assertEquals(0,executed.get()); assertEquals(2,retired.get()); assertTrue(harness.timers.isEmpty());
     }
     @ParameterizedTest @ValueSource(booleans={false,true})
+    void bundledImmediateCallbackAfterDisableRetiresOnceWithoutRunningTheAction(boolean paper) {
+        MCPerksMain plugin=mock(MCPerksMain.class); when(plugin.isEnabled()).thenReturn(true);
+        Player player=mock(Player.class); when(player.isValid()).thenReturn(true);
+        var harness=new BundledOwnerTaskHarness(plugin,paper);
+        AtomicInteger executed=new AtomicInteger(),retired=new AtomicInteger();
+        OwnerTasks.run(plugin,player,executed::incrementAndGet,retired::incrementAndGet);
+        when(plugin.isEnabled()).thenReturn(false);
+        Runnable callback=harness.tasks.remove(); callback.run(); callback.run();
+        assertEquals(0,executed.get()); assertEquals(1,retired.get());
+        assertTrue(harness.tasks.isEmpty());
+    }
+    @ParameterizedTest @ValueSource(booleans={false,true})
     void bundledImmediateSiblingUsesTheNativeOwnerAndCompletesInvalidEntityRetirementOnce(boolean paper) {
         MCPerksMain plugin=mock(MCPerksMain.class); when(plugin.isEnabled()).thenReturn(true);
         Player player=mock(Player.class); when(player.isValid()).thenReturn(true);
