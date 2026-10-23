@@ -225,3 +225,7 @@ JavascriptEngine:
   # This only controls command access/registration, not whether JavaScript support itself is enabled.
   # Legacy option: EnableJavascriptCommand
   CommandEnabled: false
+
+# Optional local, aggregate-only counters. No external reporting. Counters reset on restart.
+LocalStatistics:
+  Enabled: false

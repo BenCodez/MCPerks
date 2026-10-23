@@ -32,6 +32,7 @@ import com.bencodez.mcperks.configs.ConfigPerks;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.userapi.MCPerksUser;
+import com.bencodez.mcperks.userapi.UsageCharges;
 import com.bencodez.simpleapi.array.ArrayUtils;
 import com.bencodez.simpleapi.command.TabCompleteHandle;
 import com.bencodez.simpleapi.command.TabCompleteHandler;
@@ -51,6 +52,33 @@ public class CommandLoader {
 	private HashMap<String, CommandHandler> commands;
 
 	private Object activationsLock = new Object();
+
+	private void loadReloadCommand() {
+        plugin.getCommands().add(new CommandHandler(plugin, new String[] { "Reload" }, "MCPerks.Reload", "Reloads the plugin") {
+            @Override public void execute(CommandSender sender, String[] args) {
+                plugin.reloadAsync().whenComplete((ignored, error) -> {
+                    Runnable response = () -> sender.sendMessage(MessageAPI.colorize(error == null
+                            ? "&c" + plugin.getName() + " v" + plugin.getDescription().getVersion() + " reloaded!"
+                            : "&c" + plugin.getName() + " reload failed; check the server log."));
+                    if (sender instanceof Player player)
+                        com.bencodez.mcperks.scheduling.OwnerTasks.run(plugin, player,
+                                () -> { if (player.isOnline()) response.run(); }, () -> {});
+                    else plugin.getBukkitScheduler().runTask(plugin, response);
+                });
+            }
+        });
+    }
+
+	private void registerFeatureArgumentMatchers() {
+		TabCompleteHandler replacements = TabCompleteHandler.getInstance();
+		for (String name : new String[] { "(effect)", "(seconds)", "(id)", "(position)" }) {
+			if (replacements.getTabCompleteReplaces().contains(name)) continue;
+			replacements.addTabCompleteOption(new TabCompleteHandle(name) {
+				@Override public void reload() { }
+				@Override public void updateReplacements() { setReplace(new ArrayList<String>()); }
+			});
+		}
+	}
 
 	/**
 	 * Instantiates a new command loader.
@@ -141,7 +169,153 @@ public class CommandLoader {
 
 	}
 
-	public void loadCommands() {
+	private void plannerReply(CommandSender sender, java.util.concurrent.CompletableFuture<?> operation, String success) {
+        operation.whenComplete((result, error) -> {
+            Runnable reply = () -> {
+                sender.sendMessage(MessageAPI.colorize(error == null && !Boolean.FALSE.equals(result) ? success : "&cPlanner update failed or entry unavailable."));
+                plugin.getQueuePlanner().refreshLegacyView(); plugin.getQueuePlanner().check();
+            };
+            if (sender instanceof org.bukkit.entity.Player player) plugin.getBukkitScheduler().runTask(plugin, reply, player);
+            else plugin.getBukkitScheduler().runTask(plugin, reply);
+        });
+    }
+    private void loadClearQueueCommand() {
+		plugin.getCommands().add(
+				new CommandHandler(plugin, new String[] { "ClearQueue" }, "MCPerks.ClearQueue", "Clear Perk Queue") {
+
+					@Override
+					public void execute(CommandSender sender, String[] args) {
+						plannerReply(sender, plugin.getPerkHandler().clearQueueConfirmed(), "&cPerk Queue Cleared");
+					}
+				});
+    }
+    private void loadPlannerCommands() {
+        for (boolean other : new boolean[] { false, true }) {
+            plugin.getCommands().add(new CommandHandler(plugin, other ? new String[] { "Diagnose", "(player)" } : new String[] { "Diagnose" },
+                    other ? "MCPerks.Diagnose.Other" : "MCPerks.Diagnose", "Explain actual MCPerks decisions") {
+                @Override public void execute(CommandSender sender, String[] args) {
+                    org.bukkit.entity.Player target = other ? org.bukkit.Bukkit.getPlayerExact(args[1]) : sender instanceof org.bukkit.entity.Player p ? p : null;
+                    if (target == null) { sendMessage(sender, "&cAn online player is required. Offline banked time is paused."); return; }
+                    plugin.getBukkitScheduler().runTask(plugin, () -> new PerkDiagnostics(plugin).explain(sender, target), target);
+                }
+            });
+        }
+        plugin.getCommands().add(new CommandHandler(plugin, new String[] { "LocalStatistics" }, "MCPerks.LocalStatistics", "Read local aggregate counters") {
+            @Override public void execute(CommandSender sender, String[] args) { sendMessage(sender, "&b" + plugin.getLocalStatistics().summary()); }
+        });
+        plugin.getCommands().add(new CommandHandler(plugin, new String[] { "GetBankedTime", "(perk)" }, "MCPerks.BankedTime", "Read personal banked time") {
+            @Override public void execute(CommandSender sender, String[] args) {
+                if (!(sender instanceof org.bukkit.entity.Player player)) { sendMessage(sender, "&cPlayer only."); return; }
+                if (!plugin.getFeatureState().available()) { sendMessage(sender, "&cBanked state is unavailable."); return; }
+                var bank = plugin.getFeatureState().banks().get(new com.bencodez.mcperks.data.FeatureState.BankKey(player.getUniqueId(), args[1]));
+                sendMessage(sender, bank == null ? "&bNo banked grant. Legacy timers retain their absolute expiration." : "&bBanked: " + bank.milliseconds()/1000 + "s; paused=" + bank.paused());
+            }
+        });
+        plugin.getCommands().add(new CommandHandler(plugin, new String[] { "SetBankedTime", "(player)", "(perk)", "(seconds)" }, "MCPerks.SetBankedTime", "Set supported personal banked time") {
+            @Override public void execute(CommandSender sender, String[] args) {
+                Perk perk = plugin.getPerkHandler().getPerk(args[2]);
+                if (perk == null || !perk.getInteractionOptions().banked() || !com.bencodez.mcperks.perk.BankedPerks.supported(perk)) { sendMessage(sender, "&cEnable BankedTime for a supported PLAYER perk first."); return; }
+                try {
+                    long milliseconds = Math.multiplyExact(Long.parseLong(args[3]), 1000L);
+                    java.util.UUID owner = java.util.UUID.fromString(plugin.getMcperksUserManager().getMCPerksUser(args[1]).getUUID());
+                    plannerReply(sender, plugin.getFeatureState().setBank(new com.bencodez.mcperks.data.FeatureState.BankKey(owner, perk.getPerk()), milliseconds)
+                        .thenApply(bank -> { plugin.getBankedPerks().refresh(owner); return bank; }), "&aBanked time saved.");
+                } catch (IllegalArgumentException | ArithmeticException error) { sendMessage(sender, "&cUse a nonnegative time of at most one year."); }
+            }
+        });
+        for (boolean paused : new boolean[] { true, false }) {
+            plugin.getCommands().add(new CommandHandler(plugin, new String[] { paused ? "PauseBankedTime" : "ResumeBankedTime", "(perk)" }, "MCPerks.BankedTime", "Pause/resume a personal banked grant") {
+                @Override public void execute(CommandSender sender, String[] args) {
+                    if (!(sender instanceof org.bukkit.entity.Player player)) { sendMessage(sender, "&cPlayer only."); return; }
+                    var key = new com.bencodez.mcperks.data.FeatureState.BankKey(player.getUniqueId(), args[1]);
+                    plannerReply(sender, plugin.getBankedPerks().pause(key, paused).thenApply(bank -> {
+                        if (bank == null) throw new IllegalArgumentException("No banked grant"); plugin.getBankedPerks().refresh(player.getUniqueId()); return bank;
+                    }), "&aBanked pause state saved.");
+                }
+            });
+        }
+        plugin.getCommands().add(new CommandHandler(plugin, new String[] { "Queue" }, "MCPerks.Queue", "Show the active and queued perks") {
+            @Override public void execute(CommandSender sender, String[] args) {
+                if (!plugin.getFeatureState().available()) sendMessage(sender, "&cQueue storage is unavailable. Entries below are the last confirmed start fences; admin review required.");
+                long now = System.currentTimeMillis();
+                for (Perk active : plugin.getPerkHandler().getActivePerks()) {
+                    var bank = plugin.getBankedPerks().attached(active) ? plugin.getFeatureState().banks().get(new com.bencodez.mcperks.data.FeatureState.BankKey(java.util.UUID.fromString(active.getActivater().getUUID()), active.getPerk())) : null;
+                    String remaining = bank != null ? bank.milliseconds()/1000 + " banked seconds" : active.getKnownExpiration() > 0 ? Math.max(0, active.getKnownExpiration()-now)/1000 + " seconds" : "unknown";
+                    sendMessage(sender, "&bActive: " + active.getPerk() + " (remaining: " + remaining + ")");
+                }
+                int position = 1;
+                for (var entry : plugin.getFeatureState().queue()) {
+                    if (position > 32) { sendMessage(sender, "&bFurther entries omitted; total " + plugin.getFeatureState().queue().size()); break; }
+                    sendMessage(sender, "&b" + position++ + ". " + entry.perk() + " requester=" + entry.owner() + " id=" + entry.id() + " state=" + entry.stage() + " wait=" + Math.max(0, now-entry.admitted())/1000 + "s start=" + (plugin.getQueuePlanner().startUnavailable(entry) == null ? "eligible checks pending" : plugin.getQueuePlanner().startUnavailable(entry)) + " ETA=unknown");
+                }
+                sendMessage(sender, "&bQueue paused: " + plugin.getFeatureState().paused());
+                plugin.getQueuePlanner().estimatedWaits().thenAccept(estimates -> {
+                    Runnable report = () -> estimates.forEach((id, seconds) -> sendMessage(sender, "&bEstimated start for " + id + ": " + seconds + "s"));
+                    if (sender instanceof org.bukkit.entity.Player player) com.bencodez.mcperks.scheduling.OwnerTasks.run(plugin, player, report, () -> {});
+                    else if (plugin.isEnabled()) plugin.getBukkitScheduler().runTask(plugin, report);
+                });
+            }
+        });
+        for (boolean staff : new boolean[] { false, true }) {
+            String command = staff ? "QueueRemove" : "CancelQueue";
+            plugin.getCommands().add(new CommandHandler(plugin, new String[] { command, "(id)" }, staff ? "MCPerks.Queue.Manage" : "MCPerks.CancelQueue", "Cancel a waiting queue entry") {
+                @Override public void execute(CommandSender sender, String[] args) {
+                    if (!staff && !(sender instanceof org.bukkit.entity.Player)) { sendMessage(sender, "&cPlayer only."); return; }
+                    try { java.util.UUID id = java.util.UUID.fromString(args[1]); java.util.UUID owner = sender instanceof org.bukkit.entity.Player player ? player.getUniqueId() : new java.util.UUID(0,0);
+                        plannerReply(sender, plugin.getFeatureState().cancel(id, owner, staff), "&aQueue entry removed; consumed activations are not refunded.");
+                    } catch (IllegalArgumentException error) { sendMessage(sender, "&cInvalid queue ID."); }
+                }
+            });
+        }
+        plugin.getCommands().add(new CommandHandler(plugin, new String[] { "QueuePause", "(boolean)" }, "MCPerks.Queue.Manage", "Pause/resume queued starts") {
+            @Override public void execute(CommandSender sender, String[] args) {
+                if (!args[1].equalsIgnoreCase("true") && !args[1].equalsIgnoreCase("false")) { sendMessage(sender, "&cUse true or false."); return; }
+                plannerReply(sender, plugin.getFeatureState().pauseQueue(Boolean.parseBoolean(args[1])), "&aQueue pause state saved.");
+            }
+        });
+        plugin.getCommands().add(new CommandHandler(plugin, new String[] { "QueueMove", "(id)", "(position)" }, "MCPerks.Queue.Manage", "Reorder a waiting queue entry") {
+            @Override public void execute(CommandSender sender, String[] args) {
+                try { int position = Integer.parseInt(args[2]); if (position < 1) throw new IllegalArgumentException();
+                    plannerReply(sender, plugin.getFeatureState().move(java.util.UUID.fromString(args[1]), position), "&aQueue order saved.");
+                } catch (IllegalArgumentException error) { sendMessage(sender, "&cUse a queue ID and positive position."); }
+            }
+        });
+    }
+
+    private void loadUsageCommands() {
+        plugin.getCommands().add(new CommandHandler(plugin, new String[] { "GetUsageCharges", "(effect)" },
+                "MCPerks.GetUsageCharges", "Show a personal effect balance") {
+            @Override public void execute(CommandSender sender, String[] args) {
+                if (!(sender instanceof org.bukkit.entity.Player player)) { sendMessage(sender, "&cPlayer only."); return; }
+                if (!plugin.getUsageCharges().available()) { sendMessage(sender, "&cCharge state is unavailable."); return; }
+                try { UsageCharges.Kind kind = UsageCharges.Kind.valueOf(args[1]);
+                    sendMessage(sender, "&b" + kind + " charges: " + plugin.getUsageCharges().get(player.getUniqueId(), kind));
+                } catch (IllegalArgumentException e) { sendMessage(sender, "&cUnknown charge effect."); }
+            }
+        });
+        for (boolean add : new boolean[] { false, true }) {
+            String command = add ? "AddUsageCharges" : "SetUsageCharges";
+            plugin.getCommands().add(new CommandHandler(plugin, new String[] { command, "(player)", "(effect)", "(number)" },
+                    "MCPerks." + command, "Manage personal effect charges") {
+                @Override public void execute(CommandSender sender, String[] args) {
+                    try {
+                        UsageCharges.Kind kind = UsageCharges.Kind.valueOf(args[2]); int amount = Integer.parseInt(args[3]);
+                        java.util.UUID owner = java.util.UUID.fromString(plugin.getMcperksUserManager().getMCPerksUser(args[1]).getUUID());
+                        java.util.concurrent.CompletableFuture<Integer> result = add ? plugin.getUsageCharges().add(owner, kind, amount)
+                                : plugin.getUsageCharges().set(owner, kind, amount);
+                        result.whenComplete((balance, error) -> {
+                            Runnable reply = () -> sendMessage(sender, error == null ? "&b" + kind + " charges: " + balance : "&cCharge update failed.");
+                            if (sender instanceof org.bukkit.entity.Player player) plugin.getBukkitScheduler().runTask(plugin, reply, player);
+                            else plugin.getBukkitScheduler().runTask(plugin, reply);
+                        });
+                    } catch (IllegalArgumentException e) { sendMessage(sender, "&cUse a supported effect and nonnegative integer amount."); }
+                }
+            });
+        }
+    }
+
+    public void loadCommands() {
+		registerFeatureArgumentMatchers();
 		plugin.setCommands(new ArrayList<CommandHandler>());
 		commands = new HashMap<String, CommandHandler>();
 
@@ -157,16 +331,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands()
-				.add(new CommandHandler(plugin, new String[] { "Reload" }, "MCPerks.Reload", "Reloads the plugin") {
-
-					@Override
-					public void execute(CommandSender sender, String[] args) {
-						plugin.reload();
-						sender.sendMessage(MessageAPI.colorize(
-								"&c" + plugin.getName() + " v" + plugin.getDescription().getVersion() + " reloaded!"));
-					}
-				});
+		loadReloadCommand();
 
 		plugin.getCommands()
 				.add(new CommandHandler(plugin, new String[] { "Version" }, "MCPerks.Version", "List version info") {
@@ -396,15 +561,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands().add(
-				new CommandHandler(plugin, new String[] { "ClearQueue" }, "MCPerks.ClearQueue", "Clear Perk Queue") {
-
-					@Override
-					public void execute(CommandSender sender, String[] args) {
-						plugin.getPerkHandler().clearQueue();
-						sender.sendMessage(MessageAPI.colorize("&cPerk Queue Cleared"));
-					}
-				});
+        loadClearQueueCommand();
 
 		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "ActivatePerk", "(player)", "(perk)" },
 				"MCPerks.ActivatePerk", "Forcefly Activate Perk") {
@@ -726,7 +883,10 @@ public class CommandLoader {
 							sendMessage(sender, "&cSet activations to " + user.getActivations());
 						}
 					}
-				});
+					});
+
+        loadUsageCommands();
+        loadPlannerCommands();
 
 		// load perk commands
 		for (Perk perk : plugin.getPerkHandler().getLoadedPerks().values()) {
