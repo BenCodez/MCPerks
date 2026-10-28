@@ -4,13 +4,48 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.simpleapi.folialib.enums.EntityTaskResult;
+import com.bencodez.simpleapi.folialib.wrapper.task.WrappedTask;
 class OwnerTasksTest {
+    @Test void asynchronousSchedulerFailureRetiresOnceBeforeLateEntityCallback() {
+        MCPerksMain plugin=mock(MCPerksMain.class); when(plugin.isEnabled()).thenReturn(true);
+        Player player=mock(Player.class); var harness=new OwnerTaskHarness(plugin,player,true);
+        CompletableFuture<EntityTaskResult> result=new CompletableFuture<>();
+        AtomicReference<Consumer<WrappedTask>> callback=new AtomicReference<>();
+        AtomicReference<Runnable> fallback=new AtomicReference<>();
+        when(harness.implementation.runAtEntityWithFallback(eq(player),any(),any())).thenAnswer(invocation -> {
+            callback.set(invocation.getArgument(1)); fallback.set(invocation.getArgument(2)); return result;
+        });
+        AtomicInteger executed=new AtomicInteger(),retired=new AtomicInteger();
+        OwnerTasks.run(plugin,player,executed::incrementAndGet,retired::incrementAndGet);
+        verify(player,never()).isValid();
+        assertEquals(0,retired.get());
+        result.completeExceptionally(new IllegalStateException("scheduler failed"));
+        assertEquals(1,retired.get());
+        callback.get().accept(null); fallback.get().run(); callback.get().accept(null);
+        assertEquals(0,executed.get()); assertEquals(1,retired.get());
+        verify(player,never()).isValid();
+    }
+
+    @Test void actionFailureDoesNotAllowDuplicateCallbackOrRetirement() {
+        MCPerksMain plugin=mock(MCPerksMain.class); when(plugin.isEnabled()).thenReturn(true);
+        Player player=mock(Player.class); var harness=new OwnerTaskHarness(plugin,player,true);
+        AtomicInteger executed=new AtomicInteger(),retired=new AtomicInteger();
+        OwnerTasks.run(plugin,player,() -> { executed.incrementAndGet(); throw new IllegalStateException("action failed"); },retired::incrementAndGet);
+        verify(player,never()).isValid();
+        Runnable callback=harness.tasks.remove();
+        assertThrows(IllegalStateException.class,callback::run);
+        callback.run(); harness.retirement.get(callback).run();
+        assertEquals(1,executed.get()); assertEquals(0,retired.get());
+        verify(player,times(1)).isValid();
+    }
     @Test void rejectedEntitySchedulerCompletesAdmissionEvenWhenFallbackIsNotCalled() {
         MCPerksMain plugin=mock(MCPerksMain.class); when(plugin.isEnabled()).thenReturn(true); Player player=mock(Player.class); var harness=new OwnerTaskHarness(plugin,player);
         when(harness.implementation.runAtEntityWithFallback(eq(player),any(),any())).thenReturn(CompletableFuture.completedFuture(EntityTaskResult.SCHEDULER_RETIRED));
