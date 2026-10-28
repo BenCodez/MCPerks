@@ -8,8 +8,6 @@ softdepend:
 - Vault
 - RoseStacker
 api-version: 1.13
-libraries:
-- org.openjdk.nashorn:nashorn-core:15.3
 commands:
   mcperks:
     description: MCPerks commands

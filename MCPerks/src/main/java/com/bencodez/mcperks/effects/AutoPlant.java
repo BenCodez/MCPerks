@@ -88,19 +88,19 @@ public class AutoPlant {
 	public Material getSeedBlockType(Material crop) {
 		switch (crop) {
 		case WHEAT:
-			return Material.WHEAT;
 		case WHEAT_SEEDS:
 			return Material.WHEAT;
 		case POTATOES:
 			return Material.POTATOES;
-		case BEETROOT:
-			return Material.BEETROOT_SEEDS;
-		case BEETROOT_SEEDS:
-			return Material.BEETROOT_SEEDS;
 		case CARROTS:
 			return Material.CARROTS;
 		case BEETROOTS:
 			return Material.BEETROOTS;
+		case BEETROOT:
+		case BEETROOT_SEEDS:
+			return Material.BEETROOT_SEEDS;
+		case NETHER_WART:
+			return Material.NETHER_WART;
 		default:
 			return null;
 		}
@@ -109,22 +109,27 @@ public class AutoPlant {
 	public Material getSeedItemType(Material crop) {
 		switch (crop) {
 		case WHEAT:
-			return Material.WHEAT_SEEDS;
 		case WHEAT_SEEDS:
 			return Material.WHEAT_SEEDS;
 		case POTATOES:
 			return Material.POTATO;
-		case BEETROOT:
-			return Material.BEETROOT_SEEDS;
-		case BEETROOTS:
-			return Material.BEETROOT_SEEDS;
-		case BEETROOT_SEEDS:
-			return Material.BEETROOT_SEEDS;
 		case CARROTS:
 			return Material.CARROT;
+		case BEETROOT:
+		case BEETROOTS:
+		case BEETROOT_SEEDS:
+			return Material.BEETROOT_SEEDS;
+		case NETHER_WART:
+			return Material.NETHER_WART;
 		default:
 			return null;
 		}
+	}
+
+	public boolean isFarmable(Block b) {
+		return b.getType().equals(Material.POTATOES) || b.getType().equals(Material.CARROTS)
+				|| b.getType().equals(Material.WHEAT) || b.getType().equals(Material.WHEAT_SEEDS)
+				|| b.getType().equals(Material.BEETROOTS) || b.getType().equals(Material.NETHER_WART);
 	}
 
 	public boolean hasSeed(Player player, Material seed) {
@@ -161,11 +166,5 @@ public class AutoPlant {
 				}
 			}
 		}
-	}
-
-	public boolean isFarmable(Block b) {
-		return b.getType().equals(Material.POTATOES) || b.getType().equals(Material.CARROTS)
-				|| b.getType().equals(Material.WHEAT) || b.getType().equals(Material.WHEAT_SEEDS)
-				|| b.getType().equals(Material.BEETROOTS);
 	}
 }
