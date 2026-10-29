@@ -8,7 +8,7 @@
     <packaging>jar</packaging>
     <name>MCPerks</name>
     <properties>
-        <advancedcore.version>LATEST</advancedcore.version>
+        <advancedcore.version>3.8.2-SNAPSHOT</advancedcore.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
     </properties>
