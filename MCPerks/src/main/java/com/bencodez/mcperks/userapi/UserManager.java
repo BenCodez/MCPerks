@@ -46,6 +46,7 @@ public class UserManager {
 		manager.addKey(new UserDataKeyString("UseBossBar").setColumnType("VARCHAR(5)"));
 		manager.addKey(new UserDataKeyString("IgnoreEffects").setColumnType("VARCHAR(5)"));
 		manager.addKey(new UserDataKeyInt("Activations"));
+		manager.addKey(new UserDataKeyString(ReplayAwardLedger.COLUMN).setColumnType("TEXT"));
 		for (String perk : ConfigPerks.getInstance().getPerksNames()) {
 			manager.addKey(new UserDataKeyInt("PerkActivations_" + perk));
 			manager.addKey(new UserDataKeyInt(perk + "_TimesUsed"));
