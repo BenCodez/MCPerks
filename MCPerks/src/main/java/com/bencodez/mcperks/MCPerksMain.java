@@ -141,6 +141,10 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	 * 
 	 * @see org.bukkit.plugin.java.JavaPlugin#onDisable()
 	 */
+    private com.bencodez.mcperks.userapi.UsageCharges usageCharges;
+    private com.bencodez.mcperks.listeners.UsageEffectListener usageEffects;
+    public com.bencodez.mcperks.userapi.UsageCharges getUsageCharges() { return usageCharges; }
+
     private volatile java.util.concurrent.CompletableFuture<Void> shutdownPreparation;
     private volatile java.util.concurrent.CompletionStage<Void> shutdownFinalFiles;
     private boolean shutdownCompletionHookDispatched;
@@ -157,7 +161,10 @@ public class MCPerksMain extends AdvancedCorePlugin {
         shutdownPreparation = new java.util.concurrent.CompletableFuture<>();
         java.util.concurrent.CompletableFuture<Void> activations = java.util.concurrent.CompletableFuture.completedFuture(null);
         java.util.concurrent.CompletableFuture<Void> saved;
+        java.util.concurrent.CompletableFuture<Void> refill = java.util.concurrent.CompletableFuture.completedFuture(null);
         try {
+            if (usageEffects != null) refill = usageEffects.retireAndClose();
+            else if (usageCharges != null) usageCharges.close();
             featureLifecycle++;
             if (getPerkHandler() != null) activations = getPerkHandler().retireNativeActivations().toCompletableFuture();
             if (getMcperksServerData() != null) getMcperksServerData().retireActivationCallbacks();
@@ -173,7 +180,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
                                 stages.toArray(java.util.concurrent.CompletableFuture[]::new)));
             }
         } catch (Throwable failure) { saved = java.util.concurrent.CompletableFuture.failedFuture(failure); }
-        java.util.concurrent.CompletableFuture.allOf(activations, saved).whenComplete((ignored, failure) -> {
+        java.util.concurrent.CompletableFuture.allOf(activations, saved, refill).whenComplete((ignored, failure) -> {
             if (failure == null) shutdownPreparation.complete(null);
             else shutdownPreparation.completeExceptionally(failure);
         });
@@ -213,6 +220,8 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	@Override
 	public void onUnLoad() {
+        if (usageEffects != null) usageEffects.retireAndClose();
+        else if (usageCharges != null) usageCharges.close();
         com.bencodez.mcperks.scheduling.OwnerTasks.shutdown(this);
         // Native user storage is retired here; all user work belongs to the earlier stage.
         if (getMcperksServerData() != null) getMcperksServerData().saveData();
@@ -227,12 +236,22 @@ public class MCPerksMain extends AdvancedCorePlugin {
         shutdownFinalFiles = null;
         shutdownCompletionHookDispatched = false;
         int featureEpoch = ++featureLifecycle;
+        // Retire any predecessor before exposing a successor ledger. If startup
+        // fails before listener registration, shutdown must close the successor.
+        if (usageEffects != null) usageEffects.retireAndClose();
+        else if (usageCharges != null) usageCharges.close();
+        usageEffects = null;
+        usageCharges = null;
+        usageCharges = new com.bencodez.mcperks.userapi.UsageCharges(getDataFolder().toPath().resolve("usage-charges.dat"));
+        usageCharges.ready().exceptionally(error -> { getLogger().severe("Usage charge store unavailable; charged effects fail closed"); return null; });
         storage = new com.bencodez.mcperks.data.OrderedStorage(getDataFolder().toPath().resolve("perk-features.dat"));
         var runtimeReady = mcperksServerData.initialize(storage);
         runtimeReady.exceptionally(error -> { getLogger().severe("ServerData startup reconciliation failed; activations remain unavailable"); return null; });
 		loadListeners();
 		perkHandler = new PerkHandler(this);
 		effectHandler = new EffectHandler(this);
+        usageEffects = new com.bencodez.mcperks.listeners.UsageEffectListener(this);
+        getServer().getPluginManager().registerEvents(usageEffects, this);
 
 		commandLoader = new CommandLoader(this);
 		commandLoader.loadCommands();
@@ -673,6 +692,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
         reloadObservation = observation;
         try {
             if (perkHandler != null) perkHandler.pauseNativeActivationsForReload();
+            if (usageEffects != null) usageEffects.invalidate();
         } catch (RuntimeException unavailable) {
             finishReload(operation, unavailable);
             return observation;
@@ -724,6 +744,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
     private void reloadAfterDrain() {
         // Retire direct activations admitted by the previous configuration generation.
         featureLifecycle++;
+        if (usageEffects != null) usageEffects.invalidate();
 		configFile.reloadData();
 		perkSystemType = configFile.getPerkSystemType();
 		Lang.getInstance().reloadData();

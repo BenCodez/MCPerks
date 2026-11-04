@@ -16,6 +16,10 @@ public final class TestAccess {
 
 
 
+    public static com.bencodez.mcperks.userapi.UsageCharges newUsageCharges(java.nio.file.Path file, DurableFeatureFiles.Publisher publisher) {
+        return construct(com.bencodez.mcperks.userapi.UsageCharges.class, new Class<?>[] {java.nio.file.Path.class, DurableFeatureFiles.Publisher.class}, file, publisher);
+    }
+
     public static ServerData newServerData(MCPerksMain plugin, DurableFeatureFiles.Publisher publisher) {
         return construct(ServerData.class, new Class<?>[] {MCPerksMain.class, DurableFeatureFiles.Publisher.class}, plugin, publisher);
     }

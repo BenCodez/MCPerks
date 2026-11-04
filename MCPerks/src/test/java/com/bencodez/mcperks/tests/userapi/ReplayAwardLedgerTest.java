@@ -166,21 +166,33 @@ class ReplayAwardLedgerTest {
         doAnswer(call -> {
             if (pause.get()) { entered.countDown(); assertTrue(release.await(5, java.util.concurrent.TimeUnit.SECONDS)); }
             return call.callRealMethod();
-        }).when(manager).submitSharedReplayTransaction(any(), any(), anyMap(), any());
+        }).when(manager).submitSharedReplayTransaction(any(), any(), anyString(), anyMap(), any());
         var pool = java.util.concurrent.Executors.newSingleThreadExecutor();
+        var laneField = com.bencodez.advancedcore.api.user.usercache.UserDataManager.class.getDeclaredField("mutationCallbacks"); laneField.setAccessible(true);
+        var lane = (java.util.concurrent.ExecutorService) laneField.get(manager);
+        var laneEntered = new java.util.concurrent.CountDownLatch(4); var laneRelease = new java.util.concurrent.CountDownLatch(1);
         try {
             user.addReplayActivationAsync(null, 2, "event:one").toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS);
+            for (int i = 0; i < 4; i++) lane.execute(() -> { laneEntered.countDown(); try { laneRelease.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } });
+            assertTrue(laneEntered.await(5, java.util.concurrent.TimeUnit.SECONDS));
             pause.set(true);
             var delayed = pool.submit(() -> user.addReplayActivationAsync(null, 2, "event:one").toCompletableFuture());
             assertTrue(entered.await(5, java.util.concurrent.TimeUnit.SECONDS));
-            user.checkpointReplayActivationAsync("event:one").toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS);
+            var checkpoint = user.checkpointReplayActivationAsync("event:one").toCompletableFuture();
+            manager.getTimer().submit(() -> {}).get(5, java.util.concurrent.TimeUnit.SECONDS);
+            assertFalse(checkpoint.isDone(), "checkpoint completion is held after confirmed storage cleanup");
             release.countDown();
             var pending = delayed.get(5, java.util.concurrent.TimeUnit.SECONDS);
+            manager.getTimer().submit(() -> {}).get(5, java.util.concurrent.TimeUnit.SECONDS);
+            var beforeCallbacks = backend.user(uuid).readRow(UserStorage.SQLITE);
+            assertEquals(2, beforeCallbacks.stream().filter(c -> c.getName().equals("Activations")).findFirst().orElseThrow().getValue().getInt());
+            assertEquals("", beforeCallbacks.stream().filter(c -> c.getName().equals("MCPerksAwardReceipts")).findFirst().orElseThrow().getValue().getString());
+            laneRelease.countDown(); checkpoint.get(5, java.util.concurrent.TimeUnit.SECONDS);
             var failure = assertThrows(java.util.concurrent.ExecutionException.class, () -> pending.get(5, java.util.concurrent.TimeUnit.SECONDS));
             assertInstanceOf(SqlUserStorage.ReplayPreconditionException.class, failure.getCause());
             var row = backend.user(uuid).readRow(UserStorage.SQLITE);
             assertEquals(2, row.stream().filter(c -> c.getName().equals("Activations")).findFirst().orElseThrow().getValue().getInt());
-        } finally { release.countDown(); pool.shutdownNow(); manager.getTimer().shutdownNow(); if (backend.isOpen()) backend.close(); }
+        } finally { laneRelease.countDown(); release.countDown(); pool.shutdownNow(); manager.getTimer().shutdownNow(); if (backend.isOpen()) backend.close(); }
     }
     @Test void customUserDataMustOptInBeforeReplayCanBypassOverrides() throws Exception {
         UUID uuid = UUID.randomUUID(); var backend = mock(com.bencodez.advancedcore.core.user.storage.sql.SqlUserBackend.class);
@@ -590,31 +602,32 @@ class ReplayAwardLedgerTest {
             var dispatch = com.bencodez.votingplugin.advancedcore.api.rewards.Reward.class.getDeclaredMethod("requestInjectionAsync",
                     com.bencodez.votingplugin.advancedcore.api.rewards.injected.RewardInject.class,
                     com.bencodez.votingplugin.advancedcore.api.user.AdvancedCoreUser.class, HashMap.class,
-                    com.bencodez.votingplugin.advancedcore.api.rewards.Reward.ReplayState.class, String.class, String.class);
+                    com.bencodez.votingplugin.advancedcore.api.rewards.Reward.ReplayState.class, String.class, String.class,
+                    com.bencodez.votingplugin.advancedcore.api.rewards.RewardOptions.class, org.bukkit.entity.Player.class);
             dispatch.setAccessible(true);
             var vpCore = mock(com.bencodez.votingplugin.advancedcore.AdvancedCorePlugin.class);
             try (var core = mockStatic(com.bencodez.votingplugin.advancedcore.AdvancedCorePlugin.class)) {
                 core.when(com.bencodez.votingplugin.advancedcore.AdvancedCorePlugin::getInstance).thenReturn(vpCore);
                 var globalReceipt = new java.util.concurrent.CompletableFuture<Void>(); when(fallback.addActivationAsync(3)).thenReturn(globalReceipt);
                 @SuppressWarnings("unchecked") var global = (java.util.concurrent.CompletionStage<Object>) dispatch.invoke(
-                        dispatchReward, inject, player, new HashMap<>(), state, "root:global", null);
+                        dispatchReward, inject, player, new HashMap<>(), state, "root:global", null, null, null);
                 assertFalse(global.toCompletableFuture().isDone()); globalReceipt.complete(null);
                 global.toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS);
                 var rejected = new java.util.concurrent.CompletableFuture<Void>(); when(fallback.addActivationAsync(3)).thenReturn(rejected);
                 @SuppressWarnings("unchecked") var failed = (java.util.concurrent.CompletionStage<Object>) dispatch.invoke(
-                        dispatchReward, inject, player, new HashMap<>(), state, "root:rejected", null);
+                        dispatchReward, inject, player, new HashMap<>(), state, "root:rejected", null, null, null);
                 rejected.completeExceptionally(new UnsupportedOperationException("rejected before admission"));
                 assertThrows(java.util.concurrent.ExecutionException.class, () -> failed.toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS));
                 configData.set("Activations", null);
                 var resumedReceipt = new java.util.concurrent.CompletableFuture<Void>(); when(fallback.addActivationAsync(3)).thenReturn(resumedReceipt);
                 @SuppressWarnings("unchecked") var resumed = (java.util.concurrent.CompletionStage<Object>) dispatch.invoke(
-                        dispatchReward, inject, player, new HashMap<>(), state, "root:rejected", null);
+                        dispatchReward, inject, player, new HashMap<>(), state, "root:rejected", null, null, null);
                 assertFalse(resumed.toCompletableFuture().isDone()); resumedReceipt.complete(null);
                 resumed.toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS);
                 configData.set("PerkActivations.vote", 3);
                 var perkReceipt = new java.util.concurrent.CompletableFuture<Void>(); when(fallback.addActivationAsync("vote", 3)).thenReturn(perkReceipt);
                 @SuppressWarnings("unchecked") var perkResult = (java.util.concurrent.CompletionStage<Object>) dispatch.invoke(
-                        dispatchReward, perkInject, player, new HashMap<>(), state, "root:perk", null);
+                        dispatchReward, perkInject, player, new HashMap<>(), state, "root:perk", null, null, null);
                 assertFalse(perkResult.toCompletableFuture().isDone()); perkReceipt.complete(null);
                 perkResult.toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS);
                 verify(fallback).addActivationAsync("vote", 3); verify(fallback, never()).addActivation("vote", 3);

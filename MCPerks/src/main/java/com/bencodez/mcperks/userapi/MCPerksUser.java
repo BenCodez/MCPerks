@@ -213,7 +213,7 @@ public class MCPerksUser extends com.bencodez.advancedcore.api.user.AdvancedCore
 					new com.bencodez.simpleapi.sql.data.DataValueString(""));
 			UUID uuid = UUID.fromString(getUUID()); var receipt = new AwardReceipt();
 			manager.acquireSharedReplayLease(uuid, identity);
-			try { var operation = manager.submitSharedReplayTransaction(uuid, owner.getStorageType(), initial,
+			try { var operation = manager.submitSharedReplayTransaction(uuid, owner.getStorageType(), identity, initial,
 					scope -> { manager.requireSharedReplayAwardActive(uuid, identity); return ReplayAwardLedger.apply(scope, key, amount, identity); });
 			var settled = new AwardReceipt();
 			operation.whenComplete((applied, failure) -> {
@@ -260,7 +260,7 @@ public class MCPerksUser extends com.bencodez.advancedcore.api.user.AdvancedCore
 			settled.whenComplete((ignored, failure) -> manager.afterSharedMutationFinalization(operation).whenComplete((done, finalizationFailure) -> {
 				if (failure != null) receipt.fail(failure); else if (finalizationFailure != null) receipt.fail(finalizationFailure); else receipt.succeed();
 			}));
-			} catch (RuntimeException | Error failure) { manager.settleSharedReplayLease(uuid, identity, false, false); throw failure; }
+			} catch (RuntimeException | Error failure) { manager.cancelSharedReplayCheckpointReservation(uuid, identity); throw failure; }
 			return receipt;
 		} catch (RuntimeException | Error failure) { return java.util.concurrent.CompletableFuture.failedFuture(failure); }
 	}

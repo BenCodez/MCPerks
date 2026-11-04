@@ -114,7 +114,10 @@ public enum Effect {
 
 	AllRepair,
 
-	RandomAllRepair;
+	RandomAllRepair,
+
+	/** Refill a depleted held stack from matching inventory items. */
+	AutoBlockRefill;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {
