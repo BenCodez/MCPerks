@@ -153,7 +153,8 @@ public class EffectListeners implements Listener {
 		if (plugin.getPerkHandler().effectActive(Effect.InstantSmelt, player.getUniqueId().toString(),
 				player.getWorld().getName())) {
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
-				if (active.getEffects().contains(Effect.InstantSmelt)) {
+				if (active.getEffects().contains(Effect.InstantSmelt) && plugin.getPerkHandler().effectAllowed(active,
+                        Effect.InstantSmelt, player.getUniqueId().toString(), player.getWorld().getName())) {
 					ArrayList<Item> toRemove = new ArrayList<Item>();
 					for (Item item : event.getItems()) {
 						ItemStack smeltedItem = null;
@@ -213,6 +214,7 @@ public class EffectListeners implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onBlockBreak(BlockBreakEvent event) {
 		Player player = event.getPlayer();
+        boolean nativeBreak = plugin.getUsageEffects() != null && plugin.getUsageEffects().isNativeBreak(player.getUniqueId());
 		if (!event.isCancelled()) {
 			for (BlockBreakEvent e : plugin.getEffectHandler().getBlockBreakEvents()) {
 				if (e.equals(event)) {
@@ -224,7 +226,7 @@ public class EffectListeners implements Listener {
 			Block blockBroken;
 			Collection<ItemStack> var5;
 
-			if (Tag.LOGS.isTagged(event.getBlock().getType())) {
+			if (!nativeBreak && Tag.LOGS.isTagged(event.getBlock().getType())) {
 				if (plugin.getPerkHandler().effectActive(Effect.TreeHarvest, player.getUniqueId().toString(),
 						player.getWorld().getName())) {
 					boolean found = false;
@@ -236,7 +238,8 @@ public class EffectListeners implements Listener {
 							}
 						}
 
-						if (e != null && !found) {
+						if (e != null && !found && plugin.getPerkHandler().effectAllowed(active,
+                            e, player.getUniqueId().toString(), player.getWorld().getName())) {
 							new TreeHarvestEffect(plugin, player, event.getBlock(), active);
 							found = true;
 						}
@@ -245,7 +248,7 @@ public class EffectListeners implements Listener {
 				}
 			}
 
-			if (plugin.getPerkHandler().effectActive(Effect.AutoPlant, player.getUniqueId().toString(),
+			if (!nativeBreak && plugin.getPerkHandler().effectActive(Effect.AutoPlant, player.getUniqueId().toString(),
 					player.getWorld().getName())) {
 				boolean found = false;
 				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
@@ -256,7 +259,8 @@ public class EffectListeners implements Listener {
 						}
 					}
 
-					if (e != null && !found) {
+					if (e != null && !found && plugin.getPerkHandler().effectAllowed(active,
+                            e, player.getUniqueId().toString(), player.getWorld().getName())) {
 						new AutoPlant(plugin, player, event.getBlock(), active, event);
 						found = true;
 
@@ -269,7 +273,8 @@ public class EffectListeners implements Listener {
 			if (plugin.getPerkHandler().effectActive(Effect.Fortune, player.getUniqueId().toString(),
 					player.getWorld().getName())) {
 				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
-					if (active.getEffects().contains(Effect.Fortune)) {
+					if (active.getEffects().contains(Effect.Fortune) && plugin.getPerkHandler().effectAllowed(active,
+							Effect.Fortune, player.getUniqueId().toString(), player.getWorld().getName())) {
 
 						FortuneEffect fe = new FortuneEffect(active);
 						blockBroken = event.getBlock();
@@ -290,7 +295,8 @@ public class EffectListeners implements Listener {
 			if (plugin.getPerkHandler().effectActive(Effect.Farmer, player.getUniqueId().toString(),
 					player.getWorld().getName())) {
 				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
-					if (active.getEffects().contains(Effect.Farmer)) {
+					if (active.getEffects().contains(Effect.Farmer) && plugin.getPerkHandler().effectAllowed(active,
+							Effect.Farmer, player.getUniqueId().toString(), player.getWorld().getName())) {
 						FarmerEffect fe1 = new FarmerEffect(active);
 						blockBroken = event.getBlock();
 						if (fe1.isFarmable(blockBroken)) {
@@ -305,7 +311,7 @@ public class EffectListeners implements Listener {
 				}
 			}
 
-			if (plugin.getPerkHandler().effectActive(Effect.IncreaseMiningArea, player.getUniqueId().toString(),
+			if (!nativeBreak && plugin.getPerkHandler().effectActive(Effect.IncreaseMiningArea, player.getUniqueId().toString(),
 					player.getWorld().getName())) {
 				boolean found = false;
 				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
@@ -316,7 +322,8 @@ public class EffectListeners implements Listener {
 						}
 					}
 
-					if (e != null && !found) {
+					if (e != null && !found && plugin.getPerkHandler().effectAllowed(active,
+                            e, player.getUniqueId().toString(), player.getWorld().getName())) {
 						blockBroken = event.getBlock();
 						BlockFace f = PlayerUtils.yawToFace(player.getLocation().getYaw(), false);
 						new IncreaseMiningArea(plugin, event, active, player, e.getModifier(), f);
@@ -353,7 +360,7 @@ public class EffectListeners implements Listener {
 				if (perk.getBossBar() != null) {
 					perk.getBossBar().removePlayer(player);
 				}
-				if (plugin.getConfigFile().getDeactivateOnLogout()) {
+				if (plugin.getConfigFile().getDeactivateOnLogout() && (plugin.getBankedPerks() == null || !plugin.getBankedPerks().attached(perk))) {
 					if (perk.getActivater().getUUID().equals(player.getUniqueId().toString())) {
 						perk.deactivatePerk(perk.getActivater());
 					}
@@ -364,12 +371,19 @@ public class EffectListeners implements Listener {
 
 	}
 
+    private String killerIdentity(EntityDeathEvent event) {
+        org.bukkit.entity.Entity killer = plugin.getVersionHandle().hasDamageSourceMethod()
+                ? plugin.getVersionHandle().getCausingEntity(event) : event.getEntity().getKiller();
+        return killer instanceof Player ? killer.getUniqueId().toString() : null;
+    }
+
 	@SuppressWarnings("unchecked")
 	@EventHandler(ignoreCancelled = true)
 	public void onEntityDeath(EntityDeathEvent event) {
 		if (!(event.getEntity() instanceof Player) && !event.getEntityType().equals(EntityType.ARMOR_STAND)) {
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
-				if (active.getEffects().contains(Effect.IncreaseMobDrops)) {
+				if (active.getEffects().contains(Effect.IncreaseMobDrops) && plugin.getPerkHandler().effectAllowed(active, Effect.IncreaseMobDrops,
+                        killerIdentity(event), event.getEntity().getWorld().getName())) {
 					boolean giveEffects = false;
 					if (active.getPerkType().equals(PerkSystemType.ALL)) {
 						giveEffects = true;
@@ -402,7 +416,8 @@ public class EffectListeners implements Listener {
 			}
 
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
-				if (active.getEffects().contains(Effect.DoubleExperience)) {
+				if (active.getEffects().contains(Effect.DoubleExperience) && plugin.getPerkHandler().effectAllowed(active, Effect.DoubleExperience,
+                        killerIdentity(event), event.getEntity().getWorld().getName())) {
 					boolean giveEffects = false;
 					if (active.getPerkType().equals(PerkSystemType.ALL)) {
 						giveEffects = true;
@@ -428,7 +443,8 @@ public class EffectListeners implements Listener {
 			}
 
 			for (Perk active : plugin.getPerkHandler().getActivePerks()) {
-				if (active.getEffects().contains(Effect.HeadDropper)) {
+				if (active.getEffects().contains(Effect.HeadDropper) && plugin.getPerkHandler().effectAllowed(active, Effect.HeadDropper,
+                        killerIdentity(event), event.getEntity().getWorld().getName())) {
 					if (!active.getBlackedListedMobs().contains(event.getEntity().getType())) {
 						boolean giveEffects = false;
 						if (active.getPerkType().equals(PerkSystemType.ALL)) {
@@ -687,7 +703,8 @@ public class EffectListeners implements Listener {
 					}
 				}
 
-				if (e != null) {
+				if (e != null && plugin.getPerkHandler().effectAllowed(active, Effect.BoneMealAura,
+						player.getUniqueId().toString(), player.getWorld().getName())) {
 					new BoneMealAura().checkPlants(player, event.getTo(), (int) e.getModifier());
 
 				}

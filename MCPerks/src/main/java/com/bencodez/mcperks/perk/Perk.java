@@ -10,6 +10,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.sql.Timestamp;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -41,6 +45,9 @@ import lombok.Getter;
  * The Class Perk.
  */
 public class Perk {
+	/** Admission fence for direct starts; prevents duplicate delayed hooks. */
+	private final Map<String, Long> activationAdmissions = new LinkedHashMap<>();
+	private long activationSequence;
 
 	/** The perk. */
 	private String perk;
@@ -74,9 +81,10 @@ public class Perk {
 
 	private ArrayList<Effect> effects = new ArrayList<Effect>();
 
-	private boolean active;
+	private volatile boolean active;
+    private boolean shutdownPrepared;
 
-	private long experation;
+	private volatile long experation;
 
 	private ArrayList<ItemStack> specialDrops;
 
@@ -143,8 +151,11 @@ public class Perk {
 	@Getter
 	private boolean clearModifiers;
 
+    @Getter private InteractionOptions interactionOptions;
+
 	public Perk(Perk perk) {
 		this.perk = perk.perk;
+        interactionOptions = perk.interactionOptions;
 		name = perk.name;
 		description = perk.description;
 		time = perk.time;
@@ -190,6 +201,7 @@ public class Perk {
 	 */
 	public Perk(String perk) {
 		this.perk = perk;
+        interactionOptions = InteractionOptions.read(ConfigPerks.getInstance().getData(perk));
 		setPriority(ConfigPerks.getInstance().getPerkPriority(perk));
 		name = ConfigPerks.getInstance().getPerkName(perk);
 		description = ConfigPerks.getInstance().getPerkDescription(perk).replace("%TimeLasts%", "" + getTime());
@@ -269,8 +281,12 @@ public class Perk {
 	 * @param length length
 	 */
 	public void activatePerk(MCPerksUser user, int length) {
+		activatePerk(user, length, null);
+	}
+
+	void activatePerk(MCPerksUser user, int length, Timestamp timestamp) {
 		activater = user;
-		plugin.getPerkHandler().activePerk(this, user, length, null);
+		plugin.getPerkHandler().activePerk(this, user, length, timestamp);
 	}
 
 	public void addEffectedPlayer(String uuid) {
@@ -366,20 +382,63 @@ public class Perk {
 		if (getLimit() == 0) {
 			return true;
 		}
-		int used = user.getPerkTimesUsed(this);
-		if (used >= getLimit()) {
-
-			return false;
-		}
-		return true;
+		return !isActivationLimitReached(user.getPerkTimesUsed(this));
 	}
+
+    /** Read-only activation rule shared with diagnostics using captured storage state. */
+    public boolean isActivationLimitReached(int used) {
+        return getLimit() != 0 && used >= getLimit();
+    }
 
 	@Override
 	public Perk clone() {
 		return new Perk(this);
 	}
 
+    /** Disable-time game cleanup is synchronous on Bukkit's owner and performs no user-data lookup. */
+    public synchronized boolean detachForShutdown() {
+        if (shutdownPrepared || !active) return false;
+        if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Perk shutdown requires the Bukkit owner");
+        shutdownPrepared = true;
+        active = false;
+        for (Effect effect : getEffects()) {
+            try {
+                effect.removeEffectForShutdown(plugin, this, getEffectedPlayers());
+            } catch (Throwable failure) {
+                plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                        "Failed to remove shutdown effect " + effect + " for perk " + getPerk(), failure);
+            }
+        }
+        if (getBossBar() != null) {
+            try { getBossBar().hide(); }
+            catch (Throwable failure) {
+                plugin.getLogger().log(java.util.logging.Level.SEVERE,
+                        "Failed to hide shutdown boss bar for perk " + getPerk(), failure);
+            } finally { setBossBar(null); }
+        }
+        plugin.getPerkHandler().getActivePerks().remove(this);
+        return true;
+    }
+
+    /** First acknowledge the legacy restart record; only then clear the native live expiration. */
+    public java.util.concurrent.CompletableFuture<Void> persistForShutdown() {
+        var state = plugin.getFeatureState();
+        var data = plugin.getMcperksServerData();
+        return data.confirmedActivation(() -> data.saveOfflinePerk(this))
+                .thenCompose(ignored -> state.runtimeStorage(() -> data.confirmedActivation(
+                        () -> setExperation(getActivater(), 0))).thenCompose(stage -> stage))
+                .thenCompose(ignored -> state.runtimeStorage(() -> {
+                    if (getPerkType() == PerkSystemType.ALL) return java.util.concurrent.CompletableFuture.<Void>completedFuture(null);
+                    var flushed = new java.util.concurrent.CompletableFuture<Void>();
+                    plugin.getUserManager().getDataManager().getCache(UUID.fromString(getActivater().getUUID()))
+                            .flushChangesAndRun(() -> flushed.complete(null));
+                    return flushed;
+                }).thenCompose(stage -> stage));
+    }
+
 	public synchronized void deactivatePerk(MCPerksUser user) {
+        if (shutdownPrepared) return;
+        if (plugin.getBankedPerks() != null && plugin.getBankedPerks().deactivate(this)) return;
 		setExperation(user, 0);
 		setActive(false);
 		// Main.plugin.getEffectHandler().deactivate(this);
@@ -429,16 +488,138 @@ public class Perk {
 
 	}
 
-	public void execute(MCPerksUser user, int length) {
-		user.setPerkCoolDown(this, MiscUtils.getInstance().addSeconds(new Date(), getCoolDown()).getTime());
-		if (getServerWideCoolDown() > 0) {
-			setServerCoolDownTime(MiscUtils.getInstance().addSeconds(new Date(), getServerWideCoolDown()).getTime());
-		}
-		activatePerk(user, length);
-	}
+    public void execute(MCPerksUser user, int length) {
+        executeConfirmed(user, length).exceptionally(error -> { plugin.getLogger().warning("Perk execution could not be confirmed: " + getPerk()); return null; });
+    }
+    public java.util.concurrent.CompletableFuture<Void> executeConfirmed(MCPerksUser user, int length) {
+        long admission = acquireActivationAdmission(user);
+        if (admission == 0) return java.util.concurrent.CompletableFuture.failedFuture(
+                new IllegalStateException("Perk activation already pending or admissions busy"));
+        return executeAdmitted(user, length, admission);
+    }
+    private java.util.concurrent.CompletableFuture<Void> executeAdmitted(MCPerksUser user, int length, long admission) {
+        final String admissionKey = activationKey(user);
+        try {
+            return executeAdmittedWork(user, length, admissionKey, admission).whenComplete((ignored, error) ->
+                    releaseActivationAdmission(admissionKey, admission));
+        } catch (RuntimeException failure) {
+            releaseActivationAdmission(admissionKey, admission);
+            return java.util.concurrent.CompletableFuture.failedFuture(failure);
+        }
+    }
+    private java.util.concurrent.CompletableFuture<Void> executeAdmittedWork(MCPerksUser user, int length, String admissionKey, long admission) {
+        return executeAdmittedWork(user, length, admissionKey, admission, null);
+    }
+    private Runnable activationVerifier(String admissionKey, long admission) {
+        final PerkHandler ownerHandler = plugin.getPerkHandler();
+        final int lifecycle = plugin.getFeatureLifecycle();
+        return () -> {
+            synchronized (this) {
+                if (!Objects.equals(activationAdmissions.get(admissionKey), admission) || !plugin.isEnabled()
+                        || plugin.getFeatureLifecycle() != lifecycle || plugin.getPerkHandler() != ownerHandler)
+                    throw new IllegalStateException("Perk activation lifecycle retired");
+            }
+        };
+    }
+    private java.util.concurrent.CompletableFuture<Void> executeAdmittedWork(MCPerksUser user, int length, String admissionKey, long admission,
+            java.util.function.Supplier<java.util.concurrent.CompletableFuture<Void>> consume) {
+        if (!plugin.getMcperksServerData().isReady()) return java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("ServerData initialization unavailable"));
+        org.bukkit.entity.Player owner = user == null ? null : user.getPlayer();
+        if (consume != null) {
+            Runnable verifyAdmission = activationVerifier(admissionKey, admission);
+            // Before credit commits, confirm only existing state. Publishing a new expiration
+            // here could restore a rejected permanent purchase as a free perk after restart.
+            return plugin.getMcperksServerData().confirmedActivationBeforeWork(Map.of(), () -> {
+                verifyAdmission.run();
+                return com.bencodez.mcperks.userapi.UserStorageConfirmation.confirm(plugin, user)
+                        .thenCompose(ignored -> consume.get());
+            }, () -> {
+                verifyAdmission.run();
+                return executeMetadataAndGameplay(user, length, admissionKey, admission, true, owner);
+            }, owner);
+        }
+        return executeMetadataAndGameplay(user, length, admissionKey, admission, false, owner);
+    }
+    private java.util.concurrent.CompletableFuture<Void> executeMetadataAndGameplay(MCPerksUser user, int length,
+            String admissionKey, long admission, boolean alreadyConsumed, org.bukkit.entity.Player owner) {
+        final boolean banked = getInteractionOptions().banked();
+        long admissionExpiration = activationExpiration(length);
+        final long personalCooldown = MiscUtils.getInstance().addSeconds(new Date(), getCoolDown()).getTime();
+        Map<String, Long> sharedFields = new LinkedHashMap<>();
+        if (getServerWideCoolDown() > 0)
+            sharedFields.put(getPerk() + ".CoolDown", MiscUtils.getInstance().addSeconds(new Date(), getServerWideCoolDown()).getTime());
+        if (isTimed() && getPerkType() == PerkSystemType.ALL)
+            sharedFields.put("Experation." + getPerk(), admissionExpiration);
+        Runnable verifyAdmission = activationVerifier(admissionKey, admission);
+        java.util.function.Supplier<java.util.concurrent.CompletableFuture<Void>> callerStorage = () -> {
+            verifyAdmission.run();
+            user.setPerkCoolDown(this, personalCooldown);
+            if (isTimed() && !banked) {
+                if (getPerkType() != PerkSystemType.ALL) user.setPerkExperation(this, admissionExpiration);
+                this.experation = admissionExpiration;
+            }
+            return com.bencodez.mcperks.userapi.UserStorageConfirmation.confirm(plugin, user);
+        };
+        // Publish the cooldown/admission boundary before adding bank time. The
+        // bank remains durable if the later attachment fails, so a retry must
+        // observe the cooldown and duplicate-entitlement policy.
+        if (banked && !alreadyConsumed)
+            return plugin.getMcperksServerData().confirmedActivationBeforeWork(sharedFields, callerStorage, () -> {
+                verifyAdmission.run();
+                return plugin.getBankedPerks().grantConfirmed(user, this, length);
+            }, owner);
+        if (banked) return plugin.getMcperksServerData().confirmedActivationBeforeWork(sharedFields, callerStorage, () -> {
+            verifyAdmission.run();
+            return attachPublishedBank(user, verifyAdmission);
+        }, owner);
+        var confirmed = plugin.getMcperksServerData().confirmedActivationBeforeGameplay(sharedFields, callerStorage, () -> {
+            verifyAdmission.run();
+            activatePerk(user, length, isTimed() && !isLastForever() ? new Timestamp(admissionExpiration) : null);
+        }, owner);
+        return confirmed;
+    }
+    private String activationKey(MCPerksUser user) {
+        return getPerkType() == PerkSystemType.PLAYER && getServerWideCoolDown() <= 0
+                ? "PLAYER:" + user.getUUID() : getPerkType().name() + ":" + getPerk();
+    }
+    private synchronized long acquireActivationAdmission(MCPerksUser user) {
+        String key = activationKey(user);
+        if (activationAdmissions.size() >= 256 || activationAdmissions.containsKey(key)) return 0;
+        long admission = ++activationSequence;
+        activationAdmissions.put(key, admission);
+        return admission;
+    }
+    private synchronized void releaseActivationAdmission(String key, long admission) {
+        if (Objects.equals(activationAdmissions.get(key), admission)) activationAdmissions.remove(key);
+    }
+    private long activationExpiration(int length) {
+        if (!isTimed()) return 0;
+        if (isLastForever()) return -1;
+        return Math.addExact(System.currentTimeMillis(), Math.multiplyExact(1000L, length));
+    }
+    public java.util.concurrent.CompletableFuture<Void> executePublishedBank(MCPerksUser user) {
+        return plugin.getMcperksServerData().confirmedActivation(() -> recordCooldown(user))
+                .thenCompose(ignored -> attachPublishedBank(user, () -> {}));
+    }
+    private java.util.concurrent.CompletableFuture<Void> attachPublishedBank(MCPerksUser user, Runnable verifyAdmission) {
+        verifyAdmission.run();
+        return plugin.getBankedPerks().grantedConfirmed(user, this)
+                .thenCompose(ignored -> {
+                    verifyAdmission.run();
+                    return com.bencodez.mcperks.userapi.UserStorageConfirmation.confirm(plugin, user);
+                });
+    }
+    private java.util.concurrent.CompletableFuture<Void> confirmCooldown(MCPerksUser user) {
+        return plugin.getMcperksServerData().confirmedActivation(() -> recordCooldown(user))
+                .thenCompose(ignored -> com.bencodez.mcperks.userapi.UserStorageConfirmation.confirm(plugin, user));
+    }
+    private void recordCooldown(MCPerksUser user) {
+        user.setPerkCoolDown(this, MiscUtils.getInstance().addSeconds(new Date(), getCoolDown()).getTime());
+        if (getServerWideCoolDown() > 0) setServerCoolDownTime(MiscUtils.getInstance().addSeconds(new Date(), getServerWideCoolDown()).getTime());
+    }
 
 	public void setServerCoolDownTime(long time) {
-		MCPerksMain.plugin.getMcperksServerData().getData().set(getPerk() + ".CoolDown", time);
+		MCPerksMain.plugin.getMcperksServerData().setServerCooldown(getPerk(), time);
 	}
 
 	public void forcePerk(String name) {
@@ -507,9 +688,12 @@ public class Perk {
 		return effects;
 	}
 
+    /** Last expiration published with the active grant; reading does not touch user storage. */
+    public long getKnownExpiration() { return experation; }
+
 	public long getExperation(MCPerksUser user) {
 		if (getPerkType().equals(PerkSystemType.ALL)) {
-			experation = MCPerksMain.plugin.getMcperksServerData().getPerkExperation(this);
+			experation = plugin.getMcperksServerData().getPerkExperation(this);
 		} else {
 			experation = user.getPerkExperation(this);
 		}
@@ -748,20 +932,40 @@ public class Perk {
 	}
 
 	public void runPerk(MCPerksUser user) {
+        boolean banked = getInteractionOptions().banked();
+        var controller = banked ? plugin.getBankedPerks() : null;
+        if (banked && !controller.beginDirect(user, this)) {
+            user.sendMessage("&cA bank grant for this perk is still being confirmed; no activation consumed."); return;
+        }
+        boolean handedOff = false;
+        try { handedOff = runPerkAdmitted(user, controller); }
+        finally { if (banked && !handedOff) controller.finishDirect(user, this); }
+    }
 
-		if (user.isInWorld(disabledWorlds)) {
+    private boolean runPerkAdmitted(MCPerksUser user, BankedPerks controller) {
+        if (!plugin.getMcperksServerData().isReady() || !plugin.getPerkHandler().isRestorationReady()) {
+            user.sendMessage("&cPerk runtime state is unavailable; no activation consumed."); return false;
+        }
+        if ((plugin.getConfigFile().getPerkQue() || plugin.getConfigFile().getLimitActivations() || getInteractionOptions().banked()) && !plugin.getFeatureState().available()) {
+            user.sendMessage("&cPerk entitlement state is unavailable; no activation consumed."); return false;
+        }
+
+		if (getInteractionOptions().banked() && (!BankedPerks.supported(this) || getTime() <= 0)) {
+            user.sendMessage("&cThis perk is not supported in banked mode; no activation consumed."); return false;
+        }
+        if (user.isInWorld(disabledWorlds)) {
 			user.sendMessage(Lang.getInstance().getDisabledWorlds());
-			return;
+			return false;
 		}
 
-		if (isPerkActive(user) && !plugin.getConfigFile().getAllowDuplicatePerksActive()) {
+		if ((isPerkActive(user) || getInteractionOptions().banked() && plugin.getBankedPerks().hasEntitlement(UUID.fromString(user.getUUID()), this)) && !plugin.getConfigFile().getAllowDuplicatePerksActive()) {
 			user.sendMessage(ConfigPerks.getInstance().getPerkAlreayActive(perk));
-			return;
+			return false;
 		}
 
 		if (!checkTimesUsed(user)) {
 			user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
-			return;
+			return false;
 		}
 
 		long coolDownTime = user.getPerkCoolDown(plugin.getPerkHandler().getPerk(perk));
@@ -777,47 +981,81 @@ public class Perk {
 
 		if (!checkCoolDown(user)) {
 			user.sendMessage(ConfigPerks.getInstance().getPerkInCoolDown(perk), "cooldown", coolDown);
-			return;
+			return false;
 		}
 
 		if (!checkServerWideCoolDown(user)) {
 			user.sendMessage(ConfigPerks.getInstance().getPerkInCoolDown(perk), "cooldown", coolDown);
-			return;
+			return false;
 		}
 
 		if (plugin.getConfigFile().getLimitPermission()) {
 			if (user.getPerkLimit() != -1) {
 				if (user.getActivePerks() + 1 > user.getPerkLimit()) {
 					user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
-					return;
+					return false;
 				}
 			}
 		}
 
-		boolean globalActivation = true;
+        if (plugin.getConfigFile().getPerkQue() && (!plugin.getPerkHandler().getActivePerks().isEmpty() || plugin.getFeatureState().paused()
+                || !plugin.getFeatureState().queue().isEmpty() || plugin.getQueuePlanner().isStarting() || plugin.getQueuePlanner().hasAdmissions() || plugin.getQueuePlanner().hasDirectStart())) {
+            plugin.getPerkHandler().addQue(user, this); return false;
+        }
+        java.util.UUID directOwner = java.util.UUID.fromString(user.getUUID());
+        boolean queueOwned = plugin.getConfigFile().getPerkQue();
+        if (queueOwned && !plugin.getQueuePlanner().beginDirect(directOwner, this)) {
+            plugin.getPerkHandler().addQue(user, this); return false;
+        }
+        final long admission = acquireActivationAdmission(user);
+        if (admission == 0) {
+            if (queueOwned) plugin.getQueuePlanner().finishDirect(directOwner, this);
+            user.sendMessage("&cA perk activation is still being confirmed; no activation consumed.");
+            return false;
+        }
+        boolean handedOff = false;
+        try {
+            if (plugin.getConfigFile().getLimitActivations()) {
+                final String key = activationKey(user);
+                Runnable verify = activationVerifier(key, admission);
+                plugin.getQueuePlanner().startDirect(user, this, verify,
+                        consume -> executeAdmittedWork(user, getTime(), key, admission, consume))
+                        .whenComplete((ignored, error) -> {
+                            releaseActivationAdmission(key, admission);
+                            if (controller != null) controller.finishDirect(user, this);
+                            if (queueOwned) plugin.getQueuePlanner().finishDirect(directOwner, this);
+                            if (error != null) plugin.getLogger().warning("Direct perk start could not be confirmed: " + getPerk());
+                        });
+                handedOff = true;
+                return getInteractionOptions().banked();
+            }
 
-		if (plugin.getConfigFile().getLimitActivations()) {
-			boolean passed = false;
-
-			if (user.getActivations(getPerk()) > 0) {
-				globalActivation = false;
-				passed = true;
-				user.addActivation(getPerk(), -1);
-			}
-
-			if (user.getActivations() > 0) {
-				globalActivation = true;
-				passed = true;
-				user.addActivation(-1);
-			}
-
-			if (!passed) {
-				user.sendMessage(ConfigPerks.getInstance().getPerkLimitReached(perk));
-				return;
-			}
-		}
-
-		runPerkPerk(user, globalActivation);
+            if (getInteractionOptions().banked()) {
+                try {
+                    executeAdmitted(user, getTime(), admission).whenComplete((ignored, error) -> {
+                        controller.finishDirect(user, this);
+                        if (queueOwned) plugin.getQueuePlanner().finishDirect(directOwner, this);
+                        if (error != null) plugin.getLogger().warning("Bank grant could not be confirmed: " + getPerk());
+                    });
+                } catch (RuntimeException failure) {
+                    if (queueOwned) plugin.getQueuePlanner().finishDirect(directOwner, this);
+                    throw failure;
+                }
+                handedOff = true;
+                return true;
+            }
+            if (queueOwned) {
+                try {
+                    executeAdmitted(user, getTime(), admission).whenComplete((ignored, error) -> plugin.getQueuePlanner().finishDirect(directOwner, this));
+                } catch (RuntimeException failure) { plugin.getQueuePlanner().finishDirect(directOwner, this); throw failure; }
+            } else executeAdmitted(user, getTime(), admission).exceptionally(error -> {
+                plugin.getLogger().warning("Perk execution could not be confirmed: " + getPerk()); return null;
+            });
+            handedOff = true;
+            return false;
+        } finally {
+            if (!handedOff) releaseActivationAdmission(activationKey(user), admission);
+        }
 
 	}
 
@@ -907,7 +1145,7 @@ public class Perk {
 
 	public void setExperation(MCPerksUser user, long experation) {
 		if (getPerkType().equals(PerkSystemType.ALL)) {
-			MCPerksMain.plugin.getMcperksServerData().setPerkExperation(this, experation);
+			plugin.getMcperksServerData().setPerkExperation(this, experation);
 		} else {
 			user.setPerkExperation(this, experation);
 		}
