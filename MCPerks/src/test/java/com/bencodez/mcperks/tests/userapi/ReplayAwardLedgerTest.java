@@ -599,35 +599,50 @@ class ReplayAwardLedgerTest {
             when(player.endAsyncActionCollection(isNull())).thenReturn(java.util.concurrent.CompletableFuture.completedFuture(null));
             var state = com.bencodez.votingplugin.advancedcore.api.rewards.Reward.replayStateFor(
                     new com.bencodez.votingplugin.advancedcore.api.rewards.RewardOptions());
-            var dispatch = com.bencodez.votingplugin.advancedcore.api.rewards.Reward.class.getDeclaredMethod("requestInjectionAsync",
-                    com.bencodez.votingplugin.advancedcore.api.rewards.injected.RewardInject.class,
-                    com.bencodez.votingplugin.advancedcore.api.user.AdvancedCoreUser.class, HashMap.class,
-                    com.bencodez.votingplugin.advancedcore.api.rewards.Reward.ReplayState.class, String.class, String.class,
-                    com.bencodez.votingplugin.advancedcore.api.rewards.RewardOptions.class, org.bukkit.entity.Player.class);
+            java.lang.reflect.Method dispatch;
+            boolean hasEligibilityContext;
+            try {
+                dispatch = com.bencodez.votingplugin.advancedcore.api.rewards.Reward.class.getDeclaredMethod("requestInjectionAsync",
+                        com.bencodez.votingplugin.advancedcore.api.rewards.injected.RewardInject.class,
+                        com.bencodez.votingplugin.advancedcore.api.user.AdvancedCoreUser.class, HashMap.class,
+                        com.bencodez.votingplugin.advancedcore.api.rewards.Reward.ReplayState.class, String.class, String.class,
+                        com.bencodez.votingplugin.advancedcore.api.rewards.RewardOptions.class, org.bukkit.entity.Player.class);
+                hasEligibilityContext = true;
+            } catch (NoSuchMethodException olderHost) {
+                dispatch = com.bencodez.votingplugin.advancedcore.api.rewards.Reward.class.getDeclaredMethod("requestInjectionAsync",
+                        com.bencodez.votingplugin.advancedcore.api.rewards.injected.RewardInject.class,
+                        com.bencodez.votingplugin.advancedcore.api.user.AdvancedCoreUser.class, HashMap.class,
+                        com.bencodez.votingplugin.advancedcore.api.rewards.Reward.ReplayState.class, String.class, String.class);
+                hasEligibilityContext = false;
+            }
             dispatch.setAccessible(true);
             var vpCore = mock(com.bencodez.votingplugin.advancedcore.AdvancedCorePlugin.class);
             try (var core = mockStatic(com.bencodez.votingplugin.advancedcore.AdvancedCorePlugin.class)) {
                 core.when(com.bencodez.votingplugin.advancedcore.AdvancedCorePlugin::getInstance).thenReturn(vpCore);
                 var globalReceipt = new java.util.concurrent.CompletableFuture<Void>(); when(fallback.addActivationAsync(3)).thenReturn(globalReceipt);
                 @SuppressWarnings("unchecked") var global = (java.util.concurrent.CompletionStage<Object>) dispatch.invoke(
-                        dispatchReward, inject, player, new HashMap<>(), state, "root:global", null, null, null);
+                        dispatchReward, hasEligibilityContext ? new Object[] { inject, player, new HashMap<>(), state, "root:global", null, null, null }
+                                : new Object[] { inject, player, new HashMap<>(), state, "root:global", null });
                 assertFalse(global.toCompletableFuture().isDone()); globalReceipt.complete(null);
                 global.toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS);
                 var rejected = new java.util.concurrent.CompletableFuture<Void>(); when(fallback.addActivationAsync(3)).thenReturn(rejected);
                 @SuppressWarnings("unchecked") var failed = (java.util.concurrent.CompletionStage<Object>) dispatch.invoke(
-                        dispatchReward, inject, player, new HashMap<>(), state, "root:rejected", null, null, null);
+                        dispatchReward, hasEligibilityContext ? new Object[] { inject, player, new HashMap<>(), state, "root:rejected", null, null, null }
+                                : new Object[] { inject, player, new HashMap<>(), state, "root:rejected", null });
                 rejected.completeExceptionally(new UnsupportedOperationException("rejected before admission"));
                 assertThrows(java.util.concurrent.ExecutionException.class, () -> failed.toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS));
                 configData.set("Activations", null);
                 var resumedReceipt = new java.util.concurrent.CompletableFuture<Void>(); when(fallback.addActivationAsync(3)).thenReturn(resumedReceipt);
                 @SuppressWarnings("unchecked") var resumed = (java.util.concurrent.CompletionStage<Object>) dispatch.invoke(
-                        dispatchReward, inject, player, new HashMap<>(), state, "root:rejected", null, null, null);
+                        dispatchReward, hasEligibilityContext ? new Object[] { inject, player, new HashMap<>(), state, "root:rejected", null, null, null }
+                                : new Object[] { inject, player, new HashMap<>(), state, "root:rejected", null });
                 assertFalse(resumed.toCompletableFuture().isDone()); resumedReceipt.complete(null);
                 resumed.toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS);
                 configData.set("PerkActivations.vote", 3);
                 var perkReceipt = new java.util.concurrent.CompletableFuture<Void>(); when(fallback.addActivationAsync("vote", 3)).thenReturn(perkReceipt);
                 @SuppressWarnings("unchecked") var perkResult = (java.util.concurrent.CompletionStage<Object>) dispatch.invoke(
-                        dispatchReward, perkInject, player, new HashMap<>(), state, "root:perk", null, null, null);
+                        dispatchReward, hasEligibilityContext ? new Object[] { perkInject, player, new HashMap<>(), state, "root:perk", null, null, null }
+                                : new Object[] { perkInject, player, new HashMap<>(), state, "root:perk", null });
                 assertFalse(perkResult.toCompletableFuture().isDone()); perkReceipt.complete(null);
                 perkResult.toCompletableFuture().get(5, java.util.concurrent.TimeUnit.SECONDS);
                 verify(fallback).addActivationAsync("vote", 3); verify(fallback, never()).addActivation("vote", 3);
