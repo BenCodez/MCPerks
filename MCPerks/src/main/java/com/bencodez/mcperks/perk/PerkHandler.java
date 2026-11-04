@@ -64,6 +64,8 @@ public class PerkHandler {
 	private MCPerksMain plugin;
 
 	private Timer timer = new Timer();
+    private volatile java.util.concurrent.CompletableFuture<Void> restoration = new java.util.concurrent.CompletableFuture<>();
+    public boolean isRestorationReady() { var current = restoration; return current.isDone() && !current.isCompletedExceptionally(); }
 
 	public Map<Integer, Perk> invPerks = new HashMap<Integer, Perk>();
 
@@ -84,18 +86,34 @@ public class PerkHandler {
 				e.printStackTrace();
 			}
 		}
-		loadEnabledPerks(true);
+		loadEnabledPerks(false);
 		if (plugin.getConfigFile().getLogActivation()) {
 			activationLog = new Logger(plugin, new File(plugin.getDataFolder(), "ActivationLog.txt"));
 		}
 	}
 
+    PerkHandler(MCPerksMain plugin, List<Perk> initial) {
+        this.plugin = plugin; activePerks.addAll(initial); restoration.complete(null);
+    }
+
 	public void activePerk(Perk perk, MCPerksUser user, int length, Timestamp timestamp) {
+		activePerk(perk, user, length, timestamp, true);
+	}
+
+	/** Restores the timer/effects for a persisted grant without replaying activation-only effects/hooks. */
+	public void restoreActivePerk(Perk perk, MCPerksUser user, Timestamp expiration) {
+		int remaining = expiration == null ? 0 : (int) Math.min(Integer.MAX_VALUE, Math.max(0L,
+				(expiration.getTime() - System.currentTimeMillis()) / 1000L));
+		activePerk(perk, user, remaining, expiration, false);
+	}
+
+	private void activePerk(Perk perk, MCPerksUser user, int length, Timestamp timestamp, boolean runActivationHooks) {
 		final Perk clone = perk.clone();
+        if (!runActivationHooks) clone.setTime(timestamp == null ? -1 : Math.max(1, length));
 		clone.setActivater(user);
 		clone.getEffectedPlayers().clear();
 		ArrayList<Integer> times = new ArrayList<Integer>();
-		if (perk.getTime() > 0) {
+		if (runActivationHooks && perk.getTime() > 0) {
 			for (String str : ConfigPerks.getInstance().getCountDownTimes(perk.getPerk())) {
 				if (MessageAPI.isInt(str)) {
 					int num = Integer.parseInt(str);
@@ -199,24 +217,46 @@ public class PerkHandler {
 			}
 		}
 
-		plugin.getEffectHandler().activate(clone, user);
+        NativeActivation currentActivation = publishingActivation.get();
+        if (currentActivation != null) currentActivation.gameplayStarted = true;
+		plugin.getEffectHandler().activate(clone, user, runActivationHooks);
+        Timestamp exp = null;
 		if (clone.isTimed()) {
+
 			clone.setActive(true);
 			if (!clone.isLastForever()) {
-				Timestamp exp = new Timestamp(Calendar.getInstance().getTime().getTime() + 1000 * length);
+				exp = new Timestamp(Calendar.getInstance().getTime().getTime() + 1000 * length);
 				if (timestamp != null) {
 					exp = timestamp;
 				}
 
-				clone.setExperation(user, exp.getTime());
+				if (publishingActivation.get() != null) clone.setKnownExpiration(exp.getTime());
+				else clone.setExperation(user, exp.getTime());
 
-				clone.scheduleDeactivation(user);
 			} else {
-				clone.setExperation(user, -1);
+				if (publishingActivation.get() != null) clone.setKnownExpiration(-1);
+				else clone.setExperation(user, -1);
 			}
-			activePerks.add(clone);
+            try {
+                synchronized (this) {
+                    activePerks.add(clone);
+                    // Publish capacity before reentrant hooks, without releasing the storage drain.
+                    releaseNativeCapacity(publishingActivation.get());
+                }
+            } catch (RuntimeException failure) {
+                synchronized (this) { activePerks.remove(clone); }
+                clone.setActive(false);
+                // Activation hooks may already have run. Retire applied persistent effects
+                // without replaying deactivation rewards or pretending hooks were undone.
+                for (Effect effect : clone.getEffects()) {
+                    try { effect.removeEffect(plugin, clone, clone.getEffectedPlayers()); }
+                    catch (RuntimeException cleanupFailure) { failure.addSuppressed(cleanupFailure); }
+                }
+                throw failure;
+            }
 		}
 
+        try {
 		if (clone.getReActivateEffectsTimer() > 0) {
 			final Perk clonedFinal = clone;
 			timer.scheduleAtFixedRate(new TimerTask() {
@@ -354,16 +394,31 @@ public class PerkHandler {
 			}, 1000, (long) timing);
 		}
 
-		boolean perkRewards = plugin.getRewardHandler().hasRewards(ConfigPerks.getInstance().getData(perk.getPerk()),
-				ConfigPerks.getInstance().getActivationEffectPath());
-		for (String uuid : clone.getEffectedPlayers()) {
-			if (perkRewards) {
-				new RewardBuilder(ConfigPerks.getInstance().getData(perk.getPerk()),
-						ConfigPerks.getInstance().getActivationEffectPath()).setGiveOffline(false)
-						.send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
-			} else {
-				new RewardBuilder(plugin.getConfigFile().getData(), plugin.getConfigFile().getActivationEffectPath())
-						.setGiveOffline(false).send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
+            if (clone.isTimed() && !clone.isLastForever()) {
+                synchronized (this) { clone.scheduleDeactivation(user, exp.getTime()); }
+            }
+        } catch (RuntimeException failure) {
+            synchronized (this) { activePerks.remove(clone); }
+            clone.setActive(false);
+            for (Effect effect : clone.getEffects()) {
+                try { effect.removeEffect(plugin, clone, clone.getEffectedPlayers()); }
+                catch (RuntimeException cleanupFailure) { failure.addSuppressed(cleanupFailure); }
+            }
+            throw failure;
+        }
+
+		if (runActivationHooks) {
+			boolean perkRewards = plugin.getRewardHandler().hasRewards(ConfigPerks.getInstance().getData(perk.getPerk()),
+					ConfigPerks.getInstance().getActivationEffectPath());
+			for (String uuid : clone.getEffectedPlayers()) {
+				if (perkRewards) {
+					new RewardBuilder(ConfigPerks.getInstance().getData(perk.getPerk()),
+							ConfigPerks.getInstance().getActivationEffectPath()).setGiveOffline(false)
+							.send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
+				} else {
+					new RewardBuilder(plugin.getConfigFile().getData(), plugin.getConfigFile().getActivationEffectPath())
+							.setGiveOffline(false).send(plugin.getUserManager().getUser(UUID.fromString(uuid)));
+				}
 			}
 		}
 
@@ -428,23 +483,24 @@ public class PerkHandler {
 			}
 		}
 
-		clone.announcePerk(user.getPlayerName(), length);
+		if (runActivationHooks) clone.announcePerk(user.getPlayerName(), length);
 
-		plugin.getMcperksServerData()
+		if (runActivationHooks) plugin.getMcperksServerData()
 				.addPerkHistory(user.getPlayerName() + ":" + ArrayUtils.makeStringList(clone.getEffectedPlayers()) + ":"
 						+ perk.getName() + ":" + perk.getPerkType().toString() + ":" + System.currentTimeMillis());
 
 		printActivePerks();
 
-		if (plugin.getConfigFile().getLogActivation() && activationLog != null)
+		if (runActivationHooks && plugin.getConfigFile().getLogActivation() && activationLog != null)
 
 		{
 
 			String str = new SimpleDateFormat("EEE, d MMM yyyy HH:mm").format(Calendar.getInstance().getTime());
-			activationLog
-					.logToFile(str + " Activated perk " + perk.getName() + " by " + clone.getActivater().getPlayerName()
-							+ ". Affected users: " + ArrayUtils.makeStringList(clone.getEffectedPlayers())
-							+ ". Lasted for " + length + " Perk type: " + clone.getPerkType().toString());
+            String message = str + " Activated perk " + perk.getName() + " by " + clone.getActivater().getPlayerName()
+                    + ". Affected users: " + ArrayUtils.makeStringList(clone.getEffectedPlayers())
+                    + ". Lasted for " + length + " Perk type: " + clone.getPerkType().toString();
+            Logger writer = activationLog;
+            plugin.getMcperksServerData().activationLog(() -> writer.logToFile(message));
 		}
 	}
 
@@ -462,8 +518,111 @@ public class PerkHandler {
 		loadedPerks.put(key, p);
 	}
 
+    private final java.util.concurrent.atomic.AtomicInteger pendingNativeActivations = new java.util.concurrent.atomic.AtomicInteger();
+    private boolean nativeReloadPending;
+    private boolean nativeActivationsRetired;
+    static final class NativeActivation {
+        private final String owner;
+        private boolean capacityPending = true;
+        private Player session;
+        private final java.util.Set<Player> earlyQuits = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        private boolean earlyQuitOverflow;
+        volatile boolean sessionRetired;
+        volatile boolean gameplayStarted;
+        private NativeActivation(String owner) { this.owner = owner; }
+    }
+    private final java.util.Set<NativeActivation> nativeSessions = new java.util.HashSet<>();
+    synchronized void bindNativeSession(NativeActivation activation, Player session) {
+        if (activation == null) return;
+        activation.session = session;
+        if (session != null && (activation.earlyQuitOverflow || activation.earlyQuits.contains(session)))
+            activation.sessionRetired = true;
+        activation.earlyQuits.clear();
+    }
+    /** Called by the quitting player owner; only the exact captured session is retired. */
+    public synchronized void retirePendingPlayerSession(Player session) {
+        var id = session.getUniqueId();
+        for (var activation : nativeSessions) {
+            if (activation.session == session) activation.sessionRetired = true;
+            else if (activation.session == null && id != null && id.toString().equals(activation.owner)) {
+                if (activation.earlyQuits.size() < 8) activation.earlyQuits.add(session);
+                else activation.earlyQuitOverflow = true; // Fail closed if identity history is uncertain.
+            }
+        }
+    }
+    /** Unknown overrides may run side effects before the standard effect boundary. */
+    boolean usesManagedGameplayBoundary() {
+        try {
+            return getClass().getMethod("activePerk", Perk.class, MCPerksUser.class, int.class, Timestamp.class)
+                    .getDeclaringClass() == PerkHandler.class;
+        } catch (ReflectiveOperationException | SecurityException unavailable) { return false; }
+    }
+    private final ThreadLocal<NativeActivation> publishingActivation = new ThreadLocal<>();
+    NativeActivation enterNativeGameplay(NativeActivation activation) {
+        NativeActivation previous = publishingActivation.get();
+        if (activation == null) publishingActivation.remove(); else publishingActivation.set(activation);
+        return previous;
+    }
+    void leaveNativeGameplay(NativeActivation previous) {
+        if (previous == null) publishingActivation.remove(); else publishingActivation.set(previous);
+    }
+    synchronized void releaseNativeCapacity(NativeActivation activation) {
+        if (activation == null || !activation.capacityPending) return;
+        activation.capacityPending = false;
+        pendingPlayerActivations.computeIfPresent(activation.owner, (key, count) -> count == 1 ? null : count - 1);
+    }
+    private final Map<String, Integer> pendingPlayerActivations = new HashMap<>();
+    private java.util.concurrent.CompletableFuture<Void> nativeActivationDrain = java.util.concurrent.CompletableFuture.completedFuture(null);
+    /** Close new admissions; the private drain includes accepted storage and compensation. */
+    public synchronized java.util.concurrent.CompletionStage<Void> retireNativeActivations() {
+        nativeActivationsRetired = true;
+        return nativeActivationDrain.minimalCompletionStage();
+    }
+    boolean hasPendingNativeActivations() { return pendingNativeActivations.get() != 0; }
+    /** A reload may retire definitions only when accepted work and startup restoration are settled. */
+    public synchronized void pauseNativeActivationsForReload() {
+        if (!isRestorationReady() || hasPendingNativeActivations())
+            throw new IllegalStateException("Wait for perk activation or startup restoration to finish before reloading");
+        nativeReloadPending = true;
+    }
+    public synchronized void resumeNativeActivationsAfterReload() { nativeReloadPending = false; }
+    synchronized NativeActivation beginNativeActivation(MCPerksUser user, boolean enforcePlayerLimit) {
+        if (nativeReloadPending || nativeActivationsRetired || !isRestorationReady())
+            throw new IllegalStateException("Perk lifecycle is unavailable");
+        if (pendingNativeActivations.get() >= 256) throw new IllegalStateException("Perk admissions are full");
+        String owner = user == null ? null : user.getUUID();
+        int pending = pendingPlayerActivations.getOrDefault(owner, 0);
+        if (enforcePlayerLimit && user != null && plugin.getConfigFile().getLimitPermission()) {
+            int limit = user.getPerkLimit();
+            if (limit != -1 && user.getActivePerks() + pending >= limit)
+                throw new IllegalStateException("Player perk capacity is reserved");
+        }
+        pendingPlayerActivations.put(owner, pending + 1);
+        if (pendingNativeActivations.getAndIncrement() == 0) nativeActivationDrain = new java.util.concurrent.CompletableFuture<>();
+        var activation = new NativeActivation(owner);
+        nativeSessions.add(activation);
+        return activation;
+    }
+    void finishNativeActivation(NativeActivation activation) {
+        java.util.concurrent.CompletableFuture<Void> drained;
+        synchronized (this) {
+            nativeSessions.remove(activation);
+            releaseNativeCapacity(activation);
+            if (pendingNativeActivations.decrementAndGet() != 0) return;
+            drained = nativeActivationDrain;
+        }
+        // Dependent shutdown callbacks must not run while holding the admission monitor.
+        drained.complete(null);
+        if (!plugin.isEnabled()
+                || plugin.getPerkHandler() != this || !plugin.getConfigFile().getPerkQue()) return;
+        try { plugin.getBukkitScheduler().runTask(plugin, () -> {
+            if (plugin.isEnabled() && plugin.getPerkHandler() == this) checkQue();
+        }); }
+        catch (RuntimeException failure) { plugin.getLogger().warning("Legacy perk queue owner dispatch failed"); }
+    }
+
 	public void checkQue() {
-		if (!que.isEmpty() && activePerks.size() == 0) {
+		if (!hasPendingNativeActivations() && !que.isEmpty() && activePerks.size() == 0) {
 			for (Entry<MCPerksUser, Perk> entry : que.entrySet()) {
 				entry.getValue().runPerk(entry.getKey());
 				que.remove(entry.getKey());
@@ -587,31 +746,98 @@ public class PerkHandler {
 		return p;
 	}
 
-	public void loadActivePerks() {
-		Bukkit.getScheduler().runTaskAsynchronously(plugin, new Runnable() {
+    public void loadActivePerks() { loadActivePerksConfirmed(() -> {}); }
 
-			@Override
-			public void run() {
-				ArrayList<MCPerksUser> users = new ArrayList<MCPerksUser>();
-				for (String uuid : plugin.getUserManager().getAllUUIDs()) {
-					MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid));
-					user.userDataFetechMode(UserDataFetchMode.NO_CACHE);
-					users.add(user);
-				}
-				for (Perk perk : getLoadedPerks().values()) {
-					for (MCPerksUser user : users) {
-						user.userDataFetechMode(UserDataFetchMode.NO_CACHE);
-						if (perk.getExperation(user) < 0) {
-							perk.activatePerk(user, perk.getTime());
-						} else {
-							perk.scheduleDeactivation(user);
-						}
-
-					}
-				}
-			}
-		});
-	}
+    /** Completes only after legacy active state and the caller's shutdown records are restored. */
+    public synchronized java.util.concurrent.CompletableFuture<Void> loadActivePerksConfirmed(Runnable shutdownRecords) {
+        var completed = new java.util.concurrent.CompletableFuture<Void>();
+        restoration = completed;
+        try {
+            plugin.getBukkitScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    requireCurrentRestoration(completed);
+                    var users = new ArrayList<MCPerksUser>();
+                    for (String uuid : plugin.getUserManager().getAllUUIDs()) {
+                        requireCurrentRestoration(completed);
+                        MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid));
+                        user.userDataFetechMode(UserDataFetchMode.NO_CACHE); users.add(user);
+                    }
+                    var nativeRecords = new ArrayList<NativeRestoration>();
+                    var shutdownRows = new java.util.HashSet<String>();
+                    var shutdownNames = new java.util.HashSet<String>();
+                    var restorationOwners = new java.util.HashSet<UUID>();
+                    var runtime = plugin.getMcperksServerData();
+                    synchronized (runtime) {
+                        var shutdown = runtime.getData().getConfigurationSection("OfflinePerk");
+                        if (shutdown != null) for (String owner : shutdown.getKeys(false)) {
+                            var records = shutdown.getConfigurationSection(owner);
+                            if (records != null) for (String name : records.getKeys(false)) {
+                                shutdownRows.add(owner + ":" + name); shutdownNames.add(name);
+                                var definition = getPerk(name);
+                                long expiration = records.getLong(name + ".Experiaton");
+                                if (definition != null && definition.isEnabled()
+                                        && (expiration <= 0 || expiration > System.currentTimeMillis()))
+                                    restorationOwners.add(UUID.fromString(owner));
+                            }
+                        }
+                    }
+                    var restoredGlobals = new java.util.HashSet<String>();
+                    for (Perk perk : List.copyOf(getLoadedPerks().values())) {
+                        if (!perk.isEnabled()) continue;
+                        for (MCPerksUser user : users) {
+                            requireCurrentRestoration(completed);
+                            user.userDataFetechMode(UserDataFetchMode.NO_CACHE);
+                            boolean global = perk.getPerkType() == PerkSystemType.ALL;
+                            if (global ? shutdownNames.contains(perk.getPerk())
+                                    : shutdownRows.contains(user.getUUID() + ":" + perk.getPerk())) continue;
+                            long expiration = perk.getExperation(user);
+                            if (expiration < 0 || expiration > System.currentTimeMillis()) {
+                                if (!global || restoredGlobals.add(perk.getPerk())) {
+                                    nativeRecords.add(new NativeRestoration(perk, user, expiration));
+                                    if (perk.getPerkType() == PerkSystemType.PLAYER)
+                                        restorationOwners.add(UUID.fromString(user.getUUID()));
+                                }
+                            }
+                        }
+                    }
+                    // New wrappers used during restoration need the canonical shared snapshot.
+                    // Populate it here on the storage-safe worker, not from the owner callback.
+                    var manager = plugin.getUserManager().getDataManager();
+                    if (manager.usesSharedSqlStorage(plugin.getStorageType())) for (UUID owner : restorationOwners) {
+                        requireCurrentRestoration(completed);
+                        if (manager.getPublishedCache(owner) == null) manager.cacheUser(owner);
+                        if (manager.getPublishedCache(owner) == null)
+                            throw new IllegalStateException("Restoration user cache was not published");
+                    }
+                    var invoked = new java.util.concurrent.atomic.AtomicBoolean();
+                    plugin.getBukkitScheduler().runTask(plugin, () -> {
+                        if (!invoked.compareAndSet(false, true)) return;
+                        try {
+                            requireCurrentRestoration(completed);
+                            for (var record : nativeRecords) {
+                                requireCurrentRestoration(completed);
+                                if (record.expiration() < 0 || record.expiration() > System.currentTimeMillis())
+                                    restoreActivePerk(record.perk(), record.user(), record.expiration() < 0
+                                            ? null : new Timestamp(record.expiration()));
+                            }
+                            shutdownRecords.run();
+                            completed.complete(null);
+                        } catch (Throwable failure) { completed.completeExceptionally(failure); }
+                    });
+                    java.util.concurrent.CompletableFuture.delayedExecutor(30, java.util.concurrent.TimeUnit.SECONDS).execute(() -> {
+                        if (invoked.compareAndSet(false, true)) completed.completeExceptionally(
+                                new java.util.concurrent.TimeoutException("Perk restoration owner dispatch timed out"));
+                    });
+                } catch (Throwable error) { completed.completeExceptionally(error); }
+            });
+        } catch (RuntimeException error) { completed.completeExceptionally(error); }
+        return completed.copy();
+    }
+    private record NativeRestoration(Perk perk, MCPerksUser user, long expiration) {}
+    private void requireCurrentRestoration(java.util.concurrent.CompletableFuture<Void> completed) {
+        if (restoration != completed || plugin.getPerkHandler() != this || !plugin.isEnabled())
+            throw new IllegalStateException("Legacy restoration lifecycle retired");
+    }
 
 	/**
 	 * Load enabled perks.
@@ -703,6 +929,8 @@ public class PerkHandler {
 		loadEnabledPerks(false);
 
 	}
+
+    public synchronized void retireTimers() { timer.cancel(); }
 
 	public synchronized void remove(Perk pe, MCPerksUser user) {
 		getActivePerks().remove(pe);

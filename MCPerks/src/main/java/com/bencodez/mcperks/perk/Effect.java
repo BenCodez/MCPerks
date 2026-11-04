@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
 
 import com.bencodez.advancedcore.api.misc.MiscUtils;
+import com.bencodez.advancedcore.api.messages.PlaceholderUtils;
 import com.bencodez.advancedcore.api.rewards.RewardBuilder;
 import com.bencodez.mcperks.MCPerksMain;
 import com.bencodez.mcperks.configs.ConfigPerks;
@@ -126,6 +127,14 @@ public enum Effect {
 
 	@SuppressWarnings({ "deprecation", "removal" })
 	public void removeEffect(MCPerksMain plugin, Perk perk, ArrayList<String> players1) {
+        removeEffect(plugin, perk, players1, false);
+    }
+    public void removeEffectForShutdown(MCPerksMain plugin, Perk perk, ArrayList<String> players) {
+        if (!Bukkit.isPrimaryThread()) throw new IllegalStateException("Effect shutdown requires the Bukkit owner");
+        removeEffect(plugin, perk, players, true);
+    }
+    @SuppressWarnings({ "deprecation", "removal" })
+    private void removeEffect(MCPerksMain plugin, Perk perk, ArrayList<String> players1, boolean shutdown) {
 		ArrayList<Player> players = new ArrayList<Player>();
 		for (String uuid : players1) {
 			Player player = Bukkit.getPlayer(UUID.fromString(uuid));
@@ -138,7 +147,16 @@ public enum Effect {
 
 		switch (this) {
 		case Fly:
-			new FlyEffect().disableFly(perk.getFlyWorlds(), players);
+            if (shutdown) {
+                for (Player player : players) {
+                    if (perk.getFlyWorlds().contains(player.getWorld().getName())
+                            && !player.hasPermission("MCPerks.ServerFly.Bypass")) {
+                        player.setAllowFlight(false);
+                        player.setFlying(false);
+                        player.setFallDistance(-100000);
+                    }
+                }
+            } else new FlyEffect().disableFly(perk.getFlyWorlds(), players);
 			break;
 		case IncreaseMaxHealth:
 			for (Player p : players) {
@@ -206,6 +224,7 @@ public enum Effect {
 				for (String potion : perk.getPotions()) {
 					try {
 						if (p.hasPotionEffect(PotionEffectType.getByName(potion))) {
+                            if (shutdown) { p.removePotionEffect(PotionEffectType.getByName(potion)); continue; }
 							Bukkit.getScheduler().runTask(MCPerksMain.plugin, new Runnable() {
 
 								@Override
@@ -225,7 +244,8 @@ public enum Effect {
 		case TempPermission:
 			if (!getPermission().isEmpty()) {
 				for (Player p : players) {
-					perk.getPlugin().getMcperksUserManager().getMCPerksUser(p).removePermission(getPermission());
+                    if (shutdown) plugin.getPermissionHandler().removePermission(p.getUniqueId(), p.getName(), getPermission());
+                    else perk.getPlugin().getMcperksUserManager().getMCPerksUser(p).removePermission(getPermission());
 				}
 			}
 			break;
@@ -233,7 +253,21 @@ public enum Effect {
 			for (Player p : players) {
 				HashMap<String, String> placeholders = new HashMap<String, String>();
 				placeholders.put("player", p.getName());
-				MiscUtils.getInstance().executeConsoleCommands(p, perk.getDisableCommands(), placeholders, false);
+				if (shutdown) {
+					// The plugin is already disabled during onDisable. Dispatch directly on
+					// the Bukkit owner instead of enqueueing work against the retiring plugin.
+					ArrayList<String> configured = perk.getDisableCommands();
+					if (configured == null || configured.isEmpty()) break;
+					ArrayList<String> commands = PlaceholderUtils.replaceJavascriptOnly(p, configured);
+					commands = PlaceholderUtils.replacePlaceHolder(commands, placeholders);
+					commands = PlaceholderUtils.replacePlaceHolders(commands, p);
+					for (String command : commands) {
+						String rendered = command != null && command.startsWith("/") ? command.substring(1) : command;
+						Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), rendered);
+					}
+				} else {
+					MiscUtils.getInstance().executeConsoleCommands(p, perk.getDisableCommands(), placeholders, false);
+				}
 			}
 			break;
 		default:

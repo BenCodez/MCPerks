@@ -344,6 +344,8 @@ public class EffectListeners implements Listener {
 	public void onDisconnect(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		if (player != null) {
+            if (plugin.getConfigFile().getDeactivateOnLogout())
+                plugin.getPerkHandler().retirePendingPlayerSession(player);
 
 			if (plugin.getPerkHandler().effectActive(Effect.Fly, player.getUniqueId().toString(),
 					player.getWorld().getName())) {

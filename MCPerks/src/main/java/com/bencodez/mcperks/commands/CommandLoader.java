@@ -51,6 +51,32 @@ public class CommandLoader {
 	private HashMap<String, CommandHandler> commands;
 
 	private Object activationsLock = new Object();
+	private void reportActivationResult(CommandSender sender, java.util.concurrent.CompletionStage<Void> operation, String success) {
+		operation.whenComplete((ignored, failure) -> {
+			Runnable response = () -> sender.sendMessage(MessageAPI.colorize(failure == null ? success : "&cActivation update could not be confirmed; check the server log before retrying."));
+			if (failure != null) plugin.getLogger().warning("Activation update could not be confirmed");
+			if (sender instanceof Player player)
+				com.bencodez.mcperks.scheduling.OwnerTasks.run(plugin, player, () -> { if (player.isOnline()) response.run(); }, () -> {});
+			else plugin.getBukkitScheduler().runTask(plugin, response);
+		});
+	}
+	private void loadReloadCommand() {
+        plugin.getCommands().add(new CommandHandler(plugin, new String[] { "Reload" }, "MCPerks.Reload", "Reloads the plugin") {
+            @Override public void execute(CommandSender sender, String[] args) {
+                plugin.reloadAsync().whenComplete((ignored, error) -> {
+                    Runnable response = () -> sender.sendMessage(MessageAPI.colorize(error == null
+                            ? "&c" + plugin.getName() + " v" + plugin.getDescription().getVersion() + " reloaded!"
+                            : "&c" + plugin.getName() + " reload failed; check the server log."));
+                    if (sender instanceof Player player)
+                        com.bencodez.mcperks.scheduling.OwnerTasks.run(plugin, player,
+                                () -> { if (player.isOnline()) response.run(); }, () -> {});
+                    else plugin.getBukkitScheduler().runTask(plugin, response);
+                });
+            }
+        });
+    }
+
+
 
 	/**
 	 * Instantiates a new command loader.
@@ -157,16 +183,7 @@ public class CommandLoader {
 			}
 		});
 
-		plugin.getCommands()
-				.add(new CommandHandler(plugin, new String[] { "Reload" }, "MCPerks.Reload", "Reloads the plugin") {
-
-					@Override
-					public void execute(CommandSender sender, String[] args) {
-						plugin.reload();
-						sender.sendMessage(MessageAPI.colorize(
-								"&c" + plugin.getName() + " v" + plugin.getDescription().getVersion() + " reloaded!"));
-					}
-				});
+		loadReloadCommand();
 
 		plugin.getCommands()
 				.add(new CommandHandler(plugin, new String[] { "Version" }, "MCPerks.Version", "List version info") {
@@ -588,8 +605,7 @@ public class CommandLoader {
 			public void execute(CommandSender sender, String[] args) {
 				synchronized (activationsLock) {
 					MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-					user.setActivations(Integer.parseInt(args[2]));
-					sendMessage(sender, "&cSet activations to " + args[2]);
+					reportActivationResult(sender, user.setActivationsAsync(Integer.parseInt(args[2])), "&cSet activations to " + args[2]);
 				}
 			}
 		});
@@ -601,15 +617,15 @@ public class CommandLoader {
 			public void execute(CommandSender sender, String[] args) {
 				synchronized (activationsLock) {
 					if (args[1].equals("*")) {
+						var pending = new java.util.ArrayList<java.util.concurrent.CompletableFuture<Void>>();
 						for (Player p : Bukkit.getOnlinePlayers()) {
 							MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(p);
-							user.addActivation(Integer.parseInt(args[2]));
+							pending.add(user.addActivationAsync(Integer.parseInt(args[2])).toCompletableFuture());
 						}
-						sendMessage(sender, "&cAdded activations to " + args[2]);
+						reportActivationResult(sender, java.util.concurrent.CompletableFuture.allOf(pending.toArray(new java.util.concurrent.CompletableFuture<?>[0])), "&cAdded activations: " + args[2]);
 					} else {
 						MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-						user.addActivation(Integer.parseInt(args[2]));
-						sendMessage(sender, "&cSet activations to " + user.getActivations());
+						reportActivationResult(sender, user.addActivationAsync(Integer.parseInt(args[2])), "&cAdded activations: " + args[2]);
 					}
 				}
 			}
@@ -666,11 +682,7 @@ public class CommandLoader {
 					@Override
 					public void execute(CommandSender sender, String[] args) {
 						MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-						user.addActivation(-Integer.parseInt(args[2]));
-						if (user.getActivations() < 0) {
-							user.setActivations(0);
-						}
-						sendMessage(sender, "&cSet activations to " + user.getActivations());
+						reportActivationResult(sender, user.removeActivationClampedAsync(Integer.parseInt(args[2])), "&cRemoved activations: " + args[2]);
 					}
 				});
 
@@ -682,8 +694,7 @@ public class CommandLoader {
 					public void execute(CommandSender sender, String[] args) {
 						synchronized (activationsLock) {
 							MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-							user.setActivations(args[2], Integer.parseInt(args[3]));
-							sendMessage(sender, "&cSet activations to " + args[3]);
+							reportActivationResult(sender, user.setActivationsAsync(args[2], Integer.parseInt(args[3])), "&cSet activations to " + args[3]);
 						}
 					}
 				});
@@ -696,15 +707,15 @@ public class CommandLoader {
 					public void execute(CommandSender sender, String[] args) {
 						synchronized (activationsLock) {
 							if (args[1].equals("*")) {
+								var pending = new java.util.ArrayList<java.util.concurrent.CompletableFuture<Void>>();
 								for (Player p : Bukkit.getOnlinePlayers()) {
 									MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(p);
-									user.addActivation(args[2], Integer.parseInt(args[3]));
+									pending.add(user.addActivationAsync(args[2], Integer.parseInt(args[3])).toCompletableFuture());
 								}
-								sendMessage(sender, "&cAdded activations to " + args[3]);
+								reportActivationResult(sender, java.util.concurrent.CompletableFuture.allOf(pending.toArray(new java.util.concurrent.CompletableFuture<?>[0])), "&cAdded activations: " + args[3]);
 							} else {
 								MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-								user.addActivation(args[2], Integer.parseInt(args[3]));
-								sendMessage(sender, "&cSet activations to " + user.getActivations(args[2]));
+								reportActivationResult(sender, user.addActivationAsync(args[2], Integer.parseInt(args[3])), "&cAdded activations: " + args[3]);
 							}
 						}
 					}
@@ -719,11 +730,7 @@ public class CommandLoader {
 					public void execute(CommandSender sender, String[] args) {
 						synchronized (activationsLock) {
 							MCPerksUser user = plugin.getMcperksUserManager().getMCPerksUser(args[1]);
-							user.addActivation(-Integer.parseInt(args[3]));
-							if (user.getActivations(args[2]) < 0) {
-								user.setActivations(args[2], 0);
-							}
-							sendMessage(sender, "&cSet activations to " + user.getActivations());
+							reportActivationResult(sender, user.removeActivationClampedAsync(args[2], Integer.parseInt(args[3])), "&cRemoved activations: " + args[3]);
 						}
 					}
 				});

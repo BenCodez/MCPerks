@@ -60,6 +60,10 @@ import lombok.Setter;
  * The Class Main.
  */
 public class MCPerksMain extends AdvancedCorePlugin {
+    private volatile int featureLifecycle;
+    public int getFeatureLifecycle() { return featureLifecycle; }
+    private com.bencodez.mcperks.data.OrderedStorage storage;
+    public com.bencodez.mcperks.data.OrderedStorage getStorage() { return storage; }
 
 	/** The plugin. */
 	public static MCPerksMain plugin;
@@ -137,18 +141,95 @@ public class MCPerksMain extends AdvancedCorePlugin {
 	 * 
 	 * @see org.bukkit.plugin.java.JavaPlugin#onDisable()
 	 */
+    private volatile java.util.concurrent.CompletableFuture<Void> shutdownPreparation;
+    private volatile java.util.concurrent.CompletionStage<Void> shutdownFinalFiles;
+    private boolean shutdownCompletionHookDispatched;
+
+    @Override
+    public void onDisable() {
+        prepareShutdown();
+        super.onDisable();
+    }
+
+    /** Capture and remove native effects on the disable owner, before any asynchronous retirement. */
+    private synchronized void prepareShutdown() {
+        if (shutdownPreparation != null) return;
+        shutdownPreparation = new java.util.concurrent.CompletableFuture<>();
+        java.util.concurrent.CompletableFuture<Void> activations = java.util.concurrent.CompletableFuture.completedFuture(null);
+        java.util.concurrent.CompletableFuture<Void> saved;
+        try {
+            featureLifecycle++;
+            if (getPerkHandler() != null) activations = getPerkHandler().retireNativeActivations().toCompletableFuture();
+            if (getMcperksServerData() != null) getMcperksServerData().retireActivationCallbacks();
+            var legacy = new ArrayList<Perk>();
+            if (getPerkHandler() != null) for (Perk perk : getPerkHandler().getActivePerks()) legacy.add(perk);
+            if (getPerkHandler() != null) getPerkHandler().retireTimers();
+            legacy.removeIf(perk -> !perk.detachForShutdown());
+            if (legacy.isEmpty()) saved = java.util.concurrent.CompletableFuture.completedFuture(null);
+            else {
+                if (storage == null) throw new IllegalStateException("Shutdown persistence owner unavailable");
+                saved = storage.runtimeStorage(() -> legacy.stream().map(Perk::persistForShutdown).toList())
+                        .thenCompose(stages -> java.util.concurrent.CompletableFuture.allOf(
+                                stages.toArray(java.util.concurrent.CompletableFuture[]::new)));
+            }
+        } catch (Throwable failure) { saved = java.util.concurrent.CompletableFuture.failedFuture(failure); }
+        java.util.concurrent.CompletableFuture.allOf(activations, saved).whenComplete((ignored, failure) -> {
+            if (failure == null) shutdownPreparation.complete(null);
+            else shutdownPreparation.completeExceptionally(failure);
+        });
+    }
+
+    @Override public java.util.concurrent.CompletionStage<Void> onBeforeStorageShutdown() {
+        var preparation = shutdownPreparation;
+        return preparation == null ? java.util.concurrent.CompletableFuture.failedFuture(
+                new IllegalStateException("Shutdown owner preparation was not admitted")) : preparation.minimalCompletionStage();
+    }
+
+    @Override public void onShutdownComplete(java.util.concurrent.CompletionStage<Void> finalFilesStage) {
+        synchronized (this) {
+            // A duplicate/reentrant hook cannot replace the admitted final-file fence.
+            if (shutdownFinalFiles == null) shutdownFinalFiles = java.util.Objects.requireNonNull(finalFilesStage, "finalFilesStage");
+            if (shutdownCompletionHookDispatched) return;
+            shutdownCompletionHookDispatched = true;
+        }
+        onShutdownComplete(); // Preserve virtual dispatch to existing subclass hooks once.
+    }
+
+    @Override public void onShutdownComplete() {
+        var owner = storage;
+        var preparation = shutdownPreparation;
+        var files = shutdownFinalFiles;
+        if (owner != null) {
+            var prepared = preparation == null ? java.util.concurrent.CompletableFuture.<Void>completedFuture(null)
+                    : preparation;
+            var finalFiles = files == null ? java.util.concurrent.CompletableFuture.<Void>completedFuture(null)
+                    : files.toCompletableFuture();
+            // allOf waits for every settlement, including exceptional ones. Termination is
+            // deliberately outside these stages: closing the worker must not wait on itself.
+            java.util.concurrent.CompletableFuture.allOf(prepared, finalFiles)
+                    .whenComplete((ignored, failure) -> owner.close());
+        }
+    }
+
 	@Override
 	public void onUnLoad() {
-		for (Perk perk : getPerkHandler().getActivePerks()) {
-			getMcperksServerData().saveOfflinePerk(perk);
-			perk.deactivatePerk(perk.getActivater());
-		}
+        com.bencodez.mcperks.scheduling.OwnerTasks.shutdown(this);
+        // Native user storage is retired here; all user work belongs to the earlier stage.
+        if (getMcperksServerData() != null) getMcperksServerData().saveData();
 		HandlerList.unregisterAll(plugin);
 		plugin = null;
 	}
 
 	@Override
 	public void onPostLoad() {
+        com.bencodez.mcperks.scheduling.OwnerTasks.initialize(this);
+        shutdownPreparation = null;
+        shutdownFinalFiles = null;
+        shutdownCompletionHookDispatched = false;
+        int featureEpoch = ++featureLifecycle;
+        storage = new com.bencodez.mcperks.data.OrderedStorage(getDataFolder().toPath().resolve("perk-features.dat"));
+        var runtimeReady = mcperksServerData.initialize(storage);
+        runtimeReady.exceptionally(error -> { getLogger().severe("ServerData startup reconciliation failed; activations remain unavailable"); return null; });
 		loadListeners();
 		perkHandler = new PerkHandler(this);
 		effectHandler = new EffectHandler(this);
@@ -172,48 +253,16 @@ public class MCPerksMain extends AdvancedCorePlugin {
 			versionHandle = new Post123VersionHandle();
 		}
 
-		getBukkitScheduler().runTaskAsynchronously(this, new Runnable() {
-
-			@Override
-			public void run() {
-				if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk")) {
-					for (String uuid : getMcperksServerData().getData().getConfigurationSection("OfflinePerk")
-							.getKeys(false)) {
-						if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk." + uuid)) {
-							for (String perk : getMcperksServerData().getData()
-									.getConfigurationSection("OfflinePerk." + uuid).getKeys(false)) {
-
-								long timeLast = getMcperksServerData().getData()
-										.getLong("OfflinePerk." + uuid + "." + perk + ".Experiaton");
-								debug(uuid + "/" + perk + "/" + timeLast);
-								Timestamp timestamp = null;
-								if (timeLast > 0) {
-									timestamp = new Timestamp(timeLast);
-									timeLast = 0;
-								}
-								boolean activate = true;
-								if (timestamp != null) {
-									if (timestamp.after(new Timestamp(Calendar.getInstance().getTime().getTime()))) {
-										// not activating
-										activate = false;
-									}
-								}
-								if (activate) {
-									debug("Activating perk from shutdown " + perk + "/" + uuid + "/" + timeLast);
-									getPerkHandler().activePerk(getPerkHandler().getPerk(perk),
-											getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)),
-											(int) timeLast, timestamp);
-								}
-
-							}
-						}
-					}
-				}
-
-				getMcperksServerData().getData().set("OfflinePerk", null);
-				getMcperksServerData().saveData();
-			}
-		});
+        runtimeReady.thenRun(() -> {
+            if (featureEpoch != featureLifecycle || !isEnabled()) return;
+            getBukkitScheduler().runTask(this, () -> {
+                if (featureEpoch != featureLifecycle || !isEnabled()) return;
+                perkHandler.loadActivePerksConfirmed(this::restoreOfflinePerks).exceptionally(error -> {
+                    getLogger().severe("Legacy perk restoration failed; activations remain unavailable: " + error.getMessage());
+                    return null;
+                });
+            });
+        });
 
 		getJavascriptEngineRequests().add(new JavascriptPlaceholderRequest("MCPerks") {
 
@@ -278,6 +327,44 @@ public class MCPerksMain extends AdvancedCorePlugin {
 		}
 
 		plugin.getRewardHandler().addInjectedReward(new RewardInjectInt("Activations") {
+            @Override public boolean supportsAsyncRequest() { return true; }
+            @Override public boolean requiresConfiguredDataForAsync() { return true; }
+            @Override public java.util.concurrent.CompletionStage<Void> onReplayCheckpointPersisted(Reward reward, AdvancedCoreUser user,
+                    String occurrenceId, String injectionKey, boolean selectionPresent) {
+                if (!selectionPresent) return java.util.concurrent.CompletableFuture.completedFuture(null);
+                return onReplayCheckpointPersisted(reward, user, occurrenceId, injectionKey);
+            }
+            @Override public boolean hasPendingReplayWork(HashMap<String, String> placeholders) {
+                return Reward.hasReplaySelection(placeholders);
+            }
+            @Override public java.util.concurrent.CompletionStage<Object> onRewardRequestAsync(Reward reward, AdvancedCoreUser user,
+                    org.bukkit.configuration.ConfigurationSection data, HashMap<String, String> placeholders) {
+                if (data.isInt(getPath()) || (isAlwaysForce() && data.contains(getPath(), true)) || isAlwaysForceNoData())
+                    return super.onRewardRequestAsync(reward, user, data, placeholders);
+                if (!hasPendingReplayWork(placeholders)) return java.util.concurrent.CompletableFuture.completedFuture(null);
+                return onRewardRequestAsync(reward, user, 0, placeholders).thenApply(result -> (Object) result);
+            }
+
+			@Override
+			public java.util.concurrent.CompletionStage<String> onRewardRequestAsync(Reward reward, AdvancedCoreUser user, int value,
+					HashMap<String, String> placeholders) {
+				String identity = Reward.currentReplaySideEffectOccurrenceId();
+				int selected = Integer.parseInt(Reward.replaySelection(placeholders, () -> Integer.toString(value)));
+				var target = getMcperksUserManager().getMCPerksUser(user.getPlayerName());
+				boolean shared = getUserManager().getDataManager().usesSharedSqlStorage(getStorageType());
+				return Reward.persistReplayMetadataAsync(plugin, placeholders).thenCompose(ignored ->
+						shared && identity != null ? target.addReplayActivationAsync(null, selected, "mcperks:" + identity)
+								: target.addActivationAsync(selected)).thenApply(ignored -> null);
+			}
+			@Override
+			public java.util.concurrent.CompletionStage<Void> onReplayCheckpointPersisted(Reward reward, AdvancedCoreUser user,
+					String occurrenceId, String injectionKey) {
+				if (!getUserManager().getDataManager().usesSharedSqlStorage(getStorageType()))
+					return super.onReplayCheckpointPersisted(reward, user, occurrenceId, injectionKey);
+				String identity = Reward.replaySideEffectOccurrenceId(occurrenceId, injectionKey);
+				if (identity == null) return super.onReplayCheckpointPersisted(reward, user, occurrenceId, injectionKey);
+				return getMcperksUserManager().getMCPerksUser(user.getPlayerName()).checkpointReplayActivationAsync("mcperks:" + identity);
+			}
 
 			@Override
 			public String onRewardRequest(Reward reward, AdvancedCoreUser user, int value,
@@ -304,6 +391,44 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 		for (final String perk : MCPerksMain.plugin.getPerkHandler().getLoadedPerks().keySet()) {
 			plugin.getRewardHandler().addInjectedReward(new RewardInjectInt("PerkActivations." + perk) {
+            @Override public boolean supportsAsyncRequest() { return true; }
+            @Override public boolean requiresConfiguredDataForAsync() { return true; }
+            @Override public java.util.concurrent.CompletionStage<Void> onReplayCheckpointPersisted(Reward reward, AdvancedCoreUser user,
+                    String occurrenceId, String injectionKey, boolean selectionPresent) {
+                if (!selectionPresent) return java.util.concurrent.CompletableFuture.completedFuture(null);
+                return onReplayCheckpointPersisted(reward, user, occurrenceId, injectionKey);
+            }
+            @Override public boolean hasPendingReplayWork(HashMap<String, String> placeholders) {
+                return Reward.hasReplaySelection(placeholders);
+            }
+            @Override public java.util.concurrent.CompletionStage<Object> onRewardRequestAsync(Reward reward, AdvancedCoreUser user,
+                    org.bukkit.configuration.ConfigurationSection data, HashMap<String, String> placeholders) {
+                if (data.isInt(getPath()) || (isAlwaysForce() && data.contains(getPath(), true)) || isAlwaysForceNoData())
+                    return super.onRewardRequestAsync(reward, user, data, placeholders);
+                if (!hasPendingReplayWork(placeholders)) return java.util.concurrent.CompletableFuture.completedFuture(null);
+                return onRewardRequestAsync(reward, user, 0, placeholders).thenApply(result -> (Object) result);
+            }
+
+				@Override
+				public java.util.concurrent.CompletionStage<String> onRewardRequestAsync(Reward reward, AdvancedCoreUser user, int value,
+						HashMap<String, String> placeholders) {
+					String identity = Reward.currentReplaySideEffectOccurrenceId();
+					int selected = Integer.parseInt(Reward.replaySelection(placeholders, () -> Integer.toString(value)));
+					var target = getMcperksUserManager().getMCPerksUser(user.getPlayerName());
+					boolean shared = getUserManager().getDataManager().usesSharedSqlStorage(getStorageType());
+					return Reward.persistReplayMetadataAsync(plugin, placeholders).thenCompose(ignored ->
+							shared && identity != null ? target.addReplayActivationAsync(perk, selected, "mcperks:" + identity)
+									: target.addActivationAsync(perk, selected)).thenApply(ignored -> null);
+				}
+				@Override
+				public java.util.concurrent.CompletionStage<Void> onReplayCheckpointPersisted(Reward reward, AdvancedCoreUser user,
+						String occurrenceId, String injectionKey) {
+					if (!getUserManager().getDataManager().usesSharedSqlStorage(getStorageType()))
+						return super.onReplayCheckpointPersisted(reward, user, occurrenceId, injectionKey);
+					String identity = Reward.replaySideEffectOccurrenceId(occurrenceId, injectionKey);
+					if (identity == null) return super.onReplayCheckpointPersisted(reward, user, occurrenceId, injectionKey);
+					return getMcperksUserManager().getMCPerksUser(user.getPlayerName()).checkpointReplayActivationAsync("mcperks:" + identity);
+				}
 
 				@Override
 				public String onRewardRequest(Reward reward, AdvancedCoreUser user, int value,
@@ -476,22 +601,142 @@ public class MCPerksMain extends AdvancedCorePlugin {
 
 	}
 
-	@Override
-	public void reload() {
+    private volatile com.bencodez.mcperks.data.OrderedServerDataFile orderedServerData;
+    @Override public com.bencodez.advancedcore.data.ServerData getServerDataFile() {
+        var original = super.getServerDataFile();
+        if (storage == null && mcperksServerData != null && original != null)
+            mcperksServerData.observeNativePermissionSource(original.getData());
+        if (mcperksServerData == null || original == null || original.getData() == null) return original;
+        synchronized (mcperksServerData) {
+            if (orderedServerData == null) orderedServerData = new com.bencodez.mcperks.data.OrderedServerDataFile(this, original, mcperksServerData);
+            return orderedServerData;
+        }
+    }
+    @Override public com.bencodez.advancedcore.api.permissions.PermissionHandler getPermissionHandler() {
+        var handler = super.getPermissionHandler();
+        if (mcperksServerData != null && handler != null) mcperksServerData.observeNativePermissionHandler(handler);
+        return handler;
+    }
+    private void restoreOfflinePerks() {
+	if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk")) {
+		for (String uuid : getMcperksServerData().getData().getConfigurationSection("OfflinePerk")
+				.getKeys(false)) {
+			if (getMcperksServerData().getData().isConfigurationSection("OfflinePerk." + uuid)) {
+				for (String perk : getMcperksServerData().getData()
+						.getConfigurationSection("OfflinePerk." + uuid).getKeys(false)) {
+
+					long timeLast = getMcperksServerData().getData()
+							.getLong("OfflinePerk." + uuid + "." + perk + ".Experiaton");
+					long persistedExpiration = timeLast;
+					debug(uuid + "/" + perk + "/" + timeLast);
+					Timestamp timestamp = null;
+					if (timeLast > 0) {
+						timestamp = new Timestamp(timeLast);
+						timeLast = 0;
+					}
+					boolean activate = timestamp == null || timestamp.after(new Timestamp(Calendar.getInstance().getTime().getTime()));
+					var definition = getPerkHandler().getPerk(perk);
+                    if (definition == null || !definition.isEnabled()) {
+                        getLogger().warning("Skipping shutdown record for unavailable perk: " + perk);
+                        continue;
+                    }
+					if (activate) {
+						debug("Activating perk from shutdown " + perk + "/" + uuid + "/" + timeLast);
+						getPerkHandler().restoreActivePerk(definition,
+							getMcperksUserManager().getMCPerksUser(UUID.fromString(uuid)), timestamp);
+					}
+					getMcperksServerData().removeOfflinePerkIfMatches(uuid, perk, persistedExpiration);
+
+				}
+			}
+		}
+	}
+
+	getMcperksServerData().saveData();
+    }
+
+    private final java.util.concurrent.atomic.AtomicBoolean reloadPending = new java.util.concurrent.atomic.AtomicBoolean();
+    private volatile java.util.concurrent.CompletableFuture<Void> reloadOperation;
+    private volatile java.util.concurrent.CompletableFuture<Void> reloadObservation;
+    @Override
+    public void reload() {
+        reloadAsync();
+    }
+    /** Starts (or joins) the asynchronous reload and completes after the new lifecycle is installed. */
+    public synchronized java.util.concurrent.CompletableFuture<Void> reloadAsync() {
+        java.util.concurrent.CompletableFuture<Void> existing = reloadOperation;
+        if (existing != null && !existing.isDone()) return reloadObservation;
+        if (!reloadPending.compareAndSet(false, true)) return reloadObservation;
+        var operation = new java.util.concurrent.CompletableFuture<Void>();
+        reloadOperation = operation;
+        var observation = operation.copy();
+        reloadObservation = observation;
+        try {
+            if (perkHandler != null) perkHandler.pauseNativeActivationsForReload();
+        } catch (RuntimeException unavailable) {
+            finishReload(operation, unavailable);
+            return observation;
+        }
+        // ServerData snapshots accepted before reload must publish before AdvancedCore reads its file.
+        var barrier = storage == null ? java.util.concurrent.CompletableFuture.completedFuture(null) : storage.runtimeStorage(() -> null);
+        var nativeBarrier = barrier.thenCompose(ignored -> mcperksServerData == null
+                ? java.util.concurrent.CompletableFuture.completedFuture(null) : mcperksServerData.reloadDataAsync());
+        var ownerStarted = new java.util.concurrent.atomic.AtomicBoolean();
+        nativeBarrier.whenComplete((ignored, error) -> {
+            if (error != null || !isEnabled()) {
+                if (error != null) getLogger().warning("Reload postponed: pending ServerData publication could not drain");
+                finishReload(operation, error == null ? new IllegalStateException("Plugin is disabled") : error);
+                return;
+            }
+            try {
+                var dispatch = getBukkitScheduler().getFoliaLib().getImpl().runNextTick(scheduledTask -> {
+                    if (operation.isDone() || !ownerStarted.compareAndSet(false, true)) return;
+                    if (!isEnabled()) { finishReload(operation, new IllegalStateException("Plugin is disabled")); return; }
+                    try {
+                        reloadAfterDrain();
+                        reloadAdvancedCoreAsync(true).whenComplete((value, nativeFailure) -> {
+                            if (nativeFailure != null) { finishReload(operation, nativeFailure); return; }
+                            var files = mcperksServerData == null ? java.util.concurrent.CompletableFuture.<Void>completedFuture(null)
+                                    : mcperksServerData.reloadCompletion();
+                            files.whenComplete((done, fileFailure) -> finishReload(operation, fileFailure));
+                        });
+                    }
+                    catch (Throwable failure) { finishReload(operation, failure); }
+                });
+                dispatch.whenComplete((dispatchResult, dispatchFailure) -> {
+                    if (dispatchFailure != null && ownerStarted.compareAndSet(false, true)) finishReload(operation, dispatchFailure);
+                });
+            } catch (Throwable failure) {
+                finishReload(operation, failure);
+            }
+        });
+        return observation;
+    }
+    private synchronized void finishReload(java.util.concurrent.CompletableFuture<Void> operation, Throwable failure) {
+        if (operation.isDone()) return;
+        if (perkHandler != null) perkHandler.resumeNativeActivationsAfterReload();
+        reloadPending.set(false);
+        if (failure == null) operation.complete(null); else {
+            getLogger().log(java.util.logging.Level.WARNING, "Reload failed", failure);
+            operation.completeExceptionally(failure);
+        }
+    }
+    private void reloadAfterDrain() {
+        // Retire direct activations admitted by the previous configuration generation.
+        featureLifecycle++;
 		configFile.reloadData();
 		perkSystemType = configFile.getPerkSystemType();
 		Lang.getInstance().reloadData();
-		mcperksServerData.reloadData();
 		getPerkHandler().reload();
 		commandLoader.loadTabComplete();
 		updateHook();
-		reloadAdvancedCore(true);
 	}
 
 	/**
 	 * Setup files.
 	 */
 	private void setupFiles() {
+        orderedServerData = null;
 		configFile = new Config(this);
 		configFile.setup();
 		Lang.getInstance().setup(this);
