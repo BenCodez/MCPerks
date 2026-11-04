@@ -29,6 +29,7 @@ import com.bencodez.mcperks.commands.executers.CommandAliases;
 import com.bencodez.mcperks.commands.executers.CommandPerkAliases;
 import com.bencodez.mcperks.commands.tabcompleter.AliasesTabCompleter;
 import com.bencodez.mcperks.configs.ConfigPerks;
+import com.bencodez.mcperks.userapi.UsageCharges;
 import com.bencodez.mcperks.perk.Effect;
 import com.bencodez.mcperks.perk.Perk;
 import com.bencodez.mcperks.userapi.MCPerksUser;
@@ -167,8 +168,57 @@ public class CommandLoader {
 
 	}
 
-	public void loadCommands() {
+		private void registerFeatureArgumentMatchers() {
+		TabCompleteHandler replacements = TabCompleteHandler.getInstance();
+		for (String name : new String[] { "(effect)" }) {
+			if (replacements.getTabCompleteReplaces().contains(name)) continue;
+			replacements.addTabCompleteOption(new TabCompleteHandle(name) {
+				@Override public void reload() { }
+				@Override public void updateReplacements() { setReplace(new ArrayList<String>()); }
+			});
+		}
+	}
+
+    private void loadUsageCommands() {
+        // Keep the registration ledger across asynchronous player resolution. A retired
+        // ledger rejects late writes instead of admitting them into its successor.
+        final UsageCharges charges = plugin.getUsageCharges();
+        plugin.getCommands().add(new CommandHandler(plugin, new String[] { "GetUsageCharges", "(effect)" },
+                "MCPerks.GetUsageCharges", "Show a personal effect balance") {
+            @Override public void execute(CommandSender sender, String[] args) {
+                if (!(sender instanceof org.bukkit.entity.Player player)) { sendMessage(sender, "&cPlayer only."); return; }
+                if (!plugin.isEnabled() || plugin.getUsageCharges() != charges || !charges.available()) { sendMessage(sender, "&cCharge state is unavailable."); return; }
+                try { UsageCharges.Kind kind = UsageCharges.Kind.valueOf(args[1]);
+                    sendMessage(sender, "&b" + kind + " charges: " + charges.get(player.getUniqueId(), kind));
+                } catch (IllegalArgumentException e) { sendMessage(sender, "&cUnknown charge effect."); }
+            }
+        });
+        for (boolean add : new boolean[] { false, true }) {
+            String command = add ? "AddUsageCharges" : "SetUsageCharges";
+            plugin.getCommands().add(new CommandHandler(plugin, new String[] { command, "(player)", "(effect)", "(number)" },
+                    "MCPerks." + command, "Manage personal effect charges") {
+                @Override public void execute(CommandSender sender, String[] args) {
+                    try {
+                        UsageCharges.Kind kind = UsageCharges.Kind.valueOf(args[2]); int amount = Integer.parseInt(args[3]);
+                        java.util.UUID owner = java.util.UUID.fromString(plugin.getMcperksUserManager().getMCPerksUser(args[1]).getUUID());
+                        java.util.concurrent.CompletableFuture<Integer> result = !plugin.isEnabled() || plugin.getUsageCharges() != charges
+                                ? java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("Charge lifecycle retired"))
+                                : add ? charges.add(owner, kind, amount) : charges.set(owner, kind, amount);
+                        result.whenComplete((balance, error) -> {
+                            Runnable reply = () -> sendMessage(sender, error == null ? "&b" + kind + " charges: " + balance : "&cCharge update failed.");
+                            if (sender instanceof org.bukkit.entity.Player player) plugin.getBukkitScheduler().runTask(plugin, reply, player);
+                            else plugin.getBukkitScheduler().runTask(plugin, reply);
+                        });
+                    } catch (IllegalArgumentException e) { sendMessage(sender, "&cUse a supported effect and nonnegative integer amount."); }
+                }
+            });
+        }
+    }
+
+    public void loadCommands() {
+        registerFeatureArgumentMatchers();
 		plugin.setCommands(new ArrayList<CommandHandler>());
+        loadUsageCommands();
 		commands = new HashMap<String, CommandHandler>();
 
 		plugin.getCommands().add(new CommandHandler(plugin, new String[] { "ToggleBossBar" }, "MCPerks.ToggleBossBar",

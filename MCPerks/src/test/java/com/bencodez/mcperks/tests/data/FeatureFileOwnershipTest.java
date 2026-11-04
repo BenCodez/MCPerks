@@ -43,4 +43,21 @@ class FeatureFileOwnershipTest {
 
 
 
+    @Test void ownershipFailureFreezesChargeGrantsReservationsAndUnlimitedStatistics() throws Exception {
+        Path file = root.resolve("charges.dat"); var owner = java.util.UUID.randomUUID();
+        var kind = com.bencodez.mcperks.userapi.UsageCharges.Kind.VeinMining;
+        try (var seed = new com.bencodez.mcperks.userapi.UsageCharges(file)) { seed.set(owner, kind, 12).get(5, TimeUnit.SECONDS); }
+        byte[] original = Files.readAllBytes(file); Files.deleteIfExists(root.resolve("charges.dat.lock"));
+        Path unrelated = root.resolve("unrelated-charge"); Files.writeString(unrelated, "do not touch");
+        Files.createSymbolicLink(root.resolve("charges.dat.lock"), unrelated);
+        try (var state = new com.bencodez.mcperks.userapi.UsageCharges(file)) {
+            assertThrows(ExecutionException.class, () -> state.ready().get(5, TimeUnit.SECONDS)); assertFalse(state.available());
+            assertThrows(ExecutionException.class, () -> state.set(owner, kind, 1).get(5, TimeUnit.SECONDS));
+            assertThrows(ExecutionException.class, () -> state.add(owner, kind, 1).get(5, TimeUnit.SECONDS));
+            assertThrows(ExecutionException.class, () -> state.reserve(owner, kind, 1).get(5, TimeUnit.SECONDS));
+            assertThrows(ExecutionException.class, () -> state.record(owner, kind, 1).get(5, TimeUnit.SECONDS));
+            assertArrayEquals(original, Files.readAllBytes(file)); assertEquals("do not touch", Files.readString(unrelated));
+        }
+    }
+
 }
