@@ -157,11 +157,15 @@ public class Perk {
 	@Getter
 	private VeinOptions veinOptions;
 
+	@Getter
+	private java.util.List<String> harvestCrops = java.util.List.of();
+
 
 	public Perk(Perk perk) {
 		this.perk = perk.perk;
 		usageChargesEnabled = perk.usageChargesEnabled;
 		veinOptions = perk.veinOptions;
+		harvestCrops = perk.harvestCrops;
 		name = perk.name;
 		description = perk.description;
 		time = perk.time;
@@ -209,6 +213,7 @@ public class Perk {
 		this.perk = perk;
 		usageChargesEnabled = ConfigPerks.getInstance().getData(perk).getBoolean("UsageCharges.Enabled", false);
 		veinOptions = VeinOptions.read(ConfigPerks.getInstance().getData(perk));
+		harvestCrops = java.util.List.copyOf(ConfigPerks.getInstance().getData(perk).getStringList("RightClickHarvest.Crops"));
 		setPriority(ConfigPerks.getInstance().getPerkPriority(perk));
 		name = ConfigPerks.getInstance().getPerkName(perk);
 		description = ConfigPerks.getInstance().getPerkDescription(perk).replace("%TimeLasts%", "" + getTime());

@@ -66,3 +66,37 @@ UsageCharges:
 Additional blocks use the native player break path, retaining protection events, tool wear and normal drop handling. Deferred work rechecks the original event, player session, held slot and tool metadata. Reload, disconnect or replacement of the listener invalidates old work; a synchronous native break remains guarded against recursive automation until it returns.
 
 Optional personal usage charges reserve the available additional-block budget before native work. Successful additional blocks consume units; proved-unused units are refunded. A failed or exceptional native call has an uncertain outcome, so its unit remains spent and the batch stops. Charged shared perks are rejected; unlimited shared perks remain supported. This slice does not add harvesting, PrecisionMode, queues, banking or statistics. Headless tests do not establish native server or Folia acceptance.
+
+### Right-click harvesting
+
+`RightClickHarvest` is opt-in and stacks on the interaction/usage support above.
+For example, in a perk definition:
+
+```yaml
+Effects: [RightClickHarvest]
+RightClickHarvest:
+  Crops: [WHEAT, POTATOES, CARROTS, BEETROOTS, NETHER_WART]
+UsageCharges:
+  Enabled: false
+```
+
+An absent or empty crop list permits those five supported crops; it does not
+turn the effect on. Only a permitted main-hand survival interaction with a
+mature crop and one inventory seed is admitted. AutoPlant's existing tool,
+enchantment and block restrictions also apply. Deferred callbacks recheck the
+player session, selected slot/tool, seed stack, crop state, distance, loaded
+region, interaction permission and current perk eligibility.
+
+One successful native break and age-zero replant is one usage unit. The exact
+seed is reserved before native callbacks; native protection, tool wear, normal
+drops and Farmer bonuses remain in the native break path. AutoPlant and recursive
+automation are suppressed during that break to avoid planting twice. Duplicated
+callbacks do not repeat the effect. Proven-unused reservations are released;
+a false/throwing native result or changed replacement is uncertain, so its seed
+and charge remain spent and it is not automatically retried. No seed is created
+from drops or taken from armor/offhand slots.
+
+This focused slice remains subject to the parent stack's normal dependency,
+compatibility and separately authorized native-server acceptance. Unit fixtures
+with mocked world boundaries do not establish protection-plugin or live-world
+acceptance. MCPerks does not declare Folia support.
