@@ -23,12 +23,15 @@ public final class UsageEffectListener implements Listener {
     private final MCPerksMain plugin;
     private final UsageCharges ledger;
     private final UsageAdmissions admissions = new UsageAdmissions();
+    private volatile NativeBreakSessions nativeBreakSessions = new NativeBreakSessions(4096);
+    private static final ThreadLocal<java.util.Set<Player>> activeNativePlayers = ThreadLocal.withInitial(
+            () -> java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>()));
     public UsageEffectListener(MCPerksMain plugin) {
         this.plugin = plugin;
         this.ledger = plugin.getUsageCharges();
     }
-    public void invalidate() { admissions.invalidate(); }
-    public CompletableFuture<Void> retire() { return admissions.retire(); }
+    public void invalidate() { admissions.invalidate(); NativeBreakSessions old = nativeBreakSessions; nativeBreakSessions = new NativeBreakSessions(4096); old.close(); }
+    public CompletableFuture<Void> retire() { nativeBreakSessions.close(); return admissions.retire(); }
     public CompletableFuture<Void> retireAndClose() { return retire().whenComplete((ignored, error) -> ledger.close()); }
 
     /** Owner-only capture. A current server Player identity, not a matching UUID, proves the session. */
@@ -47,14 +50,21 @@ public final class UsageEffectListener implements Listener {
     public void join(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         admissions.join(player.getUniqueId(), player, currentPlayer(player));
+        if (currentPlayer(player) == player) nativeBreakSessions.join(player.getUniqueId(), player);
     }
     @EventHandler(priority = EventPriority.MONITOR)
     public void quit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         admissions.quit(player.getUniqueId(), player);
+        NativeBreakSessions sessions = nativeBreakSessions;
+        NativeBreakSessions.Session session = sessions.capture(player.getUniqueId(), player);
+        if (session != null) sessions.retire(session);
     }
 
     private Perk eligible(Player player, Perk expected, UsageCharges.Kind kind) {
+        return eligible(player, expected, kind, ignored -> true);
+    }
+    private Perk eligible(Player player, Perk expected, UsageCharges.Kind kind, java.util.function.Predicate<Perk> context) {
         if (!plugin.isEnabled()) return null;
         Effect effect;
         try { effect = Effect.valueOf(kind.name()); }
@@ -65,7 +75,8 @@ public final class UsageEffectListener implements Listener {
         for (Perk perk : plugin.getPerkHandler().getActivePerks()) {
             if (expected != null && expected != perk) continue;
             if (!perk.getEffects().contains(effect)
-                    || !perk.getEffectedPlayers().contains(owner) || !perk.isNotInDisabledWorld(world)) continue;
+                    || !perk.getEffectedPlayers().contains(owner) || !perk.isNotInDisabledWorld(world)
+                    || !context.test(perk)) continue;
             if (perk.isUsageChargesEnabled() && perk.getPerkType() != PerkSystemType.PLAYER) continue;
             if (!perk.isUsageChargesEnabled()) return perk;
             if (charged == null) charged = perk;
@@ -83,6 +94,85 @@ public final class UsageEffectListener implements Listener {
         if (scope == null) return;
         OwnerTasks.run(plugin, player, () -> submit(player, perk, UsageCharges.Kind.AutoBlockRefill, scope,
                 List.of(() -> !event.isCancelled() && plan.apply())), () -> {});
+    }
+
+    /** Owner-lane lookup shared with other native-break consumers. */
+    public boolean isNativeBreak(Player player) {
+        var active = activeNativePlayers.get();
+        boolean inFlight = active.contains(player);
+        if (active.isEmpty()) activeNativePlayers.remove();
+        if (inFlight) return true;
+        NativeBreakSessions sessions = nativeBreakSessions;
+        NativeBreakSessions.Session session = sessions.capture(player.getUniqueId(), player);
+        return session != null && sessions.isCurrent(session) && sessions.guard().isActive(session.scope);
+    }
+
+    /** Capture both admission and native-break session identities on the originating owner. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void vein(org.bukkit.event.block.BlockBreakEvent event) {
+        Player player = event.getPlayer();
+        if (isNativeBreak(player)) return;
+        AdmissionScope admission = capture(player);
+        if (admission == null || player.getGameMode() != GameMode.SURVIVAL) return;
+        NativeBreakSessions sessions = nativeBreakSessions;
+        NativeBreakSessions.Session session = sessions.capture(player.getUniqueId(), player);
+        if (session == null) session = sessions.join(player.getUniqueId(), player);
+        if (session == null || sessions.guard().isActive(session.scope)) return;
+        org.bukkit.block.Block origin = event.getBlock();
+        org.bukkit.Material ore = origin.getType();
+        if (!(ore.name().endsWith("_ORE") || ore == org.bukkit.Material.ANCIENT_DEBRIS)
+                || origin.hasMetadata("Placed") || !owns(player, origin)) return;
+        var tool = player.getInventory().getItemInMainHand().clone();
+        Perk perk = eligible(player, null, UsageCharges.Kind.VeinMining, candidate -> {
+            var currentOptions = candidate.getVeinOptions();
+            return allowed(currentOptions.materials(), ore) && (currentOptions.tools().isEmpty()
+                    ? tool.getType().name().endsWith("_PICKAXE") : allowed(currentOptions.tools(), tool.getType()));
+        });
+        if (perk == null) return;
+        var options = perk.getVeinOptions();
+        int slot = player.getInventory().getHeldItemSlot();
+        if (!allowed(options.materials(), ore) || (options.tools().isEmpty()
+                ? !tool.getType().name().endsWith("_PICKAXE") : !allowed(options.tools(), tool.getType()))) return;
+        var blocks = VeinTraversal.connected(origin, ore, options.blocks(), options.distance(),
+                () -> plugin.getBukkitScheduler().getFoliaLib().isFolia(), block -> owns(player, block));
+        if (blocks.isEmpty()) return;
+        NativeBreakSessions.Session captured = session;
+        java.util.List<EffectBatch.Unit> units = new java.util.ArrayList<>();
+        for (var block : blocks) units.add(() -> {
+            if (!sessions.isCurrent(captured) || event.isCancelled() || !owns(player, origin)
+                    || origin.getType() == ore || !VeinToolIdentity.matches(player, tool, slot)
+                    || !owns(player, block) || block.getType() != ore || block.hasMetadata("Placed")
+                    || player.getLocation().distanceSquared(block.getLocation()) > 256) return false;
+            boolean broken = sessions.guard().run(captured.scope, () -> {
+                var active = activeNativePlayers.get();
+                if (!active.add(player)) return false;
+                try { return player.breakBlock(block); }
+                finally {
+                    active.remove(player);
+                    if (active.isEmpty()) activeNativePlayers.remove();
+                }
+            });
+            // A false result after invoking the native API does not prove no side effect.
+            if (!broken) throw new IllegalStateException("Native break outcome is uncertain");
+            return true;
+        });
+        OwnerTasks.later(plugin, player, () -> {
+            if (sessions.isCurrent(captured)) submit(player, perk, UsageCharges.Kind.VeinMining, admission, units);
+        }, () -> {}, 1);
+    }
+
+    private static boolean allowed(java.util.List<String> values, org.bukkit.Material material) {
+        return values.isEmpty() || values.stream().anyMatch(value -> value.equalsIgnoreCase(material.name()));
+    }
+
+    private boolean owns(Player player, org.bukkit.block.Block block) {
+        if (!player.getWorld().equals(block.getWorld())
+                || !block.getWorld().isChunkLoaded(block.getX() >> 4, block.getZ() >> 4)) return false;
+        if (!plugin.getBukkitScheduler().getFoliaLib().isFolia()) return true;
+        try {
+            var method = org.bukkit.Bukkit.class.getMethod("isOwnedByCurrentRegion", org.bukkit.Location.class);
+            return Boolean.TRUE.equals(method.invoke(null, block.getLocation()));
+        } catch (ReflectiveOperationException failure) { return false; }
     }
 
     /** P3 owns admission and terminal settlement; callers retain their per-unit event/guard checks. */

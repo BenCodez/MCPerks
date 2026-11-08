@@ -154,10 +154,14 @@ public class Perk {
 	@Getter
 	private boolean usageChargesEnabled;
 
+	@Getter
+	private VeinOptions veinOptions;
+
 
 	public Perk(Perk perk) {
 		this.perk = perk.perk;
 		usageChargesEnabled = perk.usageChargesEnabled;
+		veinOptions = perk.veinOptions;
 		name = perk.name;
 		description = perk.description;
 		time = perk.time;
@@ -204,6 +208,7 @@ public class Perk {
 	public Perk(String perk) {
 		this.perk = perk;
 		usageChargesEnabled = ConfigPerks.getInstance().getData(perk).getBoolean("UsageCharges.Enabled", false);
+		veinOptions = VeinOptions.read(ConfigPerks.getInstance().getData(perk));
 		setPriority(ConfigPerks.getInstance().getPerkPriority(perk));
 		name = ConfigPerks.getInstance().getPerkName(perk);
 		description = ConfigPerks.getInstance().getPerkDescription(perk).replace("%TimeLasts%", "" + getTime());

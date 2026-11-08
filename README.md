@@ -45,3 +45,24 @@ Existing native YAML is reconciled automatically. Purchased expiration times and
 The ordered snapshot format bounds encoded files to four MB. Advisory history yields capacity to runtime state; an indispensable payload that cannot fit leaves the original file intact and reports the failure. No administrator deletion or data-reset step is performed. Optional queue/bank payloads are independent of this native storage owner.
 
 `/mcperks Reload` reports completion after the storage barrier and owner callback finish. Concurrent requests join the same pending operation; failed publication or dispatch reports failure instead of an early success message.
+
+## Optional VeinMining
+
+Add `VeinMining` to a perk's `Effects` to break connected eligible ore after the original block is broken. Existing perks do not gain this effect automatically.
+
+```yaml
+Effects: [VeinMining]
+VeinMining:
+  MaxBlocks: 16
+  MaxDistance: 8
+  Materials: [COAL_ORE, IRON_ORE, DIAMOND_ORE]
+  Tools: [IRON_PICKAXE, DIAMOND_PICKAXE, NETHERITE_PICKAXE]
+UsageCharges:
+  Enabled: false
+```
+
+`MaxBlocks` includes the original block and is clamped to 1–64; `MaxDistance` is clamped to 1–16 on each coordinate. Missing limits default to 16 and 8. An empty material list permits ore materials; an empty tool list requires a pickaxe. The bounded search uses loaded chunks only and excludes blocks marked `Placed`.
+
+Additional blocks use the native player break path, retaining protection events, tool wear and normal drop handling. Deferred work rechecks the original event, player session, held slot and tool metadata. Reload, disconnect or replacement of the listener invalidates old work; a synchronous native break remains guarded against recursive automation until it returns.
+
+Optional personal usage charges reserve the available additional-block budget before native work. Successful additional blocks consume units; proved-unused units are refunded. A failed or exceptional native call has an uncertain outcome, so its unit remains spent and the batch stops. Charged shared perks are rejected; unlimited shared perks remain supported. This slice does not add harvesting, PrecisionMode, queues, banking or statistics. Headless tests do not establish native server or Folia acceptance.

@@ -213,6 +213,8 @@ public class EffectListeners implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onBlockBreak(BlockBreakEvent event) {
 		Player player = event.getPlayer();
+		var usageEffects = plugin.getUsageEffects();
+		boolean nativeBreak = usageEffects != null && usageEffects.isNativeBreak(player);
 		if (!event.isCancelled()) {
 			for (BlockBreakEvent e : plugin.getEffectHandler().getBlockBreakEvents()) {
 				if (e.equals(event)) {
@@ -224,7 +226,7 @@ public class EffectListeners implements Listener {
 			Block blockBroken;
 			Collection<ItemStack> var5;
 
-			if (Tag.LOGS.isTagged(event.getBlock().getType())) {
+			if (!nativeBreak && Tag.LOGS.isTagged(event.getBlock().getType())) {
 				if (plugin.getPerkHandler().effectActive(Effect.TreeHarvest, player.getUniqueId().toString(),
 						player.getWorld().getName())) {
 					boolean found = false;
@@ -245,7 +247,7 @@ public class EffectListeners implements Listener {
 				}
 			}
 
-			if (plugin.getPerkHandler().effectActive(Effect.AutoPlant, player.getUniqueId().toString(),
+			if (!nativeBreak && plugin.getPerkHandler().effectActive(Effect.AutoPlant, player.getUniqueId().toString(),
 					player.getWorld().getName())) {
 				boolean found = false;
 				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
@@ -305,7 +307,7 @@ public class EffectListeners implements Listener {
 				}
 			}
 
-			if (plugin.getPerkHandler().effectActive(Effect.IncreaseMiningArea, player.getUniqueId().toString(),
+			if (!nativeBreak && plugin.getPerkHandler().effectActive(Effect.IncreaseMiningArea, player.getUniqueId().toString(),
 					player.getWorld().getName())) {
 				boolean found = false;
 				for (Perk active : plugin.getPerkHandler().getActivePerks()) {
