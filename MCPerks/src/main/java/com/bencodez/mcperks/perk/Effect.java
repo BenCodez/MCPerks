@@ -120,7 +120,10 @@ public enum Effect {
 	AutoBlockRefill,
 
 	/** Mine connected ore through the normal native-break path. */
-	VeinMining;
+	VeinMining,
+
+	/** Harvest a mature crop through native protection and replant one reserved seed. */
+	RightClickHarvest;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {

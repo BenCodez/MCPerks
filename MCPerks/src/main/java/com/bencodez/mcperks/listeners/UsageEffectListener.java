@@ -18,7 +18,7 @@ import com.bencodez.mcperks.perk.PerkSystemType;
 import com.bencodez.mcperks.scheduling.OwnerTasks;
 import com.bencodez.mcperks.userapi.UsageCharges;
 
-/** Refill-only owner callbacks; the ledger remains owned by this listener generation. */
+/** Owner callbacks for optional interaction effects; one generation owns the ledger. */
 public final class UsageEffectListener implements Listener {
     private final MCPerksMain plugin;
     private final UsageCharges ledger;
@@ -159,6 +159,88 @@ public final class UsageEffectListener implements Listener {
         OwnerTasks.later(plugin, player, () -> {
             if (sessions.isCurrent(captured)) submit(player, perk, UsageCharges.Kind.VeinMining, admission, units);
         }, () -> {}, 1);
+    }
+
+    /** Main-hand admission retains final interaction permission separately from native protection. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void harvest(org.bukkit.event.player.PlayerInteractEvent event) {
+        if (event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK
+                || event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND
+                || event.getClickedBlock() == null || !interactionAllowed(event)) return;
+        Player player = event.getPlayer();
+        if (isNativeBreak(player) || player.getGameMode() != GameMode.SURVIVAL) return;
+        AdmissionScope admission = capture(player);
+        if (admission == null) return;
+        var block = event.getClickedBlock();
+        var crop = block.getType();
+        var seed = com.bencodez.mcperks.effects.AutoPlant.seedFor(crop);
+        if (seed == null || !owns(player, block)
+                || !(block.getBlockData() instanceof org.bukkit.block.data.Ageable age)
+                || age.getAge() != age.getMaximumAge()) return;
+        var tool = player.getInventory().getItemInMainHand().clone();
+        Perk perk = eligible(player, null, UsageCharges.Kind.RightClickHarvest,
+                candidate -> allowed(candidate.getHarvestCrops(), crop)
+                        && com.bencodez.mcperks.effects.AutoPlant.allows(candidate, tool, crop));
+        if (perk == null) return;
+        int seedSlot = -1;
+        for (int i = 0; i < 36; i++) {
+            var item = player.getInventory().getItem(i);
+            if (item != null && item.getType() == seed && item.getAmount() > 0) { seedSlot = i; break; }
+        }
+        if (seedSlot < 0) return;
+        int slot = seedSlot;
+        var seedBefore = player.getInventory().getItem(slot).clone();
+        int toolSlot = player.getInventory().getHeldItemSlot();
+        var before = block.getBlockData().clone();
+        NativeBreakSessions sessions = nativeBreakSessions;
+        var session = sessions.capture(player.getUniqueId(), player);
+        if (session == null) session = sessions.join(player.getUniqueId(), player);
+        if (session == null) return;
+        NativeBreakSessions.Session captured = session;
+        java.util.function.BooleanSupplier ready = () -> current(admission, player) && sessions.isCurrent(captured)
+                && !isNativeBreak(player) && player.getGameMode() == GameMode.SURVIVAL && interactionAllowed(event)
+                && eligible(player, perk, UsageCharges.Kind.RightClickHarvest,
+                        candidate -> allowed(candidate.getHarvestCrops(), crop)
+                                && com.bencodez.mcperks.effects.AutoPlant.allows(candidate, tool, crop)) == perk
+                && owns(player, block) && block.getType() == crop && before.equals(block.getBlockData())
+                && player.getLocation().distanceSquared(block.getLocation()) <= 36
+                && player.getInventory().getHeldItemSlot() == toolSlot
+                && tool.equals(player.getInventory().getItemInMainHand())
+                && seedBefore.equals(player.getInventory().getItem(slot));
+        OwnerTasks.run(plugin, player, () -> {
+            if (!ready.getAsBoolean()) return;
+            submit(player, perk, UsageCharges.Kind.RightClickHarvest, admission, List.of(() -> {
+                if (!ready.getAsBoolean()) return false;
+                return sessions.guard().run(captured.scope, () -> {
+                    var active = activeNativePlayers.get();
+                    if (!active.add(player)) return false;
+                    try {
+                        // P3 has confirmed its durable reservation; reserve the exact seed
+                        // before any native break callback can mutate this inventory.
+                        var remainder = seedBefore.clone();
+                        remainder.setAmount(remainder.getAmount() - 1);
+                        player.getInventory().setItem(slot, remainder.getAmount() == 0 ? null : remainder);
+                        if (!player.breakBlock(block)) throw new IllegalStateException("Native harvest outcome is uncertain");
+                        if (!current(admission, player) || !sessions.isCurrent(captured) || !owns(player, block)
+                                || block.getType() != org.bukkit.Material.AIR)
+                            throw new IllegalStateException("Harvest replacement context changed");
+                        var replanted = (org.bukkit.block.data.Ageable) before.clone();
+                        replanted.setAge(0);
+                        block.setBlockData(replanted);
+                        return true;
+                    } finally {
+                        active.remove(player);
+                        if (active.isEmpty()) activeNativePlayers.remove();
+                    }
+                });
+            }));
+        }, () -> {});
+    }
+
+    @SuppressWarnings("deprecation")
+    private static boolean interactionAllowed(org.bukkit.event.player.PlayerInteractEvent event) {
+        return !event.isCancelled() && event.useInteractedBlock() != org.bukkit.event.Event.Result.DENY
+                && event.useItemInHand() != org.bukkit.event.Event.Result.DENY;
     }
 
     private static boolean allowed(java.util.List<String> values, org.bukkit.Material material) {

@@ -30,27 +30,7 @@ public class AutoPlant {
 			return;
 		}
 		ItemStack itemInHand = player.getInventory().getItemInMainHand();
-		if (!perk.getWhitelistedTools().isEmpty()) {
-			if (!perk.getWhitelistedTools().contains(itemInHand.getType())) {
-				return;
-			}
-		}
-		if (perk.getRequiredEnchants().size() > 0) {
-			for (Entry<String, Integer> enchants : perk.getRequiredEnchants().entrySet()) {
-				if (itemInHand.getEnchantmentLevel(
-						Enchantment.getByKey(NamespacedKey.minecraft(enchants.getKey()))) != enchants.getValue()) {
-					return;
-				}
-			}
-		}
-		if (!perk.getWhitelistedBlocks().isEmpty()) {
-			if (!perk.getWhitelistedBlocks().contains(block.getType())) {
-				return;
-			}
-		}
-		if (perk.getBlacklistedBlocks().contains(block.getType())) {
-			return;
-		}
+        if (!allows(perk, itemInHand, block.getType())) return;
 
 		Material seedBlockType = getSeedBlockType(block.getType());
 		Material seedItemType = getSeedItemType(block.getType());
@@ -75,6 +55,26 @@ public class AutoPlant {
 		}
 	}
 
+    public static Material seedFor(Material crop) {
+        return switch (crop) {
+            case WHEAT -> Material.WHEAT_SEEDS;
+            case POTATOES -> Material.POTATO;
+            case CARROTS -> Material.CARROT;
+            case BEETROOTS -> Material.BEETROOT_SEEDS;
+            case NETHER_WART -> Material.NETHER_WART;
+            default -> null;
+        };
+    }
+    @SuppressWarnings("deprecation")
+    public static boolean allows(Perk perk, ItemStack tool, Material crop) {
+        if (!perk.getWhitelistedTools().isEmpty() && !perk.getWhitelistedTools().contains(tool.getType())) return false;
+        for (Entry<String, Integer> required : perk.getRequiredEnchants().entrySet()) {
+            Enchantment enchantment = Enchantment.getByKey(NamespacedKey.minecraft(required.getKey()));
+            if (enchantment == null || tool.getEnchantmentLevel(enchantment) != required.getValue()) return false;
+        }
+        return (perk.getWhitelistedBlocks().isEmpty() || perk.getWhitelistedBlocks().contains(crop))
+                && !perk.getBlacklistedBlocks().contains(crop);
+    }
 	private void plant(MCPerksMain plugin, Player player, Block block, Material seedType) {
 		Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
 
