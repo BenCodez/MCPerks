@@ -144,6 +144,7 @@ public class MCPerksMain extends AdvancedCorePlugin {
     private com.bencodez.mcperks.userapi.UsageCharges usageCharges;
     private com.bencodez.mcperks.listeners.UsageEffectListener usageEffects;
     public com.bencodez.mcperks.userapi.UsageCharges getUsageCharges() { return usageCharges; }
+    public com.bencodez.mcperks.listeners.UsageEffectListener getUsageEffects() { return usageEffects; }
 
     private volatile java.util.concurrent.CompletableFuture<Void> shutdownPreparation;
     private volatile java.util.concurrent.CompletionStage<Void> shutdownFinalFiles;

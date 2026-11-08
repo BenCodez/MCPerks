@@ -117,7 +117,10 @@ public enum Effect {
 	RandomAllRepair,
 
 	/** Refill a depleted held stack from matching inventory items. */
-	AutoBlockRefill;
+	AutoBlockRefill,
+
+	/** Mine connected ore through the normal native-break path. */
+	VeinMining;
 
 	public static Effect fromString(String str) {
 		for (Effect eff : values()) {

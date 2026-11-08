@@ -253,4 +253,145 @@ class UsageEffectListenerTest {
         }
     }
 
+    private Block veinBlock(int x, int y, int z, Material material) {
+        Block b = mock(Block.class); when(b.getWorld()).thenReturn(world);
+        when(b.getX()).thenReturn(x); when(b.getY()).thenReturn(y); when(b.getZ()).thenReturn(z);
+        when(b.getLocation()).thenReturn(new Location(world,x,y,z)); when(b.getType()).thenReturn(material); return b;
+    }
+    private Block[] veinSetup(int count) throws Exception {
+        com.bencodez.mcperks.scheduling.OwnerTasks.initialize(plugin);
+        charges.set(owner,Kind.VeinMining,count).get(); items[0]=new ItemStack(Material.DIAMOND_PICKAXE);
+        when(perk.getEffects()).thenReturn(new ArrayList<>(List.of(Effect.VeinMining)));
+        when(perk.getVeinOptions()).thenReturn(new VeinOptions(16,8,List.of(),List.of()));
+        when(world.getMinHeight()).thenReturn(0); when(world.getMaxHeight()).thenReturn(256);
+        Block origin=veinBlock(4,64,4,Material.DIAMOND_ORE), extra=veinBlock(5,64,4,Material.DIAMOND_ORE);
+        when(world.getBlockAt(anyInt(),anyInt(),anyInt())).thenAnswer(i -> {
+            int x=i.getArgument(0), y=i.getArgument(1), z=i.getArgument(2);
+            return x==4 && y==64 && z==4 ? origin : x==5 && y==64 && z==4 ? extra : veinBlock(x,y,z,Material.AIR);
+        });
+        return new Block[]{origin,extra};
+    }
+    private Runnable queuedVein(Block origin) throws Exception {
+        listener.vein(new BlockBreakEvent(origin,player)); when(origin.getType()).thenReturn(Material.AIR);
+        Runnable timer=ownerScheduler.timers.poll(5,TimeUnit.SECONDS); assertNotNull(timer); timer.run(); return next();
+    }
+    @Test void veinEventUsesPartialBudgetAndGuardsSynchronousRecursion() throws Exception {
+        Block[] blocks=veinSetup(1); Block second=veinBlock(6,64,4,Material.DIAMOND_ORE);
+        when(world.getBlockAt(eq(6),eq(64),eq(4))).thenReturn(second);
+        when(player.breakBlock(blocks[1])).thenAnswer(i -> { listener.vein(new BlockBreakEvent(blocks[1],player)); return true; });
+        queuedVein(blocks[0]).run(); barrier(Kind.VeinMining);
+        verify(player,times(1)).breakBlock(blocks[1]); verify(player,never()).breakBlock(second); assertTrue(tasks.isEmpty());
+        assertEquals(0,charges.get(owner,Kind.VeinMining)); assertEquals(1,charges.successful(owner,Kind.VeinMining));
+    }
+    @Test void veinEventSkipsUnloadedAdjacentChunk() throws Exception {
+        Block[] blocks=veinSetup(1); when(blocks[0].getX()).thenReturn(15);
+        when(world.isChunkLoaded(anyInt(),anyInt())).thenAnswer(i -> i.getArgument(0,Integer.class)==0);
+        when(world.getBlockAt(eq(15),eq(64),eq(4))).thenReturn(blocks[0]);
+        listener.vein(new BlockBreakEvent(blocks[0],player));
+        verify(world).getBlockAt(15,64,4); verify(world,never()).getBlockAt(eq(16),anyInt(),anyInt());
+    }
+    @Test void veinEventChecksOriginChunkBeforeDeferredTypeRead() throws Exception {
+        Block[] blocks=veinSetup(1); Runnable effect=queuedVein(blocks[0]); clearInvocations(blocks[0]);
+        when(world.isChunkLoaded(anyInt(),anyInt())).thenReturn(false); effect.run(); barrier(Kind.VeinMining);
+        verify(blocks[0],never()).getType(); verify(player,never()).breakBlock(any()); assertEquals(1,charges.get(owner,Kind.VeinMining));
+    }
+    @Test void veinEventRejectsChangedHeldSlot() throws Exception {
+        Block[] blocks=veinSetup(2); Runnable effect=queuedVein(blocks[0]); when(inventory.getHeldItemSlot()).thenReturn(1);
+        effect.run(); barrier(Kind.VeinMining); verify(player,never()).breakBlock(any()); assertEquals(2,charges.get(owner,Kind.VeinMining));
+    }
+    @Test void veinEventRejectsChangedToolMetadata() throws Exception {
+        Block[] blocks=veinSetup(2); Runnable effect=queuedVein(blocks[0]);
+        var custom=mock(org.bukkit.inventory.meta.Damageable.class); when(custom.clone()).thenReturn(custom);
+        when(custom.getEnchants()).thenReturn(Map.of()); when(custom.getDisplayName()).thenReturn("Different custom tool");
+        items[0]=new ItemStack(Material.DIAMOND_PICKAXE); items[0].setItemMeta(custom);
+        effect.run(); barrier(Kind.VeinMining); verify(player,never()).breakBlock(any()); assertEquals(2,charges.get(owner,Kind.VeinMining));
+    }
+    @Test void veinEventStopsAfterToolBreak() throws Exception {
+        Block[] blocks=veinSetup(2); Block second=veinBlock(6,64,4,Material.DIAMOND_ORE);
+        when(world.getBlockAt(eq(6),eq(64),eq(4))).thenReturn(second);
+        when(player.breakBlock(blocks[1])).thenAnswer(i -> { items[0]=new ItemStack(Material.AIR); return true; });
+        queuedVein(blocks[0]).run(); barrier(Kind.VeinMining); verify(player,times(1)).breakBlock(blocks[1]);
+        verify(player,never()).breakBlock(second); assertEquals(1,charges.get(owner,Kind.VeinMining));
+        assertEquals(1,charges.successful(owner,Kind.VeinMining));
+    }
+
+    @Test void nativeVeinKeepsFortuneAndSuppressesRecursiveAutomation() throws Exception {
+        Block[] blocks=veinSetup(1); Runnable effect=queuedVein(blocks[0]);
+        when(plugin.getUsageEffects()).thenReturn(listener);
+        var effects=mock(com.bencodez.mcperks.perk.EffectHandler.class); when(plugin.getEffectHandler()).thenReturn(effects);
+        when(effects.getBlockBreakEvents()).thenReturn(new ArrayList<>());
+        var bonus=mock(Perk.class); when(bonus.getEffects()).thenReturn(new ArrayList<>(List.of(Effect.Fortune)));
+        when(bonus.getBlocks()).thenReturn(new ArrayList<>(List.of(Material.DIAMOND_ORE)));
+        when(bonus.getIncreasePercent(Effect.Fortune)).thenReturn(200.0);
+        when(handler.getActivePerks()).thenReturn(new CopyOnWriteArrayList<>(List.of(perk,bonus)));
+        when(handler.effectActive(eq(Effect.Fortune),eq(owner.toString()),eq("world"))).thenReturn(true);
+        when(player.getItemInHand()).thenAnswer(i -> inventory.getItemInMainHand());
+        var legacy=new EffectListeners(plugin);
+        when(blocks[1].getDrops(any(ItemStack.class))).thenAnswer(i -> List.of(new ItemStack(Material.DIAMOND,2)));
+        when(player.breakBlock(blocks[1])).thenAnswer(i -> {
+            assertTrue(listener.isNativeBreak(player)); var nested=new BlockBreakEvent(blocks[1],player);
+            legacy.onBlockBreak(nested); listener.vein(nested); return true;
+        });
+        effect.run(); barrier(Kind.VeinMining);
+        verify(world).dropItemNaturally(eq(blocks[1].getLocation()),argThat(item -> item.getType()==Material.DIAMOND && item.getAmount()==4));
+        verify(player,times(1)).breakBlock(blocks[1]); assertFalse(listener.isNativeBreak(player));
+        verify(handler,never()).effectActive(eq(Effect.AutoPlant),anyString(),anyString());
+        verify(handler,never()).effectActive(eq(Effect.IncreaseMiningArea),anyString(),anyString());
+        assertEquals(1,charges.successful(owner,Kind.VeinMining)); assertTrue(tasks.isEmpty());
+    }
+
+    @Test void veinOldSessionCannotReserveAfterSameUuidReconnect() throws Exception {
+        Block[] blocks=veinSetup(1); listener.vein(new BlockBreakEvent(blocks[0],player));
+        Runnable timer=ownerScheduler.timers.poll(5,TimeUnit.SECONDS); assertNotNull(timer);
+        Player successor=joinedSuccessor(); lateQuit(player); when(blocks[0].getType()).thenReturn(Material.AIR);
+        timer.run(); barrier(Kind.VeinMining); verify(player,never()).breakBlock(any());
+        assertEquals(1,charges.get(owner,Kind.VeinMining)); assertNotNull(capture(successor));
+    }
+    @Test void veinOldSessionAfterReservationRefundsOnceOnSameUuidReconnect() throws Exception {
+        Block[] blocks=veinSetup(1); Runnable effect=queuedVein(blocks[0]);
+        assertEquals(0,charges.get(owner,Kind.VeinMining)); Player successor=joinedSuccessor(); lateQuit(player);
+        effect.run(); effect.run(); barrier(Kind.VeinMining); verify(player,never()).breakBlock(any());
+        assertEquals(1,charges.get(owner,Kind.VeinMining)); assertNotNull(capture(successor));
+    }
+    @Test void veinUncertainNativeFailureRemainsSpent() throws Exception {
+        Block[] blocks=veinSetup(1); when(player.breakBlock(blocks[1])).thenReturn(false);
+        queuedVein(blocks[0]).run(); barrier(Kind.VeinMining);
+        verify(player).breakBlock(blocks[1]); assertEquals(0,charges.get(owner,Kind.VeinMining));
+        assertEquals(0,charges.successful(owner,Kind.VeinMining));
+    }
+
+    @Test void veinIgnoresNonVeinPerkBeforeReadingItsOptions() throws Exception {
+        Block[] blocks=veinSetup(1); Perk unrelated=mock(Perk.class);
+        when(unrelated.getEffects()).thenReturn(new ArrayList<>(List.of(Effect.Fortune)));
+        when(handler.getActivePerks()).thenReturn(new CopyOnWriteArrayList<>(List.of(unrelated,perk)));
+        when(player.breakBlock(blocks[1])).thenReturn(true);
+        queuedVein(blocks[0]).run(); barrier(Kind.VeinMining);
+        verify(unrelated,never()).getVeinOptions(); verify(player).breakBlock(blocks[1]);
+    }
+    @Test void reloadDuringNativeBreakPreservesGuardUntilCallbackReturns() throws Exception {
+        Block[] blocks=veinSetup(1); Runnable effect=queuedVein(blocks[0]);
+        when(plugin.getUsageEffects()).thenReturn(listener);
+        var effects=mock(com.bencodez.mcperks.perk.EffectHandler.class); when(plugin.getEffectHandler()).thenReturn(effects);
+        when(effects.getBlockBreakEvents()).thenReturn(new ArrayList<>());
+        var legacy=new EffectListeners(plugin);
+        AtomicReference<Throwable> callbackFailure = new AtomicReference<>();
+        var callbackCompleted = new java.util.concurrent.atomic.AtomicBoolean();
+        when(player.breakBlock(blocks[1])).thenAnswer(i -> {
+            try {
+                listener.invalidate(); assertTrue(listener.isNativeBreak(player));
+                var replacement=new UsageEffectListener(plugin); when(plugin.getUsageEffects()).thenReturn(replacement);
+                assertTrue(replacement.isNativeBreak(player));
+                var nested=new BlockBreakEvent(blocks[1],player); legacy.onBlockBreak(nested); replacement.vein(nested);
+                callbackCompleted.set(true);
+            } catch (Throwable failure) { callbackFailure.set(failure); }
+            return true;
+        });
+        effect.run(); barrier(Kind.VeinMining);
+        assertNull(callbackFailure.get(), "callback failed: " + callbackFailure.get());
+        assertTrue(callbackCompleted.get(), "nested callback did not complete");
+        verify(handler,never()).effectActive(eq(Effect.AutoPlant),anyString(),anyString());
+        verify(handler,never()).effectActive(eq(Effect.IncreaseMiningArea),anyString(),anyString());
+        verify(player,times(1)).breakBlock(blocks[1]); assertFalse(listener.isNativeBreak(player));
+        assertTrue(ownerScheduler.timers.isEmpty());
+    }
 }
